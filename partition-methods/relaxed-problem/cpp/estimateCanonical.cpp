@@ -31,7 +31,8 @@ void dfs(int node) {
 }
 
 // Solves a relaxed problem for each c-component (sharp if the c-component has only one latent variable)
-void boundForCanonicalPartitions() {
+vector<int> boundForCanonicalPartitions() {
+    vector<int> canonicalCardinalities = {};
     for (int i = 0; i < dagComponents.size(); i++) {
         int64_t canonicalPartition = 1;
         for (int node: dagComponents[i].nodes) {            
@@ -46,8 +47,11 @@ void boundForCanonicalPartitions() {
                 canonicalPartition *= pow(base, exponent);
             }            
         }
+        canonicalCardinalities.push_back(canonicalPartition);
         cout << "For the c-component #" << i + 1 << " the equivalente canonical partition = " << canonicalPartition << endl;
     }
+
+    return canonicalCardinalities;
 }
 
 int main() {    
@@ -93,7 +97,10 @@ int main() {
         }
     }
 
-    boundForCanonicalPartitions();
+    vector<int> calcCards = boundForCanonicalPartitions();
+    for (int el: calcCards) {
+        cout << "el = " << el << endl;
+    }
     
     return 0;
 }
