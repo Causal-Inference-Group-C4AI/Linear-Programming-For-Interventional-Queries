@@ -2,8 +2,8 @@ import math
 
 adj = []  # 1-indexed
 parents = []  # parents of each node (dual of adj)
-label_to_index = {}  # Also 1-indexed
-index_to_label = {}  # debugging
+label_to_index: dict[str, int] = {}  # Also 1-indexed
+index_to_label: dict[int, str] = {}  # debugging
 cardinalities = []  # <= 1 implies unknown
 visited = []
 curr_component = 0
@@ -63,7 +63,26 @@ def bound_for_canonical_partitions():
                     if cardinalities[parent] > 1:
                         exponent *= cardinalities[parent]
                 canonical_partition *= math.pow(base, exponent)
-        print(f"For the c-component #{i + 1} the equivalent canonical partition = {int(canonical_partition)}")
+        print(f"For the c-component #{i + 1} the equivalent canonical partition = {int(canonical_partition)}")    
+
+def generateRelaxed():    
+    relaxedGraph: str = ""
+    unob:str = ""
+    
+    for index, component in enumerate(dag_components):
+        currUnobLabel : str = "U" + str(index)
+        unob += f", {currUnobLabel}"        
+        for node in component.nodes:
+            if cardinalities[node] > 1:             
+                relaxedGraph += f", {currUnobLabel} -> {index_to_label[node]}"                                
+
+    # adicionar arestas que saem do node depois - pois pode nao estar em nenhum c-component.
+    for index, label in index_to_label.items():
+        if cardinalities[index] > 1:
+            for node in adj[index]:                
+                relaxedGraph += f", {label} -> {index_to_label[node]}"
+
+    return relaxedGraph[2:], unob[2:]
 
 def main():
     num_nodes = int(input())
@@ -104,8 +123,14 @@ def main():
         for node in component.nodes:
             status = "Latent" if cardinalities[node] < 1 else "Observable"
             print(f"node {node}({index_to_label[node]}) - {status}")
+    
+
 
     bound_for_canonical_partitions()
+
+    adj2, unob2 = generateRelaxed()
+    print(adj2)
+    print(unob2)
 
 if __name__ == "__main__":
     main()
