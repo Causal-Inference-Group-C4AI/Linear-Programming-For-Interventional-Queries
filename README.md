@@ -23,12 +23,24 @@ g++ estimateCanonical.cpp Logger.cpp -o yourExecutableName
 ```
 
 **(python)**:
-- Primeiro, entre na pasta em que se encontra o código fonte.
+- Rode o programa com:
 ```bash
-cd partition-methods/relaxed-problem/python
+python3 -m partition_methods.relaxed_problem.python.canonicalPartitions
 ```
-- Em seguida, rode o programa com:
-```bash
-python3 canonicalPartitions.py 
-```
+O "-m" é necessário para executarmos como módulo, caso contrário o programa não consegue realizar os imports corretamente.
 Você pode montar seu próprio input ou usar os que já estão prontos na pasta test-cases/inputs.
+
+## Generator:
+- Ainda está sendo feito.
+
+### Como executar:
+É necessário adicionar o root do projeto ao seu .bashrc para que os imports entre arquivos funcionem. Abra o arquivo com o editor de sua escolha:
+```shell
+nano ~/.bashrc
+```
+
+E adicione a linha abaixo ao arquivo, substituindo o caminho por como está em sua máquina.
+```shell
+export PYTHONPATH=$PYTHONPATH:/home/path/to/Canonical-Partition/
+```
+
