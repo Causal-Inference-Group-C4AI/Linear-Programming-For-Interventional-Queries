@@ -1,6 +1,6 @@
 class Graph:    
     def __init__(self, num_nodes: int, curr_nodes: list[int], visited: list[bool], cardinalities: list[int], 
-                 parents: list[int], adj: list[list[int]], label_to_index: dict[int, str], index_to_label: dict[str, int],
+                 parents: list[int], adj: list[list[int]], label_to_index: dict[str, int], index_to_label: dict[int, str],
                  dag_components: list[list[int]]):
         self.num_nodes = num_nodes
         self.curr_nodes = curr_nodes
