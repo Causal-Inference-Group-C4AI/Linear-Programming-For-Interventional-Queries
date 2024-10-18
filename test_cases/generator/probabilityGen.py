@@ -4,19 +4,16 @@ import random as rand
 
 def distribution(graph : Graph, prec = 3):
     
-    exogenous, endogenous =  findExogen(graph)
+    probs : list[np.array] = []
     
-    cardinalities : list[int] = [graph.cardinalities[i] for i in exogenous]
+    for i in graph.exogenous:
+        card = graph.cardinalities[i]
 
-    probs : list[np.array[float]] = []
-    
-    for card in cardinalities:
-        
         dist = np.array([rand.uniform(1,100) for _ in range(card)])
         
         dist /= np.sum(dist)
         dist = np.trunc(dist*10**prec)/10**prec
-        dist[-1] = 1 - np.sum(dist[0:card-1])        
+        dist[-1] = 1 - np.sum(dist[0 : card-1])        
         probs.append(dist)
 
     return probs
@@ -42,7 +39,7 @@ if __name__ == "__main__":
         if graph.cardinalities[i] < 1:
             graph.cardinalities[i] = 2
     
-    print(distribution(graph))
+    print(np.arange(1,3))
 
 
 
