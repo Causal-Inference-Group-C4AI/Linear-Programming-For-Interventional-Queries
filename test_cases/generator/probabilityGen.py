@@ -39,7 +39,7 @@ if __name__ == "__main__":
         if graph.cardinalities[i] < 1:
             graph.cardinalities[i] = 2
     
-    print(np.arange(1,3))
+    print(graph.adj)
 
 
 
