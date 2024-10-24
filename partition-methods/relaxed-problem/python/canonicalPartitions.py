@@ -1,10 +1,11 @@
+#!/usr/bin/python3
 import math
 
 adj = []  # 1-indexed
 parents = []  # parents of each node (dual of adj)
 label_to_index = {}  # Also 1-indexed
 index_to_label = {}  # debugging
-cardinalities = []  # <= 1 implies unknown
+cardinalities = []  # <= 1 implies unknown/unobserved
 visited = []
 curr_component = 0
 curr_nodes = []
@@ -51,7 +52,39 @@ def dfs(node):
         for parent_node in parents[node]:
             if not visited[parent_node] and cardinalities[parent_node] < 1:
                 dfs(parent_node)
+'''
+c-component nodes: Z, X, Y
+FIRST OBSERVING Z:
+X:3 -> Z:2
+K:2 -> Z:2
+D:4 -> Z:2
 
+EXPOENT = 3*2*4 = 24
+BASE = 2
+
+PARTIAL_CANONICA_PARTITION_1 = 2**24
+------------
+OBSERVING X:
+
+W:2 -> X:3
+
+EXPOENT = 2
+BASE = 3
+
+PARTIAL_CANONICA_PARTITION_2 = 3**2
+------------
+OBSERVING Z:
+
+Z:2 -> Y:2
+
+EXPOENT = 2
+BASE = 2
+
+PARTIAL_CANONICA_PARTITION_3 = 2**2
+------------------------
+TOTAL_CANONICAL_PARTITION = PARTIAL_CANONICA_PARTITION_1 * PARTIAL_CANONICA_PARTITION_2 * PARTIAL_CANONICA_PARTITION_3
+TOTAL_CANONICAL_PARTITION = 2**26 * 3**2
+'''
 def bound_for_canonical_partitions():
     for i, component in enumerate(dag_components):
         canonical_partition = 1
@@ -66,7 +99,9 @@ def bound_for_canonical_partitions():
         print(f"For the c-component #{i + 1} the equivalent canonical partition = {int(canonical_partition)}")
 
 def main():
+    print("What is the number of nodes?")
     num_nodes = int(input())
+    print("What is the number of edges?")
     num_edges = int(input())
     
     global adj, cardinalities, visited, parents
@@ -76,13 +111,15 @@ def main():
     parents = [[] for _ in range(num_nodes + 1)]
 
     for i in range(1, num_nodes + 1):
+        print(f"Give the label and the cardinality for the {i}th node:")
         label, cardinality = input().split()
         cardinality = int(cardinality)
         label_to_index[label] = i
         index_to_label[i] = label
         cardinalities[i] = cardinality
 
-    for _ in range(num_edges):
+    for i in range(num_edges):
+        print(f"Give the nodes of the {i+1}th edge:")
         u, v = input().split()
         u_index = label_to_index[u]
         v_index = label_to_index[v]
@@ -91,6 +128,7 @@ def main():
 
     debug(num_nodes)
 
+    # c-separating
     for i in range(1, num_nodes + 1):
         if not visited[i] and cardinalities[i] < 1:
             curr_nodes.clear()
