@@ -1,14 +1,16 @@
 #!/usr/bin/python3
 
 from partition_methods.relaxed_problem.python.graph import Graph
+from test_cases.generator.dataGen import vamos
 
 def main():
-    graph: Graph = Graph.parse()
-    for i in range(1, graph.num_nodes + 1):
-        if graph.cardinalities[i] < 1:
-            graph.cardinalities[i] = 2
+    vamos()
+    # graph: Graph = Graph.parse()
+    # for i in range(1, graph.num_nodes + 1):
+    #     if graph.cardinalities[i] < 1:
+    #         graph.cardinalities[i] = 2
     
-    print(graph.adj)
+    # print(graph.adj)
 
 
 #test function

@@ -16,6 +16,7 @@ def dataGen(graph : Graph, numSamp = int(1e3)):
 
         exogen_vals: list[int] = [np.random.choice(a = np.arange(1, len(dist) + 1),  p = dist) for dist in distExogen]
         for num_exog, node_exog in enumerate(graph.exogenous):
+            print(f"num_exog {num_exog}")
             
             vals[node_exog - 1] = exogen_vals[num_exog] 
         
@@ -32,9 +33,10 @@ def dataGen(graph : Graph, numSamp = int(1e3)):
             return None
                     
         experiment.append(vals)
+    print(experiment)
     return experiment
 
-if __name__ == "__main__":
+def vamos():
     graph: Graph = Graph.parse()
     for i in range(1, graph.num_nodes + 1):
         if graph.cardinalities[i] < 1:
