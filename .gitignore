@@ -3,3 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.pyc
+# Remove files that have no extension
+*
+!/**/
+!*.*
