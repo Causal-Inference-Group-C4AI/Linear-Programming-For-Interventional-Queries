@@ -3,7 +3,9 @@ import numpy as np
 import random as rand
 
 def distribution(graph : Graph, prec = 3):
-    
+    for i in range(1, graph.num_nodes + 1):
+        if graph.cardinalities[i] < 1:
+            graph.cardinalities[i] = 2
     probs : list[np.array] = []
     
     for i in graph.exogenous:

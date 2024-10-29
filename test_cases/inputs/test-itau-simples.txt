@@ -2,9 +2,9 @@
 6
 U 0
 T 2
-Y 2
 D 2
 E 2
+Y 2
 T Y
 T D
 U Y
