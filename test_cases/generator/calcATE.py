@@ -4,13 +4,13 @@ from partition_methods.relaxed_problem.python.graph import Graph
 from test_cases.generator.dataGen import dataGen
 import networkx as nx
 
-def estimatedATE(graph : Graph, quary : list[str]):
+def estimatedATE(graph : Graph, query : list[str]):
     data : pd.DataFrame = pd.DataFrame(dataGen(graph = graph, numSamp= int(1e2)), columns= [graph.index_to_label[i] for i in range(1, graph.num_nodes + 1)])
     data = data.replace(to_replace=2, value=0)
     print(data)
     model = CausalModel( data = data,
-                        treatment= quary[0],
-                        outcome= quary[1],
+                        treatment= query[0],
+                        outcome= query[1],
                         graph= createDag(graph= graph)
                           )
     #model.view_model()
@@ -45,5 +45,5 @@ if __name__ == "__main__":
     for i in range(1, graph.num_nodes + 1):
         if graph.cardinalities[i] < 1:
             graph.cardinalities[i] = 2
-    print(estimatedATE(graph= graph, quary= ["V2","V3"]))
+    print(estimatedATE(graph= graph, query= ["V2","V3"]))
          
