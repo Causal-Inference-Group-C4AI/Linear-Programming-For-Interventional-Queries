@@ -32,7 +32,20 @@ def dataGen(graph : Graph, numSamp = int(1e3)):
             return None
                     
         experiment.append(vals)
-    return experiment
+
+    experiment = [[element - 1 for element in row] for row in experiment]
+    
+    df = pd.DataFrame(experiment)
+
+    df_label = []
+    for i in range(1, graph.num_nodes+1):   
+        df_label.append(graph.index_to_label[i])
+
+    df.columns = df_label
+
+    df.to_csv('outputs/dataGenOutput.csv', index=False)
+
+    return df
 
 if __name__ == "__main__":
     graph: Graph = Graph.parse()
