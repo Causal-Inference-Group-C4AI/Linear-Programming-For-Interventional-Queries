@@ -1,7 +1,9 @@
+import networkx as nx
+
 class Graph:    
     def __init__(self, num_nodes: int, curr_nodes: list[int], visited: list[bool], cardinalities: list[int], 
                  parents: list[int], adj: list[list[int]], label_to_index: dict[str, int], index_to_label: dict[int, str],
-                 dag_components: list[list[int]], exogenous : list[int], endogenous : list[int]):
+                 dag_components: list[list[int]], exogenous : list[int], endogenous : list[int], topological_order: list[int], DAG: nx.digraph):
         self.num_nodes = num_nodes
         self.curr_nodes = curr_nodes
         self.visited = visited 
@@ -13,7 +15,8 @@ class Graph:
         self.dag_components = dag_components
         self.endogenous = endogenous
         self.exogenous = exogenous
-
+        self.topological_order = topological_order
+        self.DAG = DAG
     def parse():
         num_nodes = int(input())
         num_edges = int(input())
@@ -39,7 +42,24 @@ class Graph:
             v_index = label_to_index_ex[v]
             adj_ex[u_index].append(v_index)
             parents_ex[v_index].append(u_index)
+        inpDAG: nx.DiGraph = nx.DiGraph()
+    
+        for i in range(1, num_nodes+1):
+            inpDAG.add_node(i)
+    
+        for parent, edge in enumerate(adj_ex):
+            if bool(edge):
+               for ch in edge:
+                   inpDAG.add_edge(parent, ch)
         
+        order = list(nx.topological_sort(inpDAG))
+        
+        for i in range(1, num_nodes + 1) :
+        
+             name_node = index_to_label_ex[i] 
+
+             nx.relabel_nodes(inpDAG, {i : name_node}, copy=False)
+       
         for i in range(1, num_nodes + 1):
            
            if not (bool(parents_ex[i])) :
@@ -48,4 +68,7 @@ class Graph:
                endogenIndex.append(i)
         
         return Graph(num_nodes=num_nodes,curr_nodes=[], visited=visited_ex, cardinalities=cardinalities_ex, parents=parents_ex, 
-                    adj=adj_ex, index_to_label=index_to_label_ex, label_to_index=label_to_index_ex, dag_components=[], exogenous= exogenIndex,endogenous = endogenIndex)
+                    adj=adj_ex, index_to_label=index_to_label_ex, label_to_index=label_to_index_ex, dag_components=[], exogenous= exogenIndex,endogenous = endogenIndex, topological_order= order, DAG= inpDAG)
+    
+if __name__ == "__main__":
+    graph: Graph = Graph.parse()
