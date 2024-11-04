@@ -1,3 +1,9 @@
+## TODO:
+# 1 - para cada elemento de allPossibleMechanisms gerar um dicionario que leva a realizacao do domino
+# (todos os elementos menos o ultimo) na imagem (ultimo elemento).
+# 0 - Para isso precisa de um "header" que explicita qual a realizacao do domino e qual eh a variavel da 
+# imagem em cada elemento. Fazer no preproecessamento esse header comum.
+
 from partition_methods.relaxed_problem.python.graph import Graph
 import itertools
 
@@ -12,29 +18,36 @@ class solver_middleware:
         # (i) truth tables and the number of parameters        
         auxSpaces: list[list[int]] = []
         headerArray: list[str] = []
+        allCasesList: list[list[list[int]]] = []
         for var in endogenousNodes:
             auxSpaces.clear()
             header: str = f"determines variable: {var}"
             amount: int = 1
             for parent in parentsDict[var]:
                 if parent != latentNode:
-                    header = f"{parent}, " + header 
-                    auxSpaces.append(range(cardinalities[parent]))                    
+                    header = f"{parent}, " + header
+                    auxSpaces.append(range(cardinalities[parent]))
                     amount *= cardinalities[parent]
 
             headerArray.append(header + f" (x {amount})")
             functionDomain: list[list[int]] = [list(auxTuple) for auxTuple in itertools.product(*auxSpaces)]
-            # print(functionDomain)                
+            # print(functionDomain)
 
             # Valores possíveis para c
-            valores_c: list[int] = [0, 1]
+            imageValues: list[int] = range(cardinalities[var])            
             
-            resultado = [[domainCase + [c] for c in valores_c] for domainCase in functionDomain]
-            print(resultado)            
+            varResult = [[domainCase + [c] for c in imageValues] for domainCase in functionDomain]
+            print(varResult)            
+            allCasesList  = allCasesList + varResult
         
         print(headerArray)
+        print(f"Lista com todos os mecanismos possíveis, agrupando os excludentes em um mesmo vetor:\n{allCasesList}")
         # Fazer um array de strings para podermos consultar qual a funcao (e o caso do dominio) abordado. Acho que pode valer a pena 
         # usar dicionario, porque precisaremos ficar consultando isso na hora de checar os mecanismos.
+
+        allPossibleMechanisms = list(itertools.product(*allCasesList))
+        for index, case in enumerate(allPossibleMechanisms):
+            print(f"{index}) {case}")
 
     # Plano:
     # Adicionar gerador de mecanismos (listas de tabela verdade)
