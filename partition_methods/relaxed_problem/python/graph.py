@@ -17,6 +17,7 @@ class Graph:
         self.exogenous = exogenous
         self.topological_order = topological_order
         self.DAG = DAG
+        
     def parse():
         num_nodes = int(input())
         num_edges = int(input())
