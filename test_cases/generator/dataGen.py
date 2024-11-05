@@ -20,18 +20,17 @@ def dataGen(graph : Graph, numSamp = int(1e3)):
                
                vals[node - 1] = exogen_vals[(graph.exogenous).index(node)]
               
-            else:
+            if node in graph.endogenous:
                 
                 parents_vals : np.array = np.array([vals[j - 1] for j in graph.parents[node]], dtype=int)
                 
                 for event in truthTable[(graph.endogenous).index(node)]:
-                    print(event)
                     if (parents_vals == event[:-1]).all():
                         vals[node -1] = event[-1]
             
-        #if 0 in vals :
-            #print("data generation failed")
-            #return None
+        if 0 in vals :
+            print("data generation failed")
+            return None
                     
         experiment.append(vals)
     experiment = [[element - 1 for element in row] for row in experiment]
@@ -52,4 +51,4 @@ if __name__ == "__main__":
     for i in range(1, graph.num_nodes + 1):
         if graph.cardinalities[i] < 1:
             graph.cardinalities[i] = 2
-    print(dataGen(graph=graph, numSamp= 1))       
+    print(dataGen(graph=graph, numSamp= int(1e3)))       
