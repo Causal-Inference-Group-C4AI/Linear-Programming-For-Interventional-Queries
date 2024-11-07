@@ -8,6 +8,10 @@ from partition_methods.relaxed_problem.python.graph import Graph
 import itertools
 import pandas as pd
 
+def iflog(verbose: bool, message: str):
+    if (verbose):
+        print(message)
+
 class solver_middleware:
     def __init__(self, graph: Graph):
         self.graph = graph    
@@ -85,34 +89,80 @@ class solver_middleware:
     def fetchCsv(filepath="/home/c4ai-wsl/projects/Canonical-Partition/causal_solver/balke_pearl.csv"):        
         return pd.read_csv(filepath)    
 
-    def csvParser(endoVars: list[int], cardinalitiesEndo: dict[int, int], tail: list[int], cardinalitiesTail: dict[int, int]):        
+    def probabilityCalculator(dataFrame, indexToLabel, endoValues: dict[int, int], tailValues: dict[int, int], verbose=True): 
         """
-        Gerar todos as combinações de valores possíves entre as endógenas e o tail para determinar
-        P(V=v|T) em que V é o vetor das variáveis endógenas do c-component e T é o tail destas (pai de algum nó do c-component, porém
-        a variável em si não está no c-component).
-        1) Buscar dados do CSV e armazenar em data Frame
-        2) Gerar todas uma enumeração de todas as possíveis combinações 
-        2.1) Seria bom que outra função gerasse essa enumeração? Porque também precisaremos para construir a matriz de zeros e uns.
-        2.2) Será que consigo montar a função objetivo a no mesmo bloco? Será que não está relacionada, de alguma forma, com a matriz
-        de zeros e uns?    
-        3) Percorrer uma lista com tais combinações e computar, para cada uma a probabilidade
-        """
+        dataFrame: parsed CSV
+        indexToLabel: convert endogenous variables index to label, so that it matches the df header
+        endoValues: specify the values assumed by the endogenous variables V
+        tailValues: specify the values assumed by the graph tail T
         
-        df = solver_middleware.fetchCsv()
+        Calculates P(V|T) = P(V,T) / P(T) = #Cases(V,T) / # Cases(T)
+        """            
 
-        conditions = (df["X"] == 0) & (df["Y"] == 0)        
-        print(f"Teste de contagem: {df[conditions].shape[0]}")    
+        # Build the tail condition
+        conditions = pd.Series(dtype=bool)
+        for tailVar in tailValues:
+            conditions = conditions & (dataFrame[indexToLabel[tailVar]] == tailValues[tailVar])
+        
+        tailCount = dataFrame[conditions].shape[0]
+        print(f"Count tail case: {tailCount}")    
+
+        if tailCount == 0:
+            return 0
+
+        # Add endogenous c-component vars conditions
+        for endoVar in endoValues:
+            conditions = conditions & (dataFrame[indexToLabel[endoVar]] == endoValues[endoVar])
+
+        fullCount = dataFrame[conditions].shape[0]
+        print(f"Count complete case: {fullCount}")    
+
+        return fullCount / tailCount
     
-
-    def checkDfs():
+    def checkValues(mechanismDict: dict[str, int], parents: dict[int, list[int]], topoOrder: list[int],
+                 conditionalVars: dict[int, int], expectedValues: dict[int, int], v=True):
         """
         For some mechanism in the discretization of a latent variable, as well as a tuple of values for the tail, check
         if the deterministic functions imply the expected values for the variables that belong to the c-component.
+
+        mechanismDict: find the value of a node given its parents - specifies U.
+        parents: dict that lists the parents of a variable (in the correct order - the same as in the dict)
+        topoOrder: order in which we can run through the c-component without any dependency problems.
+        conditionalVars: values taken by the variables in the c-component tail.
+        expectedValues: values that should be assumed by the endogenous nodes in the c-component.
         """
-        pass
+
+        iflog(v, "Debug conditionalVars in dfs")        
+        if v:
+            for key in conditionalVars:
+                print(f"key: {key} - value: {conditionalVars[key]}")
+
+        isValid: bool = True
+        for node in topoOrder:
+            dictKey: str = ""
+            if v:
+                print(f"Check node: {node}")
+            for parentOfNode in parents[node]:                
+                if v:
+                    print(f"Parent node: {parentOfNode}")
+                    print(f"Assumes value {conditionalVars[parentOfNode]}")
+                dictKey += f"{parentOfNode}={conditionalVars[parentOfNode]},"
+            
+            if v:
+                print(f"key: {dictKey}")
+            nodeValue = mechanismDict[dictKey[:-1]] # exclude an extra comma
+            conditionalVars[node] = nodeValue
+            if nodeValue != expectedValues[node]:
+                isValid = False
+                break
+        
+        if isValid:
+            return 1
+        else:
+            return 0
     
     def equations_generator(mechanismDicts: dict[str, int], tail: list[int], cardinalitiesTail: dict[int,int], endoVars: list[int],
-                            cardinalitiesEndo: dict[int,int]):
+                            cardinalitiesEndo: dict[int,int], endoParents: dict[int, list[int]], topoOrder: list[int], endoIndexToLabel: dict[int, str]):
         """
         Generate the system of equations that represents the constraints over a c-component, supposing that only the latent 
         variable states are used as variables in the optimization problem.
@@ -126,12 +176,14 @@ class solver_middleware:
         """
         
         variableSpaces: list[list[int]] = []
-        variablesOrder = endoVars + tail
-        for endogenous in endoVars:
-            variableSpaces.append(range(cardinalitiesEndo[endogenous]))
+        variablesOrder = tail + endoVars # Will use?
+        df = solver_middleware.fetchCsv()
         
         for tailVariable in tail:
             variableSpaces.append(range(cardinalitiesTail[tailVariable]))
+        
+        for endogenous in endoVars:
+            variableSpaces.append(range(cardinalitiesEndo[endogenous]))                
 
         print(f"State spaces array:\n{variableSpaces}")
 
@@ -141,13 +193,59 @@ class solver_middleware:
         for i, case in enumerate(combinationOfSpaces):
             print(f"{i}) {case}")
 
-        for combination in combinationOfSpaces:
-            systemCoefficients: list[int] = []
-            for latentEl in mechanismDicts:
-                isValid: bool = solver_middleware.checkDfs() # TODO - args = combination, latentEl
-                systemCoefficients.append(isValid)
+        matrix: list[list[int]] = [] # 0s and 1s matrix
+        for combination in combinationOfSpaces:            
+            print(f"Combination (case): {combination}")
+            
+            # Generate endoValues and tailValues based on combination + endoVars + tail
 
-            # generate the empirical probability for this combination
+            # Tail values:
+            tailValues: dict[int, int] = {}
+            for index in range(len(tail)):
+                tailValues[tail[index]] = combination[index]
+            
+            # endoValues:
+            endoValues: dict[int, int] = {}
+            for index in range(len(tail)):
+                endoValues[endoVars[index]] = combination[index + len(tail)]
+                        
+            probability: float = solver_middleware.probabilityCalculator(df, {0: "U", 1: "X", 2: "Y", 3: "Z"},
+                                                                         endoValues, tailValues, False) # TODO
+            print(f"Probability for this case is {probability}")
+
+            # combination order = tail and then the expected values.            
+            systemCoefficients: list[int] = []
+            conditionalVars: dict[int, int] = {}
+            expectedValues:  dict[int, int] = {}
+
+            print(f"Number of tail vars: {len(tail)}")
+            for index in range(len(tail)):
+                print(f"var = {tail[index]} has value {combination[index]} in the combination")
+                conditionalVars[tail[index]] = combination[index]
+
+            print(f"Number of expected vars = {len(endoVars)}")
+            for index in range(len(tail), len(combination)):
+                print(f"index = {index} and endoVar = {endoVars[index - len(tail)]} with value {combination[index]}")
+                expectedValues[endoVars[index - len(tail)]] = combination[index]
+
+
+            print("ConditionalVars dbg:")
+            for key in conditionalVars:
+                print(f"key: {key} & value: {conditionalVars[key]}")                            
+
+            print("Expected values dbg:")
+            for key in expectedValues:
+                print(f"key: {key} & value: {expectedValues[key]}")                            
+            
+            for mechanismDict in mechanismDicts:
+                isValid: bool = solver_middleware.checkValues(mechanismDict=mechanismDict, parents=endoParents, topoOrder=topoOrder,
+                                                             conditionalVars=conditionalVars, expectedValues=expectedValues, v=False) # TODO - args = combination, latentEl
+                systemCoefficients.append(isValid)
+            matrix.append(systemCoefficients)
+        
+        for eq in matrix:
+            print(f"Equation: {eq}")
+            # TODO: generate the empirical probability for this combination
 
 def testMechanismGenerator():    
     print(f"Test case 1:")
@@ -158,19 +256,22 @@ def testMechanismGenerator():
 def testCsvSolverParser():
     solver_middleware.csvParser(0, [1, 2], {0: 2, 1: 2, 2: 2, 3: 2}, {1: [0, 3], 2: [0, 1] })
 
-def testEquationsGenrator():
+def testEquationsGenerator():
     print("Teste for Balke & Pearl")
     #mechanismDicts: dict[str, int], tail: list[int], cardinalitiesTail: dict[int,int], endoVars: list[int],
                             # cardinalitiesEndo: dict[int,int]):        
-    allPossibleMechanisms, dictKeys, mechanismDicts = solver_middleware.mechanisms_generator(0, [1, 2], {0: 2, 1: 2, 2: 2, 3: 2}, {1: [0, 3], 2: [0, 1] }, False)
+    _, _, mechanismDicts = solver_middleware.mechanisms_generator(0, [1, 2], {0: 2, 1: 2, 2: 2, 3: 2}, {1: [0, 3], 2: [0, 1] }, False)
     print("Checking the dictionary")
     for element in mechanismDicts:
         for key in element:
             print(f"Key = {key} & value = {element[key]}")
         print ("--------")
         
-    solver_middleware.equations_generator(mechanismDicts, [3], {3: 2}, [1, 2], {1: 2, 2: 2})
+    # Balke & Pearl graph in which: Z = 3, U = 0, X = 1, Y = 2
+    print("\n=== Call equation generator ===\n")
+    solver_middleware.equations_generator(mechanismDicts, [3], {3: 2}, [1, 2], {1: 2, 2: 2}, {1: [3], 2: [1]} ,
+                                          [1, 2], {1: "X", 2: "Y", 3: "Z"})    
 
 if __name__ == "__main__":
-    testCsvSolverParser()
-    testEquationsGenrator()
+    #testCsvSolverParser()
+    testEquationsGenerator()
