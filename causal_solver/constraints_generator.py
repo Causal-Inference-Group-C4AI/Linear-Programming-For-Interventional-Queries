@@ -1,17 +1,8 @@
-## TODO:
-# 1 - para cada elemento de allPossibleMechanisms gerar um dicionario que leva a realizacao do domino
-# (todos os elementos menos o ultimo) na imagem (ultimo elemento).
-# 0 - Para isso precisa de um "header" que explicita qual a realizacao do domino e qual eh a variavel da 
-# imagem em cada elemento. Fazer no preproecessamento esse header comum.
-
 from partition_methods.relaxed_problem.python.graph import Graph
 import itertools
 import pandas as pd
 
-class solver_middleware:
-    def __init__(self, graph: Graph):
-        self.graph = graph    
-        
+class solver_middleware:            
     def mechanisms_generator(latentNode: int, endogenousNodes: list[int], cardinalities: dict[int, int], parentsDict: dict[int, list[int]], v=True):
         """
         Generates an enumeration (list) of all mechanism a latent value can assume in its c-component. The c-component has to have
@@ -82,8 +73,9 @@ class solver_middleware:
         
         return allPossibleMechanisms, dictKeys, mechanismDicts
     
-    def fetchCsv(filepath="/home/c4ai-wsl/projects/Canonical-Partition/causal_solver/balke_pearl.csv"):        
-        return pd.read_csv(filepath)    
+    def fetchCsv(filepath="balke_pearl.csv"):        
+        prefix = "/home/c4ai-wsl/projects/Canonical-Partition/causal_solver/"
+        return pd.read_csv(prefix + filepath)    
 
     def probabilityCalculator(dataFrame, indexToLabel, endoValues: dict[int, int], tailValues: dict[int, int], v=True): 
         """
@@ -169,7 +161,8 @@ class solver_middleware:
             return 0
     
     def equations_generator(mechanismDicts: dict[str, int], tail: list[int], cardinalitiesTail: dict[int,int], endoVars: list[int],
-                            cardinalitiesEndo: dict[int,int], endoParents: dict[int, list[int]], topoOrder: list[int], endoIndexToLabel: dict[int, str], v: True):
+                            cardinalitiesEndo: dict[int,int], endoParents: dict[int, list[int]], topoOrder: list[int], endoIndexToLabel: dict[int, str], filepath: str, 
+                            precision: int, v: True):
         """
         Generate the system of equations that represents the constraints over a c-component, supposing that only the latent 
         variable states are used as variables in the optimization problem.
@@ -184,7 +177,7 @@ class solver_middleware:
         
         variableSpaces: list[list[int]] = []
         # variablesOrder = tail + endoVars
-        df = solver_middleware.fetchCsv()
+        df = solver_middleware.fetchCsv(filepath)
         
         for tailVariable in tail:
             variableSpaces.append(range(cardinalitiesTail[tailVariable]))
@@ -222,6 +215,8 @@ class solver_middleware:
                         
             probability: float = solver_middleware.probabilityCalculator(df, endoIndexToLabel,
                                                                          endoValues, tailValues, False)            
+            probability = round(probability * pow(10, precision)) / pow(10, precision)
+
             probabilities.append(probability)
             # combination order = tail and then the expected values.            
             systemCoefficients: list[int] = []
@@ -271,12 +266,11 @@ def testMechanismGenerator():
     print(f"Test case 2: Balke & Pearl")
     solver_middleware.mechanisms_generator(0, [1, 2], {0: 2, 1: 2, 2: 2, 3: 2}, {1: [0, 3], 2: [0, 1] })
 
-
 def testEquationsGenerator():
     print("Teste for Balke & Pearl")
     #mechanismDicts: dict[str, int], tail: list[int], cardinalitiesTail: dict[int,int], endoVars: list[int],
                             # cardinalitiesEndo: dict[int,int]):        
-    _, _, mechanismDicts = solver_middleware.mechanisms_generator(0, [1, 2], {0: 2, 1: 2, 2: 2, 3: 2}, {1: [0, 3], 2: [0, 1] }, False)
+    _, _, mechanismDicts = solver_middleware.mechanisms_generator(0, [1, 2], {1: 2, 2: 2, 3: 2}, {1: [0, 3], 2: [0, 1] }, False)
     print("Checking the dictionary")
     for element in mechanismDicts:
         for key in element:
@@ -286,7 +280,7 @@ def testEquationsGenerator():
     # Balke & Pearl graph in which: Z = 3, U = 0, X = 1, Y = 2
     print("\n=== Call equation generator ===\n")
     probabilities, equations = solver_middleware.equations_generator(mechanismDicts, [3], {3: 2}, [1, 2], {1: 2, 2: 2}, {1: [3], 2: [1]} ,
-                                          [1, 2], {0: "U", 1: "X", 2: "Y", 3: "Z"}, False)    
+                                          [1, 2], {0: "U", 1: "X", 2: "Y", 3: "Z"}, "balke_pearl.csv", 3, False)    
 
     for i, eq in enumerate(equations):
         print(f"Equation {i}: {probabilities[i]} = {eq} * U^T")
@@ -297,6 +291,25 @@ def testEquationsGenerator():
 
     # 2) Automatizar a geracao da funcao objetivo (que pode ser nao linear :( )
 
-if __name__ == "__main__":
-    #testCsvSolverParser()
-    testEquationsGenerator()
+def testItau():
+    print("Teste grafo itau")
+
+    _, _, mechanismDicts = solver_middleware.mechanisms_generator(0, [1, 2], {1: 2, 2: 2, 3: 2}, {1: [0, 3], 2: [0, 1, 3] }, False)
+    print("Checking the dictionary")
+    for element in mechanismDicts:
+        for key in element:
+            print(f"Key = {key} & value = {element[key]}")
+        print ("--------")
+        
+    # Itau graph in which: U = 0, T = 1, Y = 2, D = 3
+    print("\n=== Call equation generator ===\n")
+    probabilities, equations = solver_middleware.equations_generator(mechanismDicts, [3], {3: 2}, [1, 2], {1: 2, 2: 2}, {1: [3], 2: [1, 3]} ,
+                                          [1, 2], {0: "U", 1: "T", 2: "Y", 3: "D"}, "itau.csv", 3, False)    
+
+    for i, eq in enumerate(equations):
+        print(f"Equation {i}: {probabilities[i]} = {eq} * U^T")
+
+
+if __name__ == "__main__":    
+    # testEquationsGenerator()
+    testItau()
