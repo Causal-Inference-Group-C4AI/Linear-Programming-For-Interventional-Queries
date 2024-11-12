@@ -1,4 +1,5 @@
 from partition_methods.relaxed_problem.python.graph import Graph
+from scipy.optimize import linprog
 import itertools
 import pandas as pd
 
@@ -258,7 +259,51 @@ class solver_middleware:
                 print(f"{probabilities[index]} - Equation: {eq}")        
 
         return probabilities, matrix
+    
+    
+    def interventionalQuery(probabilities: list[int], empiricalEquations: list[list[int]], objectiveFunctionPos: list[int],
+                             objectiveFunctionNeg: list[int]):
+        PosLower, PosUpper = solver_middleware.createLinearProblem(probabilities, empiricalEquations, objectiveFunctionPos)
+        NegLower, NegUpper = solver_middleware.createLinearProblem(probabilities, empiricalEquations, objectiveFunctionNeg)
 
+        print(f"The positive query has bounds: [{PosLower},{PosUpper}]")
+        print(f"The negative query has bounds: [{NegLower},{NegUpper}]")
+        # Fazer as contas e printar!
+        finalLower = PosLower - NegUpper
+        finalUpper = PosUpper - NegLower
+        print(f"The interventional bounds are: [{finalLower},{finalUpper}]")
+        pass
+    
+    def createLinearProblem(probabilities: list[int], empiricalEquations: list[list[int]], objectiveFunction: list[int]):
+        """
+        Creates a linear programming problem with the following restrictions:
+        - Equations from empirical probabilities (from args)
+        - The sum of probabilities of a latent variable in its space must add to one (from args)
+        - All the variables must be between 0 and 1 (not from args)
+        - Objective function (from args)
+        """        
+        
+        # Call the solver
+        bounds = [(0, 1) for _ in range(len(objectiveFunction))]
+        negObj = [-x for x in objectiveFunction]
+        result = linprog(c=objectiveFunction, A_ub=None, b_ub=None, A_eq=empiricalEquations, b_eq=probabilities, method="highs", bounds=bounds)
+        resultNeg = linprog(negObj, A_ub=None, b_ub=None, A_eq=empiricalEquations, b_eq=probabilities, method="highs", bounds=bounds)
+
+        # Verify the minimum (lb)
+        if result.success:
+            # print("Solução ótima encontrada:", result.x)
+            print("Valor da função objetivo:", result.fun)
+        else:
+            print("Solução não encontrada:", result.message)
+
+        # Verify the maximum (ub)
+        if result.success:
+            # print("Solução ótima encontrada:", resultNeg.x)
+            print("Valor da função objetivo:", -resultNeg.fun)
+        else:
+            print("Solução não encontrada:", resultNeg.message)        
+        
+        return  result.fun, -resultNeg.fun
 
 def testMechanismGenerator():    
     print(f"Test case 1:")
@@ -266,7 +311,7 @@ def testMechanismGenerator():
     print(f"Test case 2: Balke & Pearl")
     solver_middleware.mechanisms_generator(0, [1, 2], {0: 2, 1: 2, 2: 2, 3: 2}, {1: [0, 3], 2: [0, 1] })
 
-def testEquationsGenerator():
+def testBalkePearl():
     print("Teste for Balke & Pearl")
     #mechanismDicts: dict[str, int], tail: list[int], cardinalitiesTail: dict[int,int], endoVars: list[int],
                             # cardinalitiesEndo: dict[int,int]):        
@@ -285,11 +330,12 @@ def testEquationsGenerator():
     for i, eq in enumerate(equations):
         print(f"Equation {i}: {probabilities[i]} = {eq} * U^T")
 
-    # 1) Montar na mao a funcao objetivo do Balke Pearl para ver se ja funcionaria
-    # 1.1) Create a function that generates the linear programming problem given the equations, the variables, the inequatilities
-    # and the objective function
-
-    # 2) Automatizar a geracao da funcao objetivo (que pode ser nao linear :( )
+    mockObj = [0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0]    
+    mockPos = [0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0]    
+    mockNeg = [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0]    
+    solver_middleware.createLinearProblem(probabilities, equations, mockObj)
+    #print("Test the second approach:")
+    #solver_middleware.interventionalQuery(probabilities, equations, mockPos, mockNeg)
 
 def testItau():
     print("Teste grafo itau")
@@ -304,12 +350,11 @@ def testItau():
     # Itau graph in which: U = 0, T = 1, Y = 2, D = 3
     print("\n=== Call equation generator ===\n")
     probabilities, equations = solver_middleware.equations_generator(mechanismDicts, [3], {3: 2}, [1, 2], {1: 2, 2: 2}, {1: [3], 2: [1, 3]} ,
-                                          [1, 2], {0: "U", 1: "T", 2: "Y", 3: "D"}, "itau.csv", 3, False)    
+                                          [1, 2], {0: "U", 1: "T", 2: "Y", 3: "D"}, "itau.csv", 3, False)  
 
     for i, eq in enumerate(equations):
         print(f"Equation {i}: {probabilities[i]} = {eq} * U^T")
 
-
 if __name__ == "__main__":    
-    # testEquationsGenerator()
-    testItau()
+    testBalkePearl()
+    # testItau()

@@ -1,56 +1,44 @@
-from partition_methods.relaxed_problem.python.graph import Graph
 from scipy.optimize import linprog
 
-class balkePearl:
-    def __init__(self, graph: Graph):
-        self.graph = graph
-    
-def test():
-    # Coeficientes da função objetivo
-    c = [-1, 4]  # Exemplo: minimizar -x + 4y
+def trimDecimal(precision: int, value: float):
+    return round(pow(10, precision) * value) / pow(10, precision)
 
-    # Coeficientes das inequações (Ax <= b)
-    A_ineq = [
-        [-3, 1],
-        [1, 2]
-    ]
-    
-    b_ineq = [6, 4]
+def optProblem(objFunction: list[float], Aeq: list[list[float]], Beq: list[float], interval, v: bool):
+    lowerBoundSol = linprog(c=objFunction, A_ub=None, b_ub=None, A_eq=Aeq, b_eq=Beq, method="highs", bounds=interval)
+    upperBoundSol = linprog(c=[-x for x in objFunction], A_ub=None, b_ub=None, A_eq=Aeq, b_eq=Beq, method="highs", bounds=interval)
 
-    # Coeficientes das equações (Ax = b)
-    A_eq = [[1, 1]]
-    b_eq = [3]
-
-    # Chamada ao solver
-    result = linprog(c, A_ub=A_ineq, b_ub=b_ineq, A_eq=A_eq, b_eq=b_eq, method="highs", bounds=(None,None))
-
-    # Verificar o resultado
-    if result.success:
-        print("Solução ótima encontrada:", result.x)
-        print("Valor da função objetivo:", result.fun)
+    if lowerBoundSol.success:
+        lowerBound = trimDecimal(3, lowerBoundSol.fun)
+        if v:
+            print(f"Optimal distribution = {lowerBoundSol.x}")
+            print(f"Obj. function = {lowerBound}")
     else:
-        print("Solução não encontrada:", result.message)
+        print("Solution not found:", lowerBoundSol.message)
 
+    # Find maximum (uses the negated objective function and changes the sign of the result)
+    if upperBoundSol.success:
+        upperBound = trimDecimal(3, -upperBoundSol.fun)
+        if v:
+            print(f"Optimal distribution = {upperBoundSol.x}")
+            print(f"Obj. function = {upperBound}")
+    else:
+        print("Solution not found:", upperBoundSol.message)    
+
+    return lowerBound, upperBound
 
 def main():
     """
-    Balke & Pearl IV example: code all the restrictions and try to use a linear solver.
+    Balke & Pearl IV example: code all the restrictions and use a linear solver.    
+    Variables are: Qij, with i and j in {0, 1, 2, 3}
     """
-
-    """
-    Variables:
-    q00, q01, q02, q03, q10, q11, q12, q13, q20, q21, q22, q23, q30, q31, q32, q33.
-    """
-
-    c = [0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0] # obj
-    negC = [-x for x in c]
-
-    # Coeficientes das inequações (Ax <= b)    
-
-    bounds2 = [(0, 1) for _ in range(16)]
-
-    # Coeficientes das equações (Ax = b)
-    A_eq = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    
+    c = [0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0] # objective for: ACE(D - Y) = P(v=l) - P(ry=2) = sum(Qi1) - sum(Qi2)                
+    c1 = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]    # P(ry=l) + P(ry=3) = sum(Qi1) + sum(Qi3)
+    c2 = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]    # P(ry=2) + P(ry=3) = sum(Qi2) + sum(Qi3)    
+    
+    bounds = [(0, 1) for _ in range(16)]
+    
+    a_eq = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
             [1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0],
             [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -62,23 +50,24 @@ def main():
             ]
     
     b_eq = [1, 0.32, 0.32, 0.04, 0.32, 0.02, 0.17, 0.67, 0.14]
+        
+    # ---------- compute using the final objective function -------- #    
+    print("\nUsing the complete objective function, the results are:")
+    lb0, ub0 = optProblem(c, a_eq, b_eq, bounds, False)
+    print(f"Lower bound: {lb0} - Upper bound: {ub0}")
 
-    result = linprog(c, A_ub=None, b_ub=None, A_eq=A_eq, b_eq=b_eq, method="highs", bounds=bounds2)
-    resultNeg = linprog(negC, A_ub=None, b_ub=None, A_eq=A_eq, b_eq=b_eq, method="highs", bounds=bounds2)
-
-    # Verificar o resultado
-    if result.success:
-        print("Solução ótima encontrada:", result.x)
-        print("Valor da função objetivo:", result.fun)
-    else:
-        print("Solução não encontrada:", result.message)
-
-    # Verificar o resultado neg
-    if result.success:
-        print("Solução ótima encontrada:", resultNeg.x)
-        print("Valor da função objetivo:", -resultNeg.fun)
-    else:
-        print("Solução não encontrada:", resultNeg.message)
+    # ---------- compute using the partial objective functions -------- #    
+    print("\nUsing the complete objective function, the result for the positive query is:")
+    lb1, ub1 = optProblem(c1, a_eq, b_eq, bounds, False)
+    print(f"Lower bound: {lb1} - Upper bound: {ub1}")
+    
+    print("Using the complete objective function, the result for the negative query is:")
+    lb2, ub2 = optProblem(c2, a_eq, b_eq, bounds, False)
+    print(f"Lower bound: {lb2} - Upper bound: {ub2}")
+    
+    # ---------- results comparison -------- #    
+    print(f"\nWith the first method, we obtain the interval: [{lb0},{ub0}]")    
+    print(f"With the second method, we obtain the interval: [{trimDecimal(3,lb1 - ub2)},{trimDecimal(3,ub1 - lb2)}]")
 
 if __name__ == "__main__":
     main()
