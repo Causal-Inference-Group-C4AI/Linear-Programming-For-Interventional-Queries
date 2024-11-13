@@ -8,6 +8,14 @@ class solver_middleware:
         """
         Generates an enumeration (list) of all mechanism a latent value can assume in its c-component. The c-component has to have
         exactly one latent variable.        
+
+        latentNode: an identifier for the latent node of the c-component
+        endogenousNodes: list of endogenous node of the c-component
+        cardinalities: dictionary with the cardinalities of the endogenous nodes. The key for each node is the number that represents
+        it in the endogenousNode list
+        parentsDict: dictionary that has the same key as the above argument, but instead returns a list with the parents of each endogenous 
+        node. PS: Note that some parents may not be in the c-component, as the tail is also necessary for this function.
+        v (verbose): enable or disable the logs
         """
         auxSpaces: list[list[int]] = []
         headerArray: list[str] = []
@@ -28,14 +36,14 @@ class solver_middleware:
 
             headerArray.append(header + f" (x {amount})")
             functionDomain: list[list[int]] = [list(auxTuple) for auxTuple in itertools.product(*auxSpaces)]
-            # print(functionDomain)
-
-            # Valores possíveis para c
+            if v:
+                print(functionDomain)
+        
             imageValues: list[int] = range(cardinalities[var])            
             
             varResult = [[domainCase + [c] for c in imageValues] for domainCase in functionDomain]
             if v:
-                print(f"For varible {var}:")                        
+                print(f"For variable {var}:")                        
                 print(f"Function domain: {functionDomain}")
                 print(f"VarResult: {varResult}")
 
@@ -49,8 +57,8 @@ class solver_middleware:
         
         if v:
             print(headerArray)
-            print(f"Lista com todos os mecanismos possíveis, agrupando os excludentes em um mesmo vetor:\n{allCasesList}")
-            print(f"Dict Key: lista com as chaves que podem ser convenientes se montarmos um dicionario: {dictKeys}")        
+            print(f"List all possible mechanism, placing in the same array those that determine the same function:\n{allCasesList}")
+            print(f"List the keys of the dictionary (all combinations of the domains of the functions): {dictKeys}")        
 
         allPossibleMechanisms = list(itertools.product(*allCasesList))
         mechanismDicts: list[dict[str, int]] = []
@@ -66,7 +74,7 @@ class solver_middleware:
             mechanismDicts.append(currDict)
 
         if v:
-            print("Check if the dict is working properly:")
+            print("Check if the mechanism dictionary is working as expected:")
             for mechanismDict in mechanismDicts:
                 for key in mechanismDict:
                     print(f"key: {key} & val: {mechanismDict[key]}")
@@ -80,12 +88,12 @@ class solver_middleware:
 
     def probabilityCalculator(dataFrame, indexToLabel, endoValues: dict[int, int], tailValues: dict[int, int], v=True): 
         """
-        dataFrame   : parsed CSV
-        indexToLabel: convert endogenous variables index to label, so that it matches the df header
-        endoValues  : specify the values assumed by the endogenous variables V
-        tailValues  : specify the values assumed by the graph tail T
+        dataFrame   : pandas dataFrama that contains the data from the csv
+        indexToLabel: dictionary that converts an endogenous variable index to its label
+        endoValues  : specifies the values assumed by the endogenous variables V
+        tailValues  : specifies the values assumed by the c-component tail T
         
-        Calculates: P(V|T) = P(V,T) / P(T) = #Cases(V,T) / # Cases(T)
+        Calculates: P(V|T) = P(V,T) / P(T) = # Rows(V,T) / # Rows(T)
         """            
 
         # Build the tail condition
@@ -103,7 +111,7 @@ class solver_middleware:
         if tailCount == 0:
             return 0
 
-        # Add endogenous c-component vars conditions        
+        # Add the endogenous c-component variables conditions        
         for endoVar in endoValues:
             if v:
                 print(f"Index to label of endogenous variable: {indexToLabel[endoVar]}")
@@ -120,22 +128,23 @@ class solver_middleware:
         return fullCount / tailCount
     
     def checkValues(mechanismDict: dict[str, int], parents: dict[int, list[int]], topoOrder: list[int],
-                 conditionalVars: dict[int, int], expectedValues: dict[int, int], v=True):
+                 tailValues: dict[int, int], endogenousValues: dict[int, int], v=True):
         """
         For some mechanism in the discretization of a latent variable, as well as a tuple of values for the tail, check
         if the set of deterministic functions implies the expected values for the variables that belong to the c-component.
 
-        mechanismDict  : find the value of a node given its parents - specifies U.
-        parents        : dict that lists the parents of a variable (in the correct order - the same as in the dict)
-        topoOrder      : order in which we can run through the c-component without any dependency problems.
-        conditionalVars: values taken by the variables in the c-component tail.
-        expectedValues : values that should be assumed by the endogenous nodes in the c-component.
+        mechanismDict    : dictionary that returns the value assumed by a node given (the key) the values of its parents
+        parents          : dictionary that return a list of the parents of a variable
+        topoOrder        : order in which we can run through the c-component without any dependency problems in the deterministic
+                          functions.
+        tailValues       : values taken by the variables in the c-component's tail T.
+        endogenousValues : values that should be assumed by the endogenous variables V of the c-component
         """
 
         if v:
-            print("Debug conditionalVars in dfs")        
-            for key in conditionalVars:
-                print(f"key: {key} - value: {conditionalVars[key]}")
+            print("Debug tailValues in dfs")        
+            for key in tailValues:
+                print(f"key: {key} - value: {tailValues[key]}")
 
         isValid: bool = True
         for node in topoOrder:
@@ -145,14 +154,14 @@ class solver_middleware:
             for parentOfNode in parents[node]:                
                 if v:
                     print(f"Parent node: {parentOfNode}")
-                    print(f"Assumes value {conditionalVars[parentOfNode]}")
-                dictKey += f"{parentOfNode}={conditionalVars[parentOfNode]},"
+                    print(f"Assumes value {tailValues[parentOfNode]}")
+                dictKey += f"{parentOfNode}={tailValues[parentOfNode]},"
             
             if v:
                 print(f"key: {dictKey}")
             nodeValue = mechanismDict[dictKey[:-1]] # exclude an extra comma
-            conditionalVars[node] = nodeValue
-            if nodeValue != expectedValues[node]:
+            tailValues[node] = nodeValue
+            if nodeValue != endogenousValues[node]:
                 isValid = False
                 break
         
@@ -199,7 +208,7 @@ class solver_middleware:
         matrix: list[list[int]] = [] # 0s and 1s matrix        
         probabilities: list[float] = []
         
-        for combination in combinationOfSpaces:            
+        for combination in combinationOfSpaces:
             print(f"Combination (case): {combination}")
             
             # Generate endoValues and tailValues based on combination + endoVars + tail
@@ -246,7 +255,7 @@ class solver_middleware:
             
             for mechanismDict in mechanismDicts:
                 isValid: bool = solver_middleware.checkValues(mechanismDict=mechanismDict, parents=endoParents, topoOrder=topoOrder,
-                                                             conditionalVars=conditionalVars, expectedValues=expectedValues, v=False) 
+                                                             tailValues=conditionalVars, endogenousValues=expectedValues, v=False) 
                 systemCoefficients.append(isValid)
             matrix.append(systemCoefficients)
         
@@ -260,7 +269,26 @@ class solver_middleware:
 
         return probabilities, matrix
     
-    
+    # Linear case: same c-component OR tail
+    def generateObjectiveFunction(mechanismDicts: list[dict[str,int]], targetVariable: int, targetValue: int, interventionVariable: int, interventionValue: int, topoOrder: list[int],
+                                  tail: list[int], tailCardinalities: dict[int,int]):
+        """
+        generate a linear objective function for the case in which the variable under intervention and the target are in 
+        the same c-component (or at least on the tail).
+
+        Algo: for each possible realization of the tail, consider all possile mechanisms. If it implies the expected target value, then it adds
+        P(U|T)*P(T) = P(U,T) to the system.
+
+        Important: this can be optimized by marginalizing on irrelevant variables. Hence, the argument tail does NOT need to contain all variables in the tail. In the
+        same way, the topoOrder does NOT need to contain all endogenous variables of the c-component
+        """
+
+        for mechanism in mechanismDicts:
+            for node in topoOrder:
+                pass
+
+        pass
+
     def interventionalQuery(probabilities: list[int], empiricalEquations: list[list[int]], objectiveFunctionPos: list[int],
                              objectiveFunctionNeg: list[int]):
         PosLower, PosUpper = solver_middleware.createLinearProblem(probabilities, empiricalEquations, objectiveFunctionPos)
@@ -268,7 +296,7 @@ class solver_middleware:
 
         print(f"The positive query has bounds: [{PosLower},{PosUpper}]")
         print(f"The negative query has bounds: [{NegLower},{NegUpper}]")
-        # Fazer as contas e printar!
+        
         finalLower = PosLower - NegUpper
         finalUpper = PosUpper - NegLower
         print(f"The interventional bounds are: [{finalLower},{finalUpper}]")
@@ -330,12 +358,13 @@ def testBalkePearl():
     for i, eq in enumerate(equations):
         print(f"Equation {i}: {probabilities[i]} = {eq} * U^T")
 
-    mockObj = [0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0]    
-    mockPos = [0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0]    
-    mockNeg = [0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0]    
+    mockObj = [0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0]
+    mockPos = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+    mockNeg = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
     solver_middleware.createLinearProblem(probabilities, equations, mockObj)
-    #print("Test the second approach:")
-    #solver_middleware.interventionalQuery(probabilities, equations, mockPos, mockNeg)
+    
+    print("Test the second approach:")
+    solver_middleware.interventionalQuery(probabilities, equations, mockPos, mockNeg)
 
 def testItau():
     print("Teste grafo itau")
@@ -357,4 +386,4 @@ def testItau():
 
 if __name__ == "__main__":    
     testBalkePearl()
-    # testItau()
+    #testItau()
