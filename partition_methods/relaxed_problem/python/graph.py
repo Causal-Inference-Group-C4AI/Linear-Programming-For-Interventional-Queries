@@ -1,9 +1,8 @@
 import networkx as nx
-
 class Graph:    
     def __init__(self, num_nodes: int, curr_nodes: list[int], visited: list[bool], cardinalities: list[int], 
                  parents: list[int], adj: list[list[int]], label_to_index: dict[str, int], index_to_label: dict[int, str],
-                 dag_components: list[list[int]], exogenous : list[int], endogenous : list[int], topological_order: list[int], DAG: nx.digraph):
+                 dag_components: list[list[int]], exogenous : list[int], endogenous : list[int], topological_order: list[int], DAG: nx.digraph, cComponent_to_Unob: dict[int, int]):
         self.num_nodes = num_nodes
         self.curr_nodes = curr_nodes
         self.visited = visited 
@@ -17,7 +16,7 @@ class Graph:
         self.exogenous = exogenous
         self.topological_order = topological_order
         self.DAG = DAG
-        
+        self.cComponent_to_unob = cComponent_to_Unob
     def parse():
         num_nodes = int(input())
         num_edges = int(input())
@@ -69,7 +68,28 @@ class Graph:
                endogenIndex.append(i)
         
         return Graph(num_nodes=num_nodes,curr_nodes=[], visited=visited_ex, cardinalities=cardinalities_ex, parents=parents_ex, 
-                    adj=adj_ex, index_to_label=index_to_label_ex, label_to_index=label_to_index_ex, dag_components=[], exogenous= exogenIndex,endogenous = endogenIndex, topological_order= order, DAG= inpDAG)
+                    adj=adj_ex, index_to_label=index_to_label_ex, label_to_index=label_to_index_ex, dag_components=[], exogenous= exogenIndex,endogenous = endogenIndex, topological_order= order, DAG= inpDAG, cComponent_to_Unob = {})
     
+    def dfs(self, node: int):        
+        self.visited[node] = True
+        self.curr_nodes.append(node)
+        is_observable = self.cardinalities[node] > 1
+
+        if not is_observable:
+            for adj_node in self.adj[node]:
+                if not self.visited[adj_node]:
+                   self.dfs(adj_node)
+        else:
+            for parent_node in self.parents[node]:
+                if not self.visited[parent_node] and self.cardinalities[parent_node] < 1:
+                    self.dfs(parent_node)
+    
+    def find_cComponents(self):
+        for i in range(1, self.num_nodes + 1):
+            if not self.visited[i] and self.cardinalities[i] < 1:            
+                self.curr_nodes.clear()
+                self.dfs(i)
+                self.dag_components.append(self.curr_nodes[:])
+                self.cComponent_to_unob[len(self.dag_components) - 1] = i
 if __name__ == "__main__":
     graph: Graph = Graph.parse()

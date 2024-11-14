@@ -14,3 +14,4 @@ class DfsRunner:
             for parent_node in graph.parents[node]:
                 if not graph.visited[parent_node] and graph.cardinalities[parent_node] < 1:
                     DfsRunner.dfs(parent_node, graph)
+        return 
