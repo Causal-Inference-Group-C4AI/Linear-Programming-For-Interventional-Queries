@@ -3,7 +3,19 @@ from scipy.optimize import linprog
 import itertools
 import pandas as pd
 
-class solver_middleware:            
+class solver_middleware:                
+    def helperGenerateSpaces(nodes: list[int], cardinalities: dict[int, int]):
+        spaces: list[list[int]] = []
+        for node in nodes:
+            spaces.append(range(0,cardinalities[node]))
+        
+        return spaces
+        
+
+    def generateCrossProducts(sets: list[list[int]]):        
+        crossProductsTuples = itertools.product(*sets)
+        return [list(combination) for combination in crossProductsTuples]
+
     def mechanisms_generator(latentNode: int, endogenousNodes: list[int], cardinalities: dict[int, int], parentsDict: dict[int, list[int]], v=True):
         """
         Generates an enumeration (list) of all mechanism a latent value can assume in its c-component. The c-component has to have
@@ -85,6 +97,23 @@ class solver_middleware:
     def fetchCsv(filepath="balke_pearl.csv"):        
         prefix = "/home/c4ai-wsl/projects/Canonical-Partition/causal_solver/"
         return pd.read_csv(prefix + filepath)    
+    
+    def tailProbability(dataFrame, indexToLabel, tailValues: dict[int, int], v=True): 
+        # Build the tail condition
+        conditions = pd.Series([True] * len(dataFrame), index=dataFrame.index)        
+        for tailVar in tailValues:
+            print(f"Test tail var: {tailVar}")
+            if v:
+                print(f"Index to label of tail variable: {indexToLabel[tailVar]}")
+                print(f"Should be equal to: {tailValues[tailVar]}")
+            conditions &= (dataFrame[indexToLabel[tailVar]] == tailValues[tailVar])
+            
+        tailCount = dataFrame[conditions].shape[0]
+        if v:
+            print(f"Count tail case: {tailCount}")                    
+            print(f"Total cases: {dataFrame.shape[0]}")
+
+        return tailCount / dataFrame.shape[0]
 
     def probabilityCalculator(dataFrame, indexToLabel, endoValues: dict[int, int], tailValues: dict[int, int], v=True): 
         """
@@ -97,8 +126,9 @@ class solver_middleware:
         """            
 
         # Build the tail condition
-        conditions = pd.Series([True] * len(dataFrame), index=dataFrame.index)
+        conditions = pd.Series([True] * len(dataFrame), index=dataFrame.index)        
         for tailVar in tailValues:
+            print(f"Test tail var: {tailVar}")
             if v:
                 print(f"Index to label of tail variable: {indexToLabel[tailVar]}")
                 print(f"Should be equal to: {tailValues[tailVar]}")
@@ -185,21 +215,13 @@ class solver_middleware:
         on the data frame. Use that P(X|Y) = P(X,Y) / P(Y) = #El(X=x,Y=y) / #El(Y=y)
         """
         
-        variableSpaces: list[list[int]] = []
+        
         # variablesOrder = tail + endoVars
         df = solver_middleware.fetchCsv(filepath)
         
-        for tailVariable in tail:
-            variableSpaces.append(range(cardinalitiesTail[tailVariable]))
-        
-        for endogenous in endoVars:
-            variableSpaces.append(range(cardinalitiesEndo[endogenous]))                
-
-        if v:
-            print(f"State spaces array:\n{variableSpaces}")
-
-        combinationOfSpacesAux = list(itertools.product(*variableSpaces))
-        combinationOfSpaces = [list(tupla) for tupla in combinationOfSpacesAux]
+        tailSpace = solver_middleware.helperGenerateSpaces(tail, cardinalitiesTail)
+        endoSpace = solver_middleware.helperGenerateSpaces(endoVars, cardinalitiesEndo)                        
+        combinationOfSpaces = solver_middleware.generateCrossProducts(tailSpace + endoSpace)
 
         if v:
             for i, case in enumerate(combinationOfSpaces):
@@ -268,26 +290,72 @@ class solver_middleware:
                 print(f"{probabilities[index]} - Equation: {eq}")        
 
         return probabilities, matrix
-    
-    # Linear case: same c-component OR tail
-    def generateObjectiveFunction(mechanismDicts: list[dict[str,int]], targetVariable: int, targetValue: int, interventionVariable: int, interventionValue: int, topoOrder: list[int],
-                                  tail: list[int], tailCardinalities: dict[int,int]):
+
+    # Linear case: same c-component OR tail + Sachs condition
+    def generateObjectiveFunction(df, indexToLabel: dict[int, str], mechanismDicts: list[dict[str,int]], targetVariable: int, targetValue: int, interventionVariable: int, interventionValue: int, topoOrder: list[int],
+                                  tail: list[int], tailCardinalities: dict[int,int], v: True, endoParents: dict[int,list[int]],
+                                  latent: int):
         """
         generate a linear objective function for the case in which the variable under intervention and the target are in 
         the same c-component (or at least on the tail).
 
         Algo: for each possible realization of the tail, consider all possile mechanisms. If it implies the expected target value, then it adds
-        P(U|T)*P(T) = P(U,T) to the system.
+        P(U|T)*P(T) = P(U,T) = P(U)*P(T) to the system.
 
         Important: this can be optimized by marginalizing on irrelevant variables. Hence, the argument tail does NOT need to contain all variables in the tail. In the
         same way, the topoOrder does NOT need to contain all endogenous variables of the c-component
-        """
+        """        
+        # Generate all tail spaces:        
+        tailSpaces = solver_middleware.helperGenerateSpaces(tail, tailCardinalities)        
+        tailRealizations = solver_middleware.generateCrossProducts(tailSpaces)
+        
+        if v:
+            print("Debug - Check all tail realizations")
+            for index, case in enumerate(tailRealizations):
+                print(f"{index}) {case}")        
 
-        for mechanism in mechanismDicts:
-            for node in topoOrder:
-                pass
+        topoOrder.remove(interventionVariable) # We do not need to run through this variable
+        
+        objectiveFunction: list[int] = [0] * len(mechanismDicts)
+        for tailRealization in tailRealizations:
+            computedNodes: dict[int, int] = {interventionVariable: interventionValue}
+            if v:
+                print(f"TailRealization = {tailRealization}")
 
-        pass
+            for index, tailNode in enumerate(tail):
+                computedNodes[tailNode] = tailRealization[index] # Consider the values of the tail and of the intervention            
+            for Uindex, mechanism in enumerate(mechanismDicts): # Consider each U for the given T + do(var=val)
+                for node in topoOrder:
+                    # --------- Build the key ---------
+                    nodeParents: list[int] = endoParents[node]                    
+                    if latent in nodeParents:
+                        nodeParents.remove(latent)                    
+
+                    dictKey: str = ""                    
+                    for index, nodeParent in enumerate(nodeParents):
+                        dictKey += f"{nodeParent}={computedNodes[nodeParent]},"                        
+                        # TODO: PENSAR EM UMA CHAVE QUE INDEPENDE DA ORDEM!                        
+                    # --------- ---------
+
+                    print(f"dictKey = {dictKey[:-1]}")
+                    nodeValue = mechanism[dictKey[:-1]]                    
+                    computedNodes[node] = nodeValue
+                    if node == targetVariable:
+                        break
+                
+                if computedNodes[targetVariable] == targetValue:                    
+                    tailDict: dict[int,int] = {}
+                    for tailIndex, tailVar in enumerate(tail):
+                        tailDict[tailVar] = tailRealization[tailIndex]
+                    
+                    tailProbability = solver_middleware.tailProbability(df, indexToLabel, tailDict, False)                    
+                    objectiveFunction[Uindex] += tailProbability
+                    print(f"Sum to index {Uindex} P = {tailProbability} ") 
+        
+        print(f"Coefficients of the obj function: {objectiveFunction}")
+        
+        return objectiveFunction
+                    
 
     def interventionalQuery(probabilities: list[int], empiricalEquations: list[list[int]], objectiveFunctionPos: list[int],
                              objectiveFunctionNeg: list[int]):
@@ -358,13 +426,21 @@ def testBalkePearl():
     for i, eq in enumerate(equations):
         print(f"Equation {i}: {probabilities[i]} = {eq} * U^T")
 
-    mockObj = [0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0]
-    mockPos = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
-    mockNeg = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]
-    solver_middleware.createLinearProblem(probabilities, equations, mockObj)
+    #mockObj = [0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0]    
+    #mockPos = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]         
+    #mockNeg = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]    
+    #solver_middleware.createLinearProblem(probabilities, equations, mockObj)
     
-    print("Test the second approach:")
-    solver_middleware.interventionalQuery(probabilities, equations, mockPos, mockNeg)
+    #print("Test the second approach:")
+    #solver_middleware.interventionalQuery(probabilities, equations, mockPos, mockNeg)
+    
+    
+    #                              tail: list[int], tailCardinalities: dict[int,int], v: True):
+    # P(Y=1|do(X=0))
+    df = solver_middleware.fetchCsv()
+    solver_middleware.generateObjectiveFunction(df, {3: "Z", 2: "Y", 1: "X"},mechanismDicts=mechanismDicts, targetVariable=2, targetValue=1, interventionVariable=1, 
+                                                interventionValue=0, topoOrder=[1, 2], tail=[3], tailCardinalities={3: 2}, v=True,
+                                                endoParents={1: [0, 3], 2: [0, 1]}, latent=0)
 
 def testItau():
     print("Teste grafo itau")
