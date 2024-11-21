@@ -426,16 +426,15 @@ def testBalkePearl():
     for i, eq in enumerate(equations):
         print(f"Equation {i}: {probabilities[i]} = {eq} * U^T")
 
-    #mockObj = [0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0]    
-    #mockPos = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]         
-    #mockNeg = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]    
-    #solver_middleware.createLinearProblem(probabilities, equations, mockObj)
+    # mockObj = [0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0]    
+    # mockPos = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]         
+    # mockNeg = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]    
+    # solver_middleware.createLinearProblem(probabilities, equations, mockObj)
     
-    #print("Test the second approach:")
-    #solver_middleware.interventionalQuery(probabilities, equations, mockPos, mockNeg)
-    
-    
-    #                              tail: list[int], tailCardinalities: dict[int,int], v: True):
+    # print("Test the second approach:")
+    # solver_middleware.interventionalQuery(probabilities, equations, mockPos, mockNeg)
+        
+    # tail: list[int], tailCardinalities: dict[int,int], v: True):
     # P(Y=1|do(X=0))
     df = solver_middleware.fetchCsv()
     solver_middleware.generateObjectiveFunction(df, {3: "Z", 2: "Y", 1: "X"},mechanismDicts=mechanismDicts, targetVariable=2, targetValue=1, interventionVariable=1, 
