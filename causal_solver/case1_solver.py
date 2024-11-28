@@ -1,6 +1,5 @@
-import itertools
 from collections import namedtuple
-import pandas as pd
+from helper import helper
 
 latentAndCcomp = namedtuple('latentAndCcomp', ['latent', 'nodes'])
 dictAndIndex   = namedtuple('dictAndIndex', ['mechanisms', 'index'])
@@ -11,8 +10,7 @@ class case1Solver:
     U such that T and U fully determine V and T and U are indepedent. We consider that the independency hypothesis
     are already inserted in the graph and assume d-separation to be its equivalent.
     The case1 is when both the variable under intervention as well as the target variable are in the same c-component
-    """    
-
+    """
     def objetiveFunctionBuilder(latentIntervention: int, cComponentIntervention: int, outNode: dict[int, list[int]], inNode: dict[int, list[int]],
                                 cardinalities: dict[int, int], cCompDict: dict[int, list[int]],
                                 interventionVariable: int, interventionValue, targetVariable: int, 
@@ -35,7 +33,7 @@ class case1Solver:
         filepath: path to the CSV file with the experiment results.
         indexToLabel: a dictionary that translates a node index to its label (which is the same as in the CSV)
         """                
-        dataFrame = case1Solver.fetchCsv(filepath)
+        dataFrame = helper.fetchCsv(filepath)
 
         listS, listT, listU = case1Solver.findSuperTail(latentIntervention, cComponentIntervention, outNode, inNode, False)
         # Remove nodes not in S from topoOrder AND the interventionNode:
@@ -45,9 +43,10 @@ class case1Solver:
             if node not in listS:
                 topoOrder.remove(node) 
 
-        # print(f"Debug list S: {listS}")
-        # print(f"Debug list U: {listU}")
-        # print(f"Debug list T: {listT}")
+        if v:
+            print(f"Debug list S: {listS}")
+            print(f"Debug list U: {listU}")
+            print(f"Debug list T: {listT}")
                     
         # Get the mechanisms from all the relevant latent variables        
         mechanismDictsList: list[list[dict[str, int]]] = [] # Same order as in list U
@@ -55,8 +54,8 @@ class case1Solver:
             endogenousNodes = cCompDict[latentVariable]
             if latentVariable in endogenousNodes:
                 endogenousNodes.remove(latentVariable)
-
-            _, _, mechanismDicts = case1Solver.mechanisms_generator(latentNode=latentVariable,endogenousNodes=endogenousNodes,
+                        
+            _, _, mechanismDicts = helper.mechanisms_generator(latentNode=latentVariable,endogenousNodes=endogenousNodes,
                                              cardinalities=cardinalities,parentsDict=inNode,v=False)            
             
             # print(f"Debug mechanisms: {mechanismDicts}")
@@ -66,17 +65,12 @@ class case1Solver:
             
             mechanismDictsList.append(mechanismIndexDict)                        
                 
-        # Generate all the tail states
-        tailVarSpaces: list[list[int]] = []
-        for tailVar in listT:
-            tailVarSpaces.append(range(0,cardinalities[tailVar]))
-
+        # Generate all the tail states        
+        tailVarSpaces: list[list[int]] = helper.helperGenerateSpaces(listT, cardinalities)
+        
         # Generate a cross product between all tail states AND all mechanisms (latent variable states)
-        tailCombinationsAux = itertools.product(*(tailVarSpaces))
-        tailCombinations = [list(combination) for combination in tailCombinationsAux] # the order is the same as in list T.        
-        latentCombinationsAux = itertools.product(*(mechanismDictsList))
-        latentCombinations = [list(combination) for combination in latentCombinationsAux]
-
+        tailCombinations = helper.generateCrossProducts(tailVarSpaces) # the order is the same as in list T.                 
+        latentCombinations = helper.generateCrossProducts(mechanismDictsList)
                 
         if v:
             print("-- debug: tailCombinations --")
@@ -98,8 +92,9 @@ class case1Solver:
                 print(f"{latentCombination}")
             indexer: str = ""
             for latentMechanism in latentCombination:                
-                indexer += f"{latentMechanism.index}"            
-                        
+                indexer += f"{latentMechanism.index},"
+            indexer = indexer.rstrip(',')
+
             for tailRealization in tailCombinations:
                 if v:
                     print(f"Tail realization: {tailRealization}")
@@ -112,41 +107,19 @@ class case1Solver:
                                              topoOrder=topoOrder,
                                              tailValues=tailValues,
                                              interventionVariable=interventionVariable,
-                                             interventionValue=interventionValue,                                             
+                                             interventionValue=interventionValue,                             
                                              latentVariables=listU,
                                              targetVariable=targetVariable,
                                              targetValue=targetValue
-                                             )                
-                if isCompatible:                
-                    empiricalProbability = case1Solver.findProbability(dataFrame, indexToLabel, tailValues, False)
-                    totalProbability += empiricalProbability            
+                                             )
+                if isCompatible:  
+                    empiricalProbability = helper.findTailProbability(dataFrame, indexToLabel, tailValues, False)
+                    totalProbability += empiricalProbability
 
             print(f"Debug: key = {indexer} and value = {totalProbability}")
             objectiveFunction[indexer] = totalProbability             
 
-        return objectiveFunction
-
-    def fetchCsv(filepath="balke_pearl.csv"):        
-        prefix = "/home/c4ai-wsl/projects/Canonical-Partition/causal_solver/"
-        return pd.read_csv(prefix + filepath)    
-        
-    def findProbability(dataFrame, indexToLabel, tailValues: dict[int, int], v=True): 
-        # Build the tail condition
-        conditions = pd.Series([True] * len(dataFrame), index=dataFrame.index)        
-        for tailVar in tailValues:            
-            if v:
-                print(f"Test tail var: {tailVar}")
-                print(f"Index to label of tail variable: {indexToLabel[tailVar]}")
-                print(f"Should be equal to: {tailValues[tailVar]}")
-            conditions &= (dataFrame[indexToLabel[tailVar]] == tailValues[tailVar])
-            
-        tailCount = dataFrame[conditions].shape[0]
-        if v:
-            print(f"Count tail case: {tailCount}")                    
-            print(f"Total cases: {dataFrame.shape[0]}")
-
-        return tailCount / dataFrame.shape[0]
-
+        return objectiveFunction            
     
     def checkRealization(mechanismDictsList: list[dict[str, int]], parents: dict[int, list[int]], topoOrder: list[int],
                 tailValues: dict[int, int], interventionVariable: int, interventionValue: int, latentVariables: list[int], 
@@ -184,86 +157,7 @@ class case1Solver:
             
             computedNodes[node] = nodeValue            
 
-        return computedNodes[targetVariable] == targetValue
-
-    def mechanisms_generator(latentNode: int, endogenousNodes: list[int], cardinalities: dict[int, int], parentsDict: dict[int, list[int]], v=True):
-        """
-        Generates an enumeration (list) of all mechanism a latent value can assume in its c-component. The c-component has to have
-        exactly one latent variable.
-
-        latentNode: an identifier for the latent node of the c-component
-        endogenousNodes: list of endogenous node of the c-component
-        cardinalities: dictionary with the cardinalities of the endogenous nodes. The key for each node is the number that represents
-        it in the endogenousNode list
-        parentsDict: dictionary that has the same key as the above argument, but instead returns a list with the parents of each endogenous
-        node. PS: Note that some parents may not be in the c-component, but the ones in the tail are also necessary for this function.
-        v (verbose): enable or disable the logs
-        """
-
-        auxSpaces: list[list[int]] = []
-        headerArray: list[str] = []
-        allCasesList: list[list[list[int]]] = []
-        dictKeys: list[str] = []
-
-        for var in endogenousNodes:
-            auxSpaces.clear()
-            header: str = f"determines variable: {var}"
-            amount: int = 1
-            orderedParents: list[int] = []
-            for parent in parentsDict[var]:
-                if parent != latentNode:
-                    orderedParents.append(parent)
-                    header = f"{parent}, " + header
-                    auxSpaces.append(range(cardinalities[parent]))
-                    amount *= cardinalities[parent]
-
-            headerArray.append(header + f" (x {amount})")
-            functionDomain: list[list[int]] = [list(auxTuple) for auxTuple in itertools.product(*auxSpaces)]
-            if v:
-                print(functionDomain)
-        
-            imageValues: list[int] = range(cardinalities[var])            
-            
-            varResult = [[domainCase + [c] for c in imageValues] for domainCase in functionDomain]
-            if v:
-                print(f"For variable {var}:")                        
-                print(f"Function domain: {functionDomain}")
-                print(f"VarResult: {varResult}")
-
-            for domainCase in functionDomain:
-                key: str = ""
-                for index, el in enumerate(domainCase):
-                    key = key + f"{orderedParents[index]}={el},"
-                dictKeys.append(key[:-1])
-            
-            allCasesList  = allCasesList + varResult
-        
-        if v:
-            print(headerArray)
-            print(f"List all possible mechanism, placing in the same array those that determine the same function:\n{allCasesList}")
-            print(f"List the keys of the dictionary (all combinations of the domains of the functions): {dictKeys}")        
-
-        allPossibleMechanisms = list(itertools.product(*allCasesList))
-        mechanismDicts: list[dict[str, int]] = []
-        for index, mechanism in enumerate(allPossibleMechanisms):
-            if v:
-                print(f"{index}) {mechanism}")
-            currDict: dict[str, int] = {} 
-            for domainIndex, nodeFunction in enumerate(mechanism):
-                if v:
-                    print(f"The node function = {nodeFunction}")
-                currDict[dictKeys[domainIndex]] = nodeFunction[-1]
-            
-            mechanismDicts.append(currDict)
-
-        if v:
-            print("Check if the mechanism dictionary is working as expected:")
-            for mechanismDict in mechanismDicts:
-                for key in mechanismDict:
-                    print(f"key: {key} & val: {mechanismDict[key]}")
-                print("------------")
-        
-        return allPossibleMechanisms, dictKeys, mechanismDicts
+        return computedNodes[targetVariable] == targetValue        
 
     def findSuperTail(latent: int, cComponent: int, outNode: dict[int, list[int]], inNode: dict[int, list[int]], v: bool):
         """
@@ -307,16 +201,16 @@ class case1Solver:
                     break
             
             if not tailIndepU:                
-                listT.remove(tailVar)                
+                listT.remove(tailVar)
                 listS.append(tailVar)
                 
-                resetFlag: bool = False                                
-                for parent in inNode[tailVar]:                    
-                    if parent not in listS and len(inNode[parent]) > 0: # endogenous                        
+                resetFlag: bool = False                         
+                for parent in inNode[tailVar]:
+                    if parent not in listS and len(inNode[parent]) > 0: # endogenous
                         listT.append(parent)
                     elif len(inNode[parent]) == 0:                    
                         if parent not in listU:                            
-                            listU.append(parent)                             
+                            listU.append(parent)             
                             resetFlag = True                
 
                 if resetFlag:
