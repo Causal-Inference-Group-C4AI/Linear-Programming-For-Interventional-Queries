@@ -11,6 +11,106 @@ class case1Solver:
     are already inserted in the graph and assume d-separation to be its equivalent.
     The case1 is when both the variable under intervention as well as the target variable are in the same c-component
     """
+
+    # TODO: Adapt this for the case1
+    def equations_generator(mechanismDicts: dict[str, int], tail: list[int], endoVars: list[int], cardinalities: dict[int,int],
+                            endoParents: dict[int, list[int]], topoOrder: list[int], endoIndexToLabel: dict[int, str], filepath: str,                            
+                            precision: int, v: True):
+        """
+        Given the supertail T, the endogenous variables S and the latent variables U, it generates the equations:
+        p = P(S=s|T=t) = Sum{P(U=u)*1(U=u,T=t -> S=s)}. Hence, each combination of latents has a coefficient, which
+        can be 0 or 1 only.
+
+        mechanismDicts: the possible latent states (mechanisms)
+        tail: set T # TODO: use supertail
+        cardinalities: dict with the cardinalities of the variables in T and S.
+        endoParents: equal to nodesIn, and contains the set of all parents of an endogenous variable
+        topoOrder: a topological order to run through S
+        endoIndexToLabel: convert from index of a variable in S to the label used in a CSV file
+        precision: defines how many decimals the calculated probability should have
+        """
+        # variablesOrder = tail + endoVars        
+        df = helper.fetchCsv(filepath)
+
+        cardinalitiesTail: dict[int, int] = {}; cardinalitiesEndo: dict[int, int] = {}
+        for key in cardinalities:
+            if key in tail:
+                cardinalitiesTail[key] = cardinalities[key] 
+            elif key in endoVars:
+                cardinalitiesEndo[key] = cardinalities[key]
+        
+        tailSpace = helper.helperGenerateSpaces(tail, cardinalitiesTail)
+        endoSpace = helper.helperGenerateSpaces(endoVars, cardinalitiesEndo)                        
+        combinationOfSpaces = helper.generateCrossProducts(tailSpace + endoSpace)
+
+        if v:
+            for i, case in enumerate(combinationOfSpaces):
+                print(f"{i}) {case}")
+
+        matrix: list[list[int]] = [] # 0s and 1s matrix        
+        probabilities: list[float] = []
+        
+        for combination in combinationOfSpaces:
+            print(f"Combination (case): {combination}")
+            
+            # Generate endoValues and tailValues based on combination + endoVars + tail
+
+            # Tail values:            
+            tailValues: dict[int, int] = {}
+            for index in range(len(tail)):
+                tailValues[tail[index]] = combination[index]
+            
+            # endoValues:
+            endoValues: dict[int, int] = {}
+            for index in range(len(endoVars)):
+                endoValues[endoVars[index]] = combination[index + len(tail)]
+                        
+            probability: float = helper.findConditionalProbability(df, endoIndexToLabel,
+                                                                         endoValues, tailValues, False)            
+            probability = round(probability * pow(10, precision)) / pow(10, precision)
+
+            probabilities.append(probability)
+            # combination order = tail and then the expected values.            
+            systemCoefficients: list[int] = []
+            conditionalVars: dict[int, int] = {}
+            expectedValues:  dict[int, int] = {}
+            
+            for index in range(len(tail)):
+                if v:
+                    print(f"var = {tail[index]} has value {combination[index]} in the combination")
+                conditionalVars[tail[index]] = combination[index]
+            
+            for index in range(len(tail), len(combination)):
+                if v:
+                    print(f"index = {index} and endoVar = {endoVars[index - len(tail)]} with value {combination[index]}")
+                expectedValues[endoVars[index - len(tail)]] = combination[index]
+
+
+            if v:
+                print("ConditionalVars dbg:")
+                for key in conditionalVars:
+                    print(f"key: {key} & value: {conditionalVars[key]}")                            
+
+                print("Expected values dbg:")
+                for key in expectedValues:
+                    print(f"key: {key} & value: {expectedValues[key]}")                            
+            
+            for mechanismDict in mechanismDicts:                
+                isValid: bool = linear_solver.checkValues(mechanismDict=mechanismDict, parents=endoParents, topoOrder=topoOrder,
+                                                             tailValues=conditionalVars, endogenousValues=expectedValues, v=False) 
+                systemCoefficients.append(isValid)
+            matrix.append(systemCoefficients)
+        
+        # Union of U states must have probability one
+        probabilities.append(1.0)
+        matrix.append([1] * len(mechanismDicts))
+
+        if v:
+            for index, eq in enumerate(matrix):
+                print(f"{probabilities[index]} - Equation: {eq}")        
+
+        return probabilities, matrix
+
     def objetiveFunctionBuilder(latentIntervention: int, cComponentIntervention: int, outNode: dict[int, list[int]], inNode: dict[int, list[int]],
                                 cardinalities: dict[int, int], cCompDict: dict[int, list[int]],
                                 interventionVariable: int, interventionValue, targetVariable: int, 
@@ -80,9 +180,7 @@ class case1Solver:
             print("-- debug: latentCombinations --")
             for i, latentCombination in enumerate(latentCombinations):            
                 print(f"latent combination {i}) {latentCombination}") 
-
-        # Run through each element in the cross product array and check if the desired output is achieved. If so,
-        # sum the calculated probability.
+        
         objectiveFunction: dict[str, int] = { } # Key = indexer (from array to str concatenated) and value = coefficient ai
         # F = sum(Prod(P(Uk)) * P(T=t) * 1(T=t,U=u => Y=y)) hence ai = P(T=t) iff 1() = 1 and 0 c.c
         for i, latentCombination in enumerate(latentCombinations):
@@ -116,7 +214,8 @@ class case1Solver:
                     empiricalProbability = helper.findTailProbability(dataFrame, indexToLabel, tailValues, False)
                     totalProbability += empiricalProbability
 
-            print(f"Debug: key = {indexer} and value = {totalProbability}")
+            if v:
+                print(f"Debug: key = {indexer} and value = {totalProbability}")
             objectiveFunction[indexer] = totalProbability             
 
         return objectiveFunction            
@@ -163,13 +262,12 @@ class case1Solver:
         """
         Given a graph, the node under intervention and the target node, it computes the supertail T and the set of latent
         variables U such that T and U are independent
-        """
-        # Initialize the sets
+        """        
         listU: list[int] = [latent] # Latent variables to be taken in account
         listT: list[int] = [] # 
         listS: list[int] = []
         
-        for node in cComponent: # Complete this procedure before the next
+        for node in cComponent: # Need to complete this procedure before the next
             if node not in listU:
                 listS.append(node)
         
@@ -189,10 +287,7 @@ class case1Solver:
         tailIndex = 0
         while tailIndex < len(listT):
             tailVar = listT[tailIndex]
-            # Check independency with the latent variables!        
-            if v:
-                print(f"Check indep for tail var: {tailVar}")
-                print(f"--- check each latent ---")
+            # Check independency with the latent variables!
             tailIndepU = True
             for latentVar in listU:                                
                 independency = case1Solver.dSeparationChecker(tailVar, latentVar, outNode, inNode)
@@ -206,7 +301,7 @@ class case1Solver:
                 
                 resetFlag: bool = False                         
                 for parent in inNode[tailVar]:
-                    if parent not in listS and len(inNode[parent]) > 0: # endogenous
+                    if parent not in listS and len(inNode[parent]) > 0:
                         listT.append(parent)
                     elif len(inNode[parent]) == 0:                    
                         if parent not in listU:                            

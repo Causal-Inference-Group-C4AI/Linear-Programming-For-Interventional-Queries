@@ -1,52 +1,9 @@
 from partition_methods.relaxed_problem.python.graph import Graph
 from scipy.optimize import linprog
-import itertools
 import pandas as pd
 from helper import helper
 
-class linear_solver:                    
-    def probabilityCalculator(dataFrame, indexToLabel, endoValues: dict[int, int], tailValues: dict[int, int], v=True): 
-        """
-        dataFrame   : pandas dataFrama that contains the data from the csv
-        indexToLabel: dictionary that converts an endogenous variable index to its label
-        endoValues  : specifies the values assumed by the endogenous variables V
-        tailValues  : specifies the values assumed by the c-component tail T
-        
-        Calculates: P(V|T) = P(V,T) / P(T) = # Rows(V,T) / # Rows(T)
-        """            
-
-        # Build the tail condition
-        conditions = pd.Series([True] * len(dataFrame), index=dataFrame.index)        
-        for tailVar in tailValues:
-            print(f"Test tail var: {tailVar}")
-            if v:
-                print(f"Index to label of tail variable: {indexToLabel[tailVar]}")
-                print(f"Should be equal to: {tailValues[tailVar]}")
-            conditions &= (dataFrame[indexToLabel[tailVar]] == tailValues[tailVar])
-            
-        tailCount = dataFrame[conditions].shape[0]
-        if v:
-            print(f"Count tail case: {tailCount}")    
-
-        if tailCount == 0:
-            return 0
-
-        # Add the endogenous c-component variables conditions        
-        for endoVar in endoValues:
-            if v:
-                print(f"Index to label of endogenous variable: {indexToLabel[endoVar]}")
-                print(f"Should be equal to: {endoValues[endoVar]}")
-            conditions = conditions & (dataFrame[indexToLabel[endoVar]] == endoValues[endoVar])
-
-        fullCount = dataFrame[conditions].shape[0]
-        
-        if v:
-            print(f"Count of all conditions: {fullCount}")            
-            print(f"Calculated probability: {fullCount / tailCount}")        
-            print("--------------\n\n")
-
-        return fullCount / tailCount
-    
+class linear_solver:    
     def checkValues(mechanismDict: dict[str, int], parents: dict[int, list[int]], topoOrder: list[int],
                  tailValues: dict[int, int], endogenousValues: dict[int, int], v=True):
         """
@@ -135,7 +92,7 @@ class linear_solver:
             for index in range(len(endoVars)):
                 endoValues[endoVars[index]] = combination[index + len(tail)]
                         
-            probability: float = linear_solver.probabilityCalculator(df, endoIndexToLabel,
+            probability: float = helper.conditionalProbabilityCalculator(df, endoIndexToLabel,
                                                                          endoValues, tailValues, False)            
             probability = round(probability * pow(10, precision)) / pow(10, precision)
 
