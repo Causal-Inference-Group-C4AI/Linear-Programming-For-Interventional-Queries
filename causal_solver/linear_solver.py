@@ -47,7 +47,7 @@ class linear_solver:
         else:
             return 0
     
-    def equations_generator(mechanismDicts: dict[str, int], tail: list[int], cardinalitiesTail: dict[int,int], endoVars: list[int],
+    def equations_generator(mechanismDicts: list[dict[str, int]], tail: list[int], cardinalitiesTail: dict[int,int], endoVars: list[int],
                             cardinalitiesEndo: dict[int,int], endoParents: dict[int, list[int]], topoOrder: list[int], endoIndexToLabel: dict[int, str], filepath: str, 
                             precision: int, v: True):
         """
@@ -67,7 +67,7 @@ class linear_solver:
         df = helper.fetchCsv(filepath)
         
         tailSpace = helper.helperGenerateSpaces(tail, cardinalitiesTail)
-        endoSpace = helper.helperGenerateSpaces(endoVars, cardinalitiesEndo)                        
+        endoSpace = helper.helperGenerateSpaces(endoVars, cardinalitiesEndo)
         combinationOfSpaces = helper.generateCrossProducts(tailSpace + endoSpace)
 
         if v:
@@ -92,7 +92,7 @@ class linear_solver:
             for index in range(len(endoVars)):
                 endoValues[endoVars[index]] = combination[index + len(tail)]
                         
-            probability: float = helper.conditionalProbabilityCalculator(df, endoIndexToLabel,
+            probability: float = helper.findConditionalProbability(df, endoIndexToLabel,
                                                                          endoValues, tailValues, False)            
             probability = round(probability * pow(10, precision)) / pow(10, precision)
 
@@ -195,7 +195,7 @@ class linear_solver:
                     for tailIndex, tailVar in enumerate(tail):
                         tailDict[tailVar] = tailRealization[tailIndex]
                     
-                    tailProbability = helper.findTailProbability(df, indexToLabel, tailDict, False)                    
+                    tailProbability = helper.findProbability(df, indexToLabel, tailDict, False)                    
                     objectiveFunction[Uindex] += tailProbability
                     print(f"Sum to index {Uindex} P = {tailProbability} ") 
         

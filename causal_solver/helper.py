@@ -5,64 +5,36 @@ class helper:
     """
     Common methods used to create the optimization problem
     """
-    def findConditionalProbability(dataFrame, indexToLabel, endoValues: dict[int, int], tailValues: dict[int, int], v=True):
+    def findConditionalProbability(dataFrame, indexToLabel, targetRealization: dict[int, int], conditionRealization: dict[int, int], v=True):
         """
-        dataFrame   : pandas dataFrama that contains the data from the csv
-        indexToLabel: dictionary that converts an endogenous variable index to its label
-        endoValues  : specifies the values assumed by the endogenous variables V
-        tailValues  : specifies the values assumed by the c-component tail T
+        dataFrame              : pandas dataFrama that contains the data from the csv
+        indexToLabel           : dictionary that converts an endogenous variable index to its label
+        targetRealization      : specifies the values assumed by the endogenous variables V
+        conditionalRealization : specifies the values assumed by the c-component tail T
         
-        Calculates: P(V|T) = P(V,T) / P(T) = # Rows(V,T) / # Rows(T)
+        Calculates: P(V|T) = P(V,T) / P(T)
         """            
+        conditionProbability = helper.findProbability(dataFrame, indexToLabel, conditionRealization, False)
 
-        # Build the tail condition
-        conditions = pd.Series([True] * len(dataFrame), index=dataFrame.index)        
-        for tailVar in tailValues:
-            print(f"Test tail var: {tailVar}")
-            if v:
-                print(f"Index to label of tail variable: {indexToLabel[tailVar]}")
-                print(f"Should be equal to: {tailValues[tailVar]}")
-            conditions &= (dataFrame[indexToLabel[tailVar]] == tailValues[tailVar])
-            
-        tailCount = dataFrame[conditions].shape[0]
-        if v:
-            print(f"Count tail case: {tailCount}")    
-
-        if tailCount == 0:
+        if conditionProbability == 0:
             return 0
 
-        # Add the endogenous c-component variables conditions        
-        for endoVar in endoValues:
-            if v:
-                print(f"Index to label of endogenous variable: {indexToLabel[endoVar]}")
-                print(f"Should be equal to: {endoValues[endoVar]}")
-            conditions = conditions & (dataFrame[indexToLabel[endoVar]] == endoValues[endoVar])
-
-        fullCount = dataFrame[conditions].shape[0]
+        targetAndConditionProbability = helper.findProbability(dataFrame, indexToLabel, targetRealization | conditionRealization, False)
         
-        if v:
-            print(f"Count of all conditions: {fullCount}")            
-            print(f"Calculated probability: {fullCount / tailCount}")        
-            print("--------------\n\n")
-
-        return fullCount / tailCount
+        return targetAndConditionProbability / conditionProbability
     
-    def findTailProbability(dataFrame, indexToLabel, tailValues: dict[int, int], v=True): 
-        # Build the tail condition
-        conditions = pd.Series([True] * len(dataFrame), index=dataFrame.index)        
-        for tailVar in tailValues:            
-            if v:
-                print(f"Test tail var: {tailVar}")
-                print(f"Index to label of tail variable: {indexToLabel[tailVar]}")
-                print(f"Should be equal to: {tailValues[tailVar]}")
-            conditions &= (dataFrame[indexToLabel[tailVar]] == tailValues[tailVar])
+    def findProbability(dataFrame, indexToLabel, variableRealizations: dict[int, int], v=True):
+        # Build the realization condition
+        conditions = pd.Series([True] * len(dataFrame), index=dataFrame.index)
+        for variable in variableRealizations:
+            conditions &= (dataFrame[indexToLabel[variable]] == variableRealizations[variable])
             
-        tailCount = dataFrame[conditions].shape[0]
+        compatibleCasesCount = dataFrame[conditions].shape[0]
         if v:
-            print(f"Count tail case: {tailCount}")                    
+            print(f"Count compatible cases: {compatibleCasesCount}")
             print(f"Total cases: {dataFrame.shape[0]}")
 
-        return tailCount / dataFrame.shape[0]
+        return compatibleCasesCount / dataFrame.shape[0]
 
     def helperGenerateSpaces(nodes: list[int], cardinalities: dict[int, int]):
         spaces: list[list[int]] = []

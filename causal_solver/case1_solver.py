@@ -3,6 +3,7 @@ from helper import helper
 
 latentAndCcomp = namedtuple('latentAndCcomp', ['latent', 'nodes'])
 dictAndIndex   = namedtuple('dictAndIndex', ['mechanisms', 'index'])
+equationsObject = namedtuple('equationsObject', ['probability', 'dictionary'])
 
 class case1Solver:
     """
@@ -11,107 +12,74 @@ class case1Solver:
     are already inserted in the graph and assume d-separation to be its equivalent.
     The case1 is when both the variable under intervention as well as the target variable are in the same c-component
     """
-
-    # TODO: Adapt this for the case1
-    def equations_generator(mechanismDicts: dict[str, int], tail: list[int], endoVars: list[int], cardinalities: dict[int,int],
-                            endoParents: dict[int, list[int]], topoOrder: list[int], endoIndexToLabel: dict[int, str], filepath: str,                            
-                            precision: int, v: True):
+    def equationsGenerator(mechanismDictsList: list[list[dictAndIndex]], setT: list[int], setS: list[int], setU: list[int],
+                            cardinalities: dict[int,int], parents: dict[int, list[int]], topoOrder: list[int], indexToLabel: dict[int, str],
+                            filepath: str):
         """
-        Given the supertail T, the endogenous variables S and the latent variables U, it generates the equations:
+        Given the supertail (set T), the endogenous variables S (set S) and the latent variables U (set U), it generates the equations:
         p = P(S=s|T=t) = Sum{P(U=u)*1(U=u,T=t -> S=s)}. Hence, each combination of latents has a coefficient, which
         can be 0 or 1 only.
 
-        mechanismDicts: the possible latent states (mechanisms)
-        tail: set T # TODO: use supertail
+        mechanismDictsList: a list in which each element corresponds to an enumeration of the mechanisms (states) of a latent variable.
+        setT: supertail
+        setS: set of endogenous variables determined by the supertail
         cardinalities: dict with the cardinalities of the variables in T and S.
-        endoParents: equal to nodesIn, and contains the set of all parents of an endogenous variable
+        parents: equal to nodesIn, and contains the set of all parents of an endogenous variable
         topoOrder: a topological order to run through S
         endoIndexToLabel: convert from index of a variable in S to the label used in a CSV file
         precision: defines how many decimals the calculated probability should have
         """
-        # variablesOrder = tail + endoVars        
         df = helper.fetchCsv(filepath)
 
         cardinalitiesTail: dict[int, int] = {}; cardinalitiesEndo: dict[int, int] = {}
         for key in cardinalities:
-            if key in tail:
-                cardinalitiesTail[key] = cardinalities[key] 
-            elif key in endoVars:
+            if key in setT:
+                cardinalitiesTail[key] = cardinalities[key]
+            elif key in setS:
                 cardinalitiesEndo[key] = cardinalities[key]
-        
-        tailSpace = helper.helperGenerateSpaces(tail, cardinalitiesTail)
-        endoSpace = helper.helperGenerateSpaces(endoVars, cardinalitiesEndo)                        
-        combinationOfSpaces = helper.generateCrossProducts(tailSpace + endoSpace)
 
-        if v:
-            for i, case in enumerate(combinationOfSpaces):
-                print(f"{i}) {case}")
+        tailSpace: list[list[int]] = helper.helperGenerateSpaces(nodes=setT, cardinalities=cardinalitiesTail)
+        tailCombinations = helper.generateCrossProducts(tailSpace)
+        endoSpace = helper.helperGenerateSpaces(nodes=setS,  cardinalities=cardinalitiesEndo)
+        endoCombinations = helper.generateCrossProducts(endoSpace)
+        latentCombinations = helper.generateCrossProducts(mechanismDictsList)
 
-        matrix: list[list[int]] = [] # 0s and 1s matrix        
-        probabilities: list[float] = []
-        
-        for combination in combinationOfSpaces:
-            print(f"Combination (case): {combination}")
-            
-            # Generate endoValues and tailValues based on combination + endoVars + tail
+        # Lista de equacoes do tipo:
+        # p = ai * U1 * U2...*Un => tome um dicionário para cada linha (equacao)
+        # em que o ai eh indexado da mesma forma que na funcao objetivo.
+        # Cada linha precisa de um dicionario e de um valor.
+        equations: list[equationsObject] = []
 
-            # Tail values:            
-            tailValues: dict[int, int] = {}
-            for index in range(len(tail)):
-                tailValues[tail[index]] = combination[index]
-            
-            # endoValues:
-            endoValues: dict[int, int] = {}
-            for index in range(len(endoVars)):
-                endoValues[endoVars[index]] = combination[index + len(tail)]
-                        
-            probability: float = helper.findConditionalProbability(df, endoIndexToLabel,
-                                                                         endoValues, tailValues, False)            
-            probability = round(probability * pow(10, precision)) / pow(10, precision)
+        for tailRealization in tailCombinations:
+            tailRealizationDict = dict(zip(setT, tailRealization))
+            for endoRealization in endoCombinations:
+                endoRealizationDict = dict(zip(setS, endoRealization))
+                probability: float = helper.findConditionalProbability(dataFrame=df,indexToLabel=indexToLabel,targetRealization=tailRealizationDict,
+                                                  conditionRealization=endoRealizationDict)
+                
+                coefficientsDict: dict[str,int] = {}
+                for latentRealization in latentCombinations:                    
+                    isCompatible: bool = case1Solver.checkRealization(mechanismDictsList=latentRealization,
+                                                parents=parents,
+                                                topoOrder=topoOrder,
+                                                tailValues=tailRealizationDict,
+                                                latentVariables=setU,
+                                                expectedRealizations=endoRealizationDict,                                                     
+                                                )
+                    indexer: str = ""
+                    for latentMechanism in latentRealization:                
+                        indexer += f"{latentMechanism.index},"
+                    indexer = indexer.rstrip(',')
+                    
+                    coefficientsDict[indexer] = int(isCompatible)                             
+                    
+                equations.append(equationsObject(probability, coefficientsDict))
+                
+        # TODO: Union of U states must have probability one        
 
-            probabilities.append(probability)
-            # combination order = tail and then the expected values.            
-            systemCoefficients: list[int] = []
-            conditionalVars: dict[int, int] = {}
-            expectedValues:  dict[int, int] = {}
-            
-            for index in range(len(tail)):
-                if v:
-                    print(f"var = {tail[index]} has value {combination[index]} in the combination")
-                conditionalVars[tail[index]] = combination[index]
-            
-            for index in range(len(tail), len(combination)):
-                if v:
-                    print(f"index = {index} and endoVar = {endoVars[index - len(tail)]} with value {combination[index]}")
-                expectedValues[endoVars[index - len(tail)]] = combination[index]
-
-
-            if v:
-                print("ConditionalVars dbg:")
-                for key in conditionalVars:
-                    print(f"key: {key} & value: {conditionalVars[key]}")                            
-
-                print("Expected values dbg:")
-                for key in expectedValues:
-                    print(f"key: {key} & value: {expectedValues[key]}")                            
-            
-            for mechanismDict in mechanismDicts:                
-                isValid: bool = linear_solver.checkValues(mechanismDict=mechanismDict, parents=endoParents, topoOrder=topoOrder,
-                                                             tailValues=conditionalVars, endogenousValues=expectedValues, v=False) 
-                systemCoefficients.append(isValid)
-            matrix.append(systemCoefficients)
-        
-        # Union of U states must have probability one
-        probabilities.append(1.0)
-        matrix.append([1] * len(mechanismDicts))
-
-        if v:
-            for index, eq in enumerate(matrix):
-                print(f"{probabilities[index]} - Equation: {eq}")        
-
-        return probabilities, matrix
-
-    def objetiveFunctionBuilder(latentIntervention: int, cComponentIntervention: int, outNode: dict[int, list[int]], inNode: dict[int, list[int]],
+        return equations
+    
+    def objectiveFunctionBuilder(latentIntervention: int, cComponentIntervention: int, outNode: dict[int, list[int]], inNode: dict[int, list[int]],
                                 cardinalities: dict[int, int], cCompDict: dict[int, list[int]],
                                 interventionVariable: int, interventionValue, targetVariable: int, 
                                 targetValue: int, topoOrder: list[int], filepath: str,
@@ -148,28 +116,27 @@ class case1Solver:
             print(f"Debug list U: {listU}")
             print(f"Debug list T: {listT}")
                     
-        # Get the mechanisms from all the relevant latent variables        
-        mechanismDictsList: list[list[dict[str, int]]] = [] # Same order as in list U
+        mechanismDictsList: list[list[dictAndIndex]] = [] # Same order as in list U
         for latentVariable in listU:        
             endogenousNodes = cCompDict[latentVariable]
             if latentVariable in endogenousNodes:
                 endogenousNodes.remove(latentVariable)
                         
             _, _, mechanismDicts = helper.mechanisms_generator(latentNode=latentVariable,endogenousNodes=endogenousNodes,
-                                             cardinalities=cardinalities,parentsDict=inNode,v=False)            
+                                             cardinalities=cardinalities,parentsDict=inNode,v=False)
             
             # print(f"Debug mechanisms: {mechanismDicts}")
             mechanismIndexDict: list[dictAndIndex] = []
             for index, mechanismDict in enumerate(mechanismDicts):
-                mechanismIndexDict.append(dictAndIndex(mechanismDict, index))                
+                mechanismIndexDict.append(dictAndIndex(mechanismDict, index))
             
-            mechanismDictsList.append(mechanismIndexDict)                        
+            mechanismDictsList.append(mechanismIndexDict)
                 
         # Generate all the tail states        
         tailVarSpaces: list[list[int]] = helper.helperGenerateSpaces(listT, cardinalities)
         
         # Generate a cross product between all tail states AND all mechanisms (latent variable states)
-        tailCombinations = helper.generateCrossProducts(tailVarSpaces) # the order is the same as in list T.                 
+        tailCombinations = helper.generateCrossProducts(tailVarSpaces) # the order is the same as in list T.
         latentCombinations = helper.generateCrossProducts(mechanismDictsList)
                 
         if v:
@@ -203,26 +170,25 @@ class case1Solver:
                 isCompatible = case1Solver.checkRealization(mechanismDictsList=latentCombination,
                                              parents=inNode,
                                              topoOrder=topoOrder,
-                                             tailValues=tailValues,
-                                             interventionVariable=interventionVariable,
-                                             interventionValue=interventionValue,                             
+                                             tailValues=tailValues,                                                                          
                                              latentVariables=listU,
-                                             targetVariable=targetVariable,
-                                             targetValue=targetValue
+                                             expectedRealizations={targetVariable: targetValue},
+                                             interventionVariable=interventionVariable,
+                                             interventionValue=interventionValue,
                                              )
                 if isCompatible:  
-                    empiricalProbability = helper.findTailProbability(dataFrame, indexToLabel, tailValues, False)
+                    empiricalProbability = helper.findProbability(dataFrame, indexToLabel, tailValues, False)
                     totalProbability += empiricalProbability
 
-            if v:
+            if True:
                 print(f"Debug: key = {indexer} and value = {totalProbability}")
             objectiveFunction[indexer] = totalProbability             
 
         return objectiveFunction            
     
     def checkRealization(mechanismDictsList: list[dict[str, int]], parents: dict[int, list[int]], topoOrder: list[int],
-                tailValues: dict[int, int], interventionVariable: int, interventionValue: int, latentVariables: list[int], 
-                targetVariable: int, targetValue: int):
+                tailValues: dict[int, int], latentVariables: list[int], expectedRealizations: dict[int, int],
+                interventionVariable=-1, interventionValue=-1):
         """
         For some mechanism in the discretization of a latent variable, as well as a tuple of values for the tail, check
         if the set of deterministic functions implies the expected values for the variables that belong to the c-component.
@@ -255,8 +221,10 @@ class case1Solver:
             nodeValue = mechanismDictsList[nodeLatentParentIndex].mechanisms[dictKey[:-1]] # exclude an extra comma
             
             computedNodes[node] = nodeValue            
+            if (node in expectedRealizations) and (computedNodes[node] != expectedRealizations[node]):
+                return False
 
-        return computedNodes[targetVariable] == targetValue        
+        return True
 
     def findSuperTail(latent: int, cComponent: int, outNode: dict[int, list[int]], inNode: dict[int, list[int]], v: bool):
         """
@@ -383,7 +351,7 @@ def itauTest():
 
     cardinalities = {0: 2, 1: 2, 2: 2, 3: 2}
     indexToLabel = {0: "Y", 1: "T", 2: "D", 3: "E"}
-    case1Solver.objetiveFunctionBuilder(latentIntervention=4, cComponentIntervention=[0, 1, 4], outNode=outNode, inNode=inNode,
+    case1Solver.objectiveFunctionBuilder(latentIntervention=4, cComponentIntervention=[0, 1, 4], outNode=outNode, inNode=inNode,
                                         cCompDict=cCompDict, cardinalities=cardinalities,
                                         interventionVariable=1,interventionValue=0,targetVariable=0,targetValue=0,
                                         topoOrder=[3, 1, 2, 0],
@@ -391,14 +359,6 @@ def itauTest():
                                         indexToLabel=indexToLabel,
                                         v=False)
     
-def cycleCase():    
-    # Nao funciona porque a funcao dSeparation nao esta lidando com ciclos
-    outNode = {0: [1, 2], 1: [2, 4], 2: [], 3: [1], 4: [2, 3], 5: [5], 6: [3]}
-    inNode =  {0: [], 1: [3], 2: [0, 1, 4], 3: [6], 4: [1, 5], 5: [], 6: []}    
-        
-    # Example of compatible intervention: target 2 interveening on 1
-    case1Solver.findSuperTail(latent=0, cComponent=[0, 1, 2], outNode=outNode, inNode=inNode)
-
 if __name__ == "__main__":    
     itauTest()
     #cycleCase()
