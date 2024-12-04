@@ -20,14 +20,19 @@ class case1Solver:
         p = P(S=s|T=t) = Sum{P(U=u)*1(U=u,T=t -> S=s)}. Hence, each combination of latents has a coefficient, which
         can be 0 or 1 only.
 
-        mechanismDictsList: a list in which each element corresponds to an enumeration of the mechanisms (states) of a latent variable.
-        setT: supertail
-        setS: set of endogenous variables determined by the supertail
-        cardinalities: dict with the cardinalities of the variables in T and S.
-        parents: equal to nodesIn, and contains the set of all parents of an endogenous variable
-        topoOrder: a topological order to run through S
-        endoIndexToLabel: convert from index of a variable in S to the label used in a CSV file
-        precision: defines how many decimals the calculated probability should have
+        - mechanismDictsList : a list in which each element corresponds to an enumeration of the mechanisms (states) of a latent variable.
+        - setT               : supertail
+        - setS               : set of endogenous variables determined by the supertail
+        - cardinalities      : dict with the cardinalities of the variables in T and S.
+        - parents            : equal to nodesIn, and contains the set of all parents of an endogenous variable
+        - topoOrder          : a topological order to run through S
+        - indexToLabel       : convert from index of a variable in S to the label used in a CSV file
+        - filepath           : path for the csv file with data.    
+
+        Returns:
+        - latentCardinalities: dictionary that returns the cardinality of the latent variables in setU.
+        - equations          : list of equationObjects, each with the probability (LHS) and the coefficients (0 or 1) of each
+                               term of the summation in the RHS.
         """
         df = helper.fetchCsv(filepath)
 
@@ -43,11 +48,7 @@ class case1Solver:
         endoSpace = helper.helperGenerateSpaces(nodes=setS,  cardinalities=cardinalitiesEndo)
         endoCombinations = helper.generateCrossProducts(endoSpace)
         latentCombinations = helper.generateCrossProducts(mechanismDictsList)
-
-        # Lista de equacoes do tipo:
-        # p = ai * U1 * U2...*Un => tome um dicionário para cada linha (equacao)
-        # em que o ai eh indexado da mesma forma que na funcao objetivo.
-        # Cada linha precisa de um dicionario e de um valor.
+        
         equations: list[equationsObject] = []
 
         for tailRealization in tailCombinations:
@@ -75,12 +76,12 @@ class case1Solver:
                     
                 equations.append(equationsObject(probability, coefficientsDict))
                 
-        # TODO: Union of U states must have probability one        
+        # TODO: Union of U states must have probability one
 
         return equations
     
-    def objectiveFunctionBuilder(latentIntervention: int, cComponentIntervention: int, outNode: dict[int, list[int]], inNode: dict[int, list[int]],
-                                cardinalities: dict[int, int], cCompDict: dict[int, list[int]],
+    def objectiveFunctionBuilder(mechanismDictsList: list[list[dictAndIndex]], parents: dict[int, list[int]],
+                                cardinalities: dict[int, int], listS: list[int], listT: list[int], listU: list[int],                                 
                                 interventionVariable: int, interventionValue, targetVariable: int, 
                                 targetValue: int, topoOrder: list[int], filepath: str,
                                 indexToLabel: dict[int, str], v: bool):
@@ -89,8 +90,8 @@ class case1Solver:
 
         latentIntervention: latent variable which is a parent of both the intervention variable in the target variable
         cComponentIntervention: complete cComponent in which the intervention variable and the target variable are
-        outNode: from each node as a key it returns a list with all the nodes that can be accessed from it (arrow points out of the node)
-        inNode: from each node as a key it returns a list with all the nodes that are parents from it
+        children: from each node as a key it returns a list with all the nodes that can be accessed from it (arrow points out of the node)
+        parents: from each node as a key it returns a list with all the nodes that are parents from it
         cardinalities: from each node return the number of states
         cCompDict: from each latent as a key get the complete cComponent (all its children)
         interventionVariable: the variable under intervention - do operator.
@@ -102,40 +103,16 @@ class case1Solver:
         indexToLabel: a dictionary that translates a node index to its label (which is the same as in the CSV)
         """                
         dataFrame = helper.fetchCsv(filepath)
-
-        listS, listT, listU = case1Solver.findSuperTail(latentIntervention, cComponentIntervention, outNode, inNode, False)
+        
         # Remove nodes not in S from topoOrder AND the interventionNode:
         if interventionVariable in topoOrder:
             topoOrder.remove(interventionVariable)
         for node in topoOrder:
             if node not in listS:
-                topoOrder.remove(node) 
-
-        if v:
-            print(f"Debug list S: {listS}")
-            print(f"Debug list U: {listU}")
-            print(f"Debug list T: {listT}")
-                    
-        mechanismDictsList: list[list[dictAndIndex]] = [] # Same order as in list U
-        for latentVariable in listU:        
-            endogenousNodes = cCompDict[latentVariable]
-            if latentVariable in endogenousNodes:
-                endogenousNodes.remove(latentVariable)
-                        
-            _, _, mechanismDicts = helper.mechanisms_generator(latentNode=latentVariable,endogenousNodes=endogenousNodes,
-                                             cardinalities=cardinalities,parentsDict=inNode,v=False)
-            
-            # print(f"Debug mechanisms: {mechanismDicts}")
-            mechanismIndexDict: list[dictAndIndex] = []
-            for index, mechanismDict in enumerate(mechanismDicts):
-                mechanismIndexDict.append(dictAndIndex(mechanismDict, index))
-            
-            mechanismDictsList.append(mechanismIndexDict)
-                
-        # Generate all the tail states        
+                topoOrder.remove(node)        
+                                    
         tailVarSpaces: list[list[int]] = helper.helperGenerateSpaces(listT, cardinalities)
-        
-        # Generate a cross product between all tail states AND all mechanisms (latent variable states)
+                
         tailCombinations = helper.generateCrossProducts(tailVarSpaces) # the order is the same as in list T.
         latentCombinations = helper.generateCrossProducts(mechanismDictsList)
                 
@@ -148,8 +125,7 @@ class case1Solver:
             for i, latentCombination in enumerate(latentCombinations):            
                 print(f"latent combination {i}) {latentCombination}") 
         
-        objectiveFunction: dict[str, int] = { } # Key = indexer (from array to str concatenated) and value = coefficient ai
-        # F = sum(Prod(P(Uk)) * P(T=t) * 1(T=t,U=u => Y=y)) hence ai = P(T=t) iff 1() = 1 and 0 c.c
+        objectiveFunction: dict[str, int] = { }        
         for i, latentCombination in enumerate(latentCombinations):
             totalProbability: float = 0.0
             if v:
@@ -168,7 +144,7 @@ class case1Solver:
                     tailValues[listT[j]] = tailValue
                 
                 isCompatible = case1Solver.checkRealization(mechanismDictsList=latentCombination,
-                                             parents=inNode,
+                                             parents=parents,
                                              topoOrder=topoOrder,
                                              tailValues=tailValues,                                                                          
                                              latentVariables=listU,
@@ -226,7 +202,7 @@ class case1Solver:
 
         return True
 
-    def findSuperTail(latent: int, cComponent: int, outNode: dict[int, list[int]], inNode: dict[int, list[int]], v: bool):
+    def findSuperTail(latent: int, cComponent: int, children: dict[int, list[int]], parents: dict[int, list[int]], v: bool):
         """
         Given a graph, the node under intervention and the target node, it computes the supertail T and the set of latent
         variables U such that T and U are independent
@@ -240,7 +216,7 @@ class case1Solver:
                 listS.append(node)
         
         for node in cComponent:
-            for parentNode in inNode[node]:
+            for parentNode in parents[node]:
                 if (parentNode not in listU) and (parentNode not in listS):
                     listT.append(parentNode) # Adds the parents to the tail
 
@@ -250,15 +226,13 @@ class case1Solver:
             print(f"List S: {listS}")
             print(f"List T: {listT}")
 
-        
         # Remember to come back to the beginning of the list if some new latent is added!
         tailIndex = 0
         while tailIndex < len(listT):
-            tailVar = listT[tailIndex]
-            # Check independency with the latent variables!
+            tailVar = listT[tailIndex]            
             tailIndepU = True
             for latentVar in listU:                                
-                independency = case1Solver.dSeparationChecker(tailVar, latentVar, outNode, inNode)
+                independency = case1Solver.dSeparationChecker(tailVar, latentVar, children, parents)
                 if not independency:                
                     tailIndepU = False
                     break
@@ -268,10 +242,10 @@ class case1Solver:
                 listS.append(tailVar)
                 
                 resetFlag: bool = False                         
-                for parent in inNode[tailVar]:
-                    if parent not in listS and len(inNode[parent]) > 0:
+                for parent in parents[tailVar]:
+                    if parent not in listS and len(parents[parent]) > 0:
                         listT.append(parent)
-                    elif len(inNode[parent]) == 0:                    
+                    elif len(parents[parent]) == 0:                    
                         if parent not in listU:                            
                             listU.append(parent)             
                             resetFlag = True                
@@ -290,19 +264,19 @@ class case1Solver:
         
         return listS, listT, listU    
 
-    def dSeparationChecker(node1: int, node2: int, outNode: dict[int, list[int]], inNode: dict[int, list[int]]):
+    def dSeparationChecker(node1: int, node2: int, children: dict[int, list[int]], parents: dict[int, list[int]]):
         """
         checks if two variables are d-separated given a DAG. Returns true if there is independency
         node1 and node2: the two nodes whose independency is being checked
-        outNode        : all edges that leave the node
-        inNode         : all edges that enter the node
+        children        : all edges that leave the node
+        parents         : all edges that enter the node
         """
 
         visited: set[int] = set()
-        findTarget = case1Solver.customDfs(node1, node2, outNode, inNode, visited, 2)
+        findTarget = case1Solver.customDfs(node1, node2, children, parents, visited, 2)
         return not findTarget
 
-    def customDfs(currNode: int, targetNode: int, outNode: dict[int, list[int]], inNode: dict[int, list[int]],
+    def customDfs(currNode: int, targetNode: int, children: dict[int, list[int]], parents: dict[int, list[int]],
                   visited: set[int], lastDirection: int):
         """
         lastDirection: 0 means it entered the node, 1 means it left the node
@@ -312,31 +286,31 @@ class case1Solver:
             return True
 
         findTarget: bool = False
-        for node in outNode[currNode]:
+        for node in children[currNode]:
             if node not in visited:
-                findTarget = case1Solver.customDfs(node, targetNode, outNode, inNode, visited, 0)
+                findTarget = case1Solver.customDfs(node, targetNode, children, parents, visited, 0)
                 if findTarget == True:
                     return True
 
         if lastDirection != 0:
-            for node in inNode[currNode]:
+            for node in parents[currNode]:
                 if node not in visited:
-                    findTarget = case1Solver.customDfs(node, targetNode, outNode, inNode, visited, 1)        
+                    findTarget = case1Solver.customDfs(node, targetNode, children, parents, visited, 1)        
                     if findTarget == True:
                         return True
         return False            
 
 def itauTest():
     # Itau graph: 
-    outNode = {0: [], 1: [0, 2], 2: [0], 3: [2], 4: [0, 1], 5: [2], 6: [3]}
-    inNode =  {0: [1, 2, 4], 1: [4], 2: [1, 3, 5], 3: [6], 4: [], 5: [], 6: []}
-    case1Solver.dSeparationChecker(node1=2, node2=2, outNode=outNode, inNode=inNode)
-    case1Solver.dSeparationChecker(node1=2, node2=4, outNode=outNode, inNode=inNode)
-    case1Solver.dSeparationChecker(node1=5, node2=4, outNode=outNode, inNode=inNode)
-    case1Solver.dSeparationChecker(node1=6, node2=4, outNode=outNode, inNode=inNode)
-    case1Solver.dSeparationChecker(node1=3, node2=4, outNode=outNode, inNode=inNode)
-    case1Solver.dSeparationChecker(node1=1, node2=4, outNode=outNode, inNode=inNode)
-    case1Solver.dSeparationChecker(node1=6, node2=2, outNode=outNode, inNode=inNode)
+    children = {0: [], 1: [0, 2], 2: [0], 3: [2], 4: [0, 1], 5: [2], 6: [3]}
+    parents =  {0: [1, 2, 4], 1: [4], 2: [1, 3, 5], 3: [6], 4: [], 5: [], 6: []}
+    case1Solver.dSeparationChecker(node1=2, node2=2, children=children, parents=parents)
+    case1Solver.dSeparationChecker(node1=2, node2=4, children=children, parents=parents)
+    case1Solver.dSeparationChecker(node1=5, node2=4, children=children, parents=parents)
+    case1Solver.dSeparationChecker(node1=6, node2=4, children=children, parents=parents)
+    case1Solver.dSeparationChecker(node1=3, node2=4, children=children, parents=parents)
+    case1Solver.dSeparationChecker(node1=1, node2=4, children=children, parents=parents)
+    case1Solver.dSeparationChecker(node1=6, node2=2, children=children, parents=parents)
         
     # Example of compatible intervention: target 0 interveening on 1
     cCompList: list[latentAndCcomp] = []
@@ -351,14 +325,46 @@ def itauTest():
 
     cardinalities = {0: 2, 1: 2, 2: 2, 3: 2}
     indexToLabel = {0: "Y", 1: "T", 2: "D", 3: "E"}
-    case1Solver.objectiveFunctionBuilder(latentIntervention=4, cComponentIntervention=[0, 1, 4], outNode=outNode, inNode=inNode,
-                                        cCompDict=cCompDict, cardinalities=cardinalities,
+    mechanismDictsList, _ = helper.mechanismListGenerator(4, cardinalities, [4, 5], cCompDict, parents)
+
+    listS, listT, listU = case1Solver.findSuperTail(latent=4,
+                              cComponent=[0, 1, 4],
+                              children=children,
+                              parents=parents,
+                              v=False
+                              )    
+
+    case1Solver.objectiveFunctionBuilder(mechanismDictsList=mechanismDictsList, parents=parents,
+                                        cardinalities=cardinalities,
+                                        listS=listS, listT=listT, listU=listU,                                        
                                         interventionVariable=1,interventionValue=0,targetVariable=0,targetValue=0,
                                         topoOrder=[3, 1, 2, 0],
                                         filepath="itau.csv",
                                         indexToLabel=indexToLabel,
-                                        v=False)
-    
-if __name__ == "__main__":    
+                                        v=False
+                                        )        
+
+    equations = case1Solver.equationsGenerator(mechanismDictsList=mechanismDictsList,
+                                   setT=listT,
+                                   setS=listS,
+                                   setU=listU,
+                                   cardinalities=cardinalities,
+                                   parents=parents,
+                                   topoOrder=[1, 2, 0],
+                                   indexToLabel=indexToLabel,
+                                   filepath='itau.csv',
+                                   )
+    dbgCnt = 3
+    for i, eq in enumerate(equations):
+        if i == dbgCnt:
+            break        
+
+        print(f"Equation {i + 1}:\nprob = {eq.probability}\n")
+        for j, key in enumerate(eq.dictionary):
+            if j == dbgCnt:
+                break            
+            print(f"for key = {key}, coefficient = {eq.dictionary[key]}")
+            
+if __name__ == "__main__":
     itauTest()
     #cycleCase()

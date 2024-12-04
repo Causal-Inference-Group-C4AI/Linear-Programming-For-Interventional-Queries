@@ -1,5 +1,8 @@
 import pandas as pd
+from collections import namedtuple
 import itertools
+
+dictAndIndex = namedtuple('dictAndIndex', ['mechanisms', 'index'])
 
 class helper:
     """
@@ -129,3 +132,28 @@ class helper:
                 print("------------")
         
         return allPossibleMechanisms, dictKeys, mechanismDicts
+
+    def mechanismListGenerator(latentNode: int, cardinalities: dict[int, int], setU: list[int], 
+                               cCompDict: dict[int, list[int]], parents: dict[int, list[int]]):
+        
+        mechanismDictsList: list[list[dictAndIndex]] = [] # Same order as in list U
+        globalIndex: int = 0
+        latentCardinalities: dict[int, int] = {}
+        for latentVariable in setU:        
+            endogenousNodes = cCompDict[latentVariable]
+            if latentVariable in endogenousNodes:
+                endogenousNodes.remove(latentVariable)
+                    
+            _, _, mechanismDicts = helper.mechanisms_generator(latentNode=latentVariable,endogenousNodes=endogenousNodes,
+                                            cardinalities=cardinalities,parentsDict=parents,v=False)
+                    
+            mechanismIndexDict: list[dictAndIndex] = []            
+            initVal: int = globalIndex
+            for mechanismDict in mechanismDicts:
+                mechanismIndexDict.append(dictAndIndex(mechanismDict, globalIndex))
+                globalIndex += 1            
+            
+            latentCardinalities[latentVariable] = globalIndex - initVal
+            mechanismDictsList.append(mechanismIndexDict)        
+        
+        return mechanismDictsList, latentCardinalities
