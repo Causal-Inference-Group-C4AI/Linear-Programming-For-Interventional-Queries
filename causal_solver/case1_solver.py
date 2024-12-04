@@ -125,7 +125,7 @@ class case1Solver:
             for i, latentCombination in enumerate(latentCombinations):            
                 print(f"latent combination {i}) {latentCombination}") 
         
-        objectiveFunction: dict[str, int] = { }        
+        objectiveFunction: dict[str, float] = { }
         for i, latentCombination in enumerate(latentCombinations):
             totalProbability: float = 0.0
             if v:

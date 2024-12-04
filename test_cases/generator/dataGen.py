@@ -9,7 +9,6 @@ def dataGen(graph : Graph, numSamp = int(1e3)):
     truthTable : list[list[np.array]] = generateMechanisms(graph)
      
     experiment : list[list[int]] = []
-    print(truthTable)
     for _ in range(numSamp):
         vals : list[int] = np.zeros(graph.num_nodes, dtype= int)
 

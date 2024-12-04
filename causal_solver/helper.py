@@ -47,7 +47,8 @@ class helper:
         return spaces
     
     def fetchCsv(filepath="balke_pearl.csv"):        
-        prefix = "/home/c4ai-wsl/projects/Canonical-Partition/causal_solver/"
+        # prefix = "/home/c4ai-wsl/projects/Canonical-Partition/causal_solver/"
+        prefix = "/home/joaog/Cpart/Canonical-Partition/causal_solver/"
         return pd.read_csv(prefix + filepath)
 
     def generateCrossProducts(sets: list[list[int]]):        
