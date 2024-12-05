@@ -1,6 +1,6 @@
 import pyomo.environ  as pyo
 from collections import namedtuple
-from case1_solver import *
+from causal_solver.NonLinearConstraints import *
 from pyomo.opt import SolverFactory
 
 equationsObject = namedtuple('equationsObject', ['probability', 'dictionary'])
@@ -55,7 +55,7 @@ def createModel(objective : dict[str, float], constraints : list[equationsObject
                     aux *= model.q[u]
                 expr += aux
         model.eqConstrain.add(expr = eqn.probability)
-         
+
     return model
 
 if __name__ == "__main__":

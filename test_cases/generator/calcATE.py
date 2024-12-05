@@ -5,7 +5,7 @@ from test_cases.generator.dataGen import dataGen
 import networkx as nx
 
 def estimatedATE(graph : Graph, query : list[str]):
-    data : pd.DataFrame = pd.DataFrame(dataGen(graph = graph, numSamp= int(1e2)), columns= [graph.index_to_label[i] for i in range(1, graph.num_nodes + 1)])
+    data : pd.DataFrame = pd.DataFrame(dataGen(graph = graph, numSamp= int(1e2)), columns= [graph.indexToLabel[i] for i in range(1, graph.numberOfNodes + 1)])
     data = data.replace(to_replace=2, value=0)
     print(data)
     model = CausalModel( data = data,
@@ -25,7 +25,7 @@ def estimatedATE(graph : Graph, query : list[str]):
 def createDag(graph : Graph):
     inpDAG: nx.DiGraph = nx.DiGraph()
     
-    for i in range(1, graph.num_nodes+1):
+    for i in range(1, graph.numberOfNodes+1):
             inpDAG.add_node(i)
     
     for parent, edge in enumerate(graph.adj):
@@ -33,16 +33,16 @@ def createDag(graph : Graph):
             for ch in edge:
                 inpDAG.add_edge(parent, ch)
 
-    for i in range(1, graph.num_nodes + 1) :
+    for i in range(1, graph.numberOfNodes + 1) :
         
-        name_node = graph.index_to_label[i] 
+        name_node = graph.indexToLabel[i] 
 
         nx.relabel_nodes(inpDAG, {i: name_node}, copy=False)
     return inpDAG
 
 if __name__ == "__main__":
     graph: Graph = Graph.parse()
-    for i in range(1, graph.num_nodes + 1):
+    for i in range(1, graph.numberOfNodes + 1):
         if graph.cardinalities[i] < 1:
             graph.cardinalities[i] = 2
     print(estimatedATE(graph= graph, query= ["V2","V3"]))

@@ -1,78 +1,108 @@
 import networkx as nx
-class Graph:    
-    def __init__(self, num_nodes: int, curr_nodes: list[int], visited: list[bool], cardinalities: list[int], 
-                 parents: list[int], adj: list[list[int]], label_to_index: dict[str, int], index_to_label: dict[int, str],
-                 dag_components: list[list[int]], exogenous : list[int], endogenous : list[int], topological_order: list[int], DAG: nx.digraph, cComponent_to_Unob: dict[int, int]):
-        self.num_nodes = num_nodes
-        self.curr_nodes = curr_nodes
+from causal_solver.SupertailFinder import Node
+
+class Graph:
+    def __init__(self, numberOfNodes: int, currNodes: list[int], visited: list[bool], cardinalities: dict[int, int],
+                 parents: list[int], adj: list[list[int]], labelToIndex: dict[str, int], indexToLabel: dict[int, str],
+                 dagComponents: list[list[int]], exogenous : list[int], endogenous : list[int], topologicalOrder: list[int], 
+                 DAG: nx.digraph, cComponentToUnob: dict[int, int], graphNodes: list[Node]):
+
+        self.numberOfNodes = numberOfNodes
+        self.currNodes = currNodes
         self.visited = visited 
         self.cardinalities = cardinalities
         self.parents = parents
         self.adj = adj
-        self.label_to_index = label_to_index
-        self.index_to_label = index_to_label
-        self.dag_components = dag_components
+        self.labelToIndex = labelToIndex
+        self.indexToLabel = indexToLabel
+        self.dagComponents = dagComponents
         self.endogenous = endogenous
         self.exogenous = exogenous
-        self.topological_order = topological_order
+        self.topologicalOrder = topologicalOrder
         self.DAG = DAG
-        self.cComponent_to_unob = cComponent_to_Unob
-    def parse():
-        num_nodes = int(input())
-        num_edges = int(input())
+        self.cComponentToUnob = cComponentToUnob
         
-        label_to_index_ex: dict[str, int] = {} 
-        index_to_label_ex: dict[int, str] = {} 
-        adj_ex = [[] for _ in range(num_nodes + 1)]
-        cardinalities_ex = [0] * (num_nodes + 1)
-        visited_ex = [False] * (num_nodes + 1)
-        parents_ex = [[] for _ in range(num_nodes + 1)]
+        self.graphNodes = graphNodes
+
+
+    def parse():
+        numberOfNodes = int(input())
+        numberOfEdges = int(input())
+        
+        labelToIndexEx: dict[str, int] = {} 
+        indexToLabelEx: dict[int, str] = {} 
+        adjEx: list[list[int]] = [[] for _ in range(numberOfNodes)]
+        cardinalitiesEx = {}
+        visited_ex = [False] * (numberOfNodes)
+        parentsEx: list[list[int]] = [[] for _ in range(numberOfNodes)]
         endogenIndex : list[int] = []
         exogenIndex : list[int] = []
-        for i in range(1, num_nodes + 1):
+        
+
+        for i in range(numberOfNodes):
             label, cardinality = input().split()
             cardinality = int(cardinality)
-            label_to_index_ex[label] = i
-            index_to_label_ex[i] = label
-            cardinalities_ex[i] = cardinality
+            labelToIndexEx[label] = i
+            indexToLabelEx[i] = label
+            cardinalitiesEx[i] = cardinality
 
-        for _ in range(num_edges):
+        for _ in range(numberOfEdges):
             u, v = input().split()
-            u_index = label_to_index_ex[u]
-            v_index = label_to_index_ex[v]
-            adj_ex[u_index].append(v_index)
-            parents_ex[v_index].append(u_index)
+            uIndex = labelToIndexEx[u]
+            vIndex = labelToIndexEx[v]
+            adjEx[uIndex].append(vIndex)
+            parentsEx[vIndex].append(uIndex)
+
+
         inpDAG: nx.DiGraph = nx.DiGraph()
     
-        for i in range(1, num_nodes+1):
+        for i in range(numberOfNodes):
             inpDAG.add_node(i)
     
-        for parent, edge in enumerate(adj_ex):
+        for parent, edge in enumerate(adjEx):
             if bool(edge):
                for ch in edge:
                    inpDAG.add_edge(parent, ch)
         
         order = list(nx.topological_sort(inpDAG))
         
-        for i in range(1, num_nodes + 1) :
+        for i in range(numberOfNodes) :
         
-             name_node = index_to_label_ex[i] 
+             name_node = indexToLabelEx[i] 
 
              nx.relabel_nodes(inpDAG, {i : name_node}, copy=False)
        
-        for i in range(1, num_nodes + 1):
+        for i in range(numberOfNodes):
            
-           if not (bool(parents_ex[i])) :
+           if not (bool(parentsEx[i])):
                exogenIndex.append(i)
-           else :
-               endogenIndex.append(i)
-        
-        return Graph(num_nodes=num_nodes,curr_nodes=[], visited=visited_ex, cardinalities=cardinalities_ex, parents=parents_ex, 
-                    adj=adj_ex, index_to_label=index_to_label_ex, label_to_index=label_to_index_ex, dag_components=[], exogenous= exogenIndex,endogenous = endogenIndex, topological_order= order, DAG= inpDAG, cComponent_to_Unob = {})
+           else:
+               endogenIndex.append(i)                
+
+        graphNodes: list[Node] = [Node(latentParent=-1, parents=[], children=[]) for _ in range(numberOfNodes)]
+        for node in range(numberOfNodes):
+            if cardinalitiesEx[node] == 0:
+                graphNodes[node] = Node(children=adjEx[node],parents=[],latentParent=None)
+            else:
+                latentParent = -1
+                for nodeParent in parentsEx[node]:
+                    if cardinalitiesEx[nodeParent] == 0:
+                        latentParent = nodeParent
+                        break
+            
+                if latentParent == -1:
+                    print(f"PARSE ERROR: ALL OBSERVABLE VARIABLES SHOULD HAVE A LATENT PARENT, BUT {node} DOES NOT.")
+                
+                graphNodes[node] = Node(children=adjEx[node],parents=parentsEx[node],latentParent=latentParent)
+            pass
+
+        return Graph(numberOfNodes=numberOfNodes,currNodes=[], visited=visited_ex, cardinalities=cardinalitiesEx, parents=parentsEx, 
+                    adj=adjEx, indexToLabel=indexToLabelEx, labelToIndex=labelToIndexEx, dagComponents=[], exogenous= exogenIndex,endogenous = endogenIndex, topologicalOrder= order, DAG= inpDAG, 
+                    cComponentToUnob = {}, graphNodes=graphNodes)
     
     def dfs(self, node: int):        
         self.visited[node] = True
-        self.curr_nodes.append(node)
+        self.currNodes.append(node)
         is_observable = self.cardinalities[node] > 1
 
         if not is_observable:
@@ -85,11 +115,11 @@ class Graph:
                     self.dfs(parent_node)
     
     def find_cComponents(self):
-        for i in range(1, self.num_nodes + 1):
+        for i in range(1, self.numberOfNodes + 1):
             if not self.visited[i] and self.cardinalities[i] < 1:            
-                self.curr_nodes.clear()
+                self.currNodes.clear()
                 self.dfs(i)
-                self.dag_components.append(self.curr_nodes[:])
-                self.cComponent_to_unob[len(self.dag_components) - 1] = i
+                self.dagComponents.append(self.currNodes[:])
+                self.cComponentToUnob[len(self.dagComponents) - 1] = i
 if __name__ == "__main__":
     graph: Graph = Graph.parse()

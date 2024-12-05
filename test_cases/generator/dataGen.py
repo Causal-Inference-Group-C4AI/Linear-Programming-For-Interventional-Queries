@@ -10,11 +10,11 @@ def dataGen(graph : Graph, numSamp = int(1e3)):
      
     experiment : list[list[int]] = []
     for _ in range(numSamp):
-        vals : list[int] = np.zeros(graph.num_nodes, dtype= int)
+        vals : list[int] = np.zeros(graph.numberOfNodes, dtype= int)
 
         exogen_vals: list[int] = [np.random.choice(a = np.arange(1, len(dist) + 1),  p = dist) for dist in distExogen]
     
-        for node in graph.topological_order:
+        for node in graph.topologicalOrder:
             if node in graph.exogenous:
                
                vals[node - 1] = exogen_vals[(graph.exogenous).index(node)]
@@ -37,8 +37,8 @@ def dataGen(graph : Graph, numSamp = int(1e3)):
     df = pd.DataFrame(experiment)
 
     df_label = []
-    for i in range(1, graph.num_nodes+1):   
-        df_label.append(graph.index_to_label[i])
+    for i in range(1, graph.numberOfNodes+1):   
+        df_label.append(graph.indexToLabel[i])
 
     df.columns = df_label
 
@@ -47,7 +47,7 @@ def dataGen(graph : Graph, numSamp = int(1e3)):
     return df
 if __name__ == "__main__":
     graph: Graph = Graph.parse()
-    for i in range(1, graph.num_nodes + 1):
+    for i in range(1, graph.numberOfNodes + 1):
         if graph.cardinalities[i] < 1:
             graph.cardinalities[i] = 2
     print(dataGen(graph=graph, numSamp= int(1e3)))       

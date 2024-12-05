@@ -2,9 +2,11 @@ import pandas as pd
 from collections import namedtuple
 import itertools
 
+from causal_solver.SupertailFinder import Node
+
 dictAndIndex = namedtuple('dictAndIndex', ['mechanisms', 'index'])
 
-class helper:
+class Helper:
     """
     Common methods used to create the optimization problem
     """
@@ -17,17 +19,16 @@ class helper:
         
         Calculates: P(V|T) = P(V,T) / P(T)
         """            
-        conditionProbability = helper.findProbability(dataFrame, indexToLabel, conditionRealization, False)
+        conditionProbability = Helper.findProbability(dataFrame, indexToLabel, conditionRealization, False)
 
         if conditionProbability == 0:
             return 0
 
-        targetAndConditionProbability = helper.findProbability(dataFrame, indexToLabel, targetRealization | conditionRealization, False)
+        targetAndConditionProbability = Helper.findProbability(dataFrame, indexToLabel, targetRealization | conditionRealization, False)
         
         return targetAndConditionProbability / conditionProbability
     
-    def findProbability(dataFrame, indexToLabel, variableRealizations: dict[int, int], v=True):
-        # Build the realization condition
+    def findProbability(dataFrame, indexToLabel, variableRealizations: dict[int, int], v=True):        
         conditions = pd.Series([True] * len(dataFrame), index=dataFrame.index)
         for variable in variableRealizations:
             conditions &= (dataFrame[indexToLabel[variable]] == variableRealizations[variable])
@@ -41,21 +42,22 @@ class helper:
 
     def helperGenerateSpaces(nodes: list[int], cardinalities: dict[int, int]):
         spaces: list[list[int]] = []
+        
         for node in nodes:
             spaces.append(range(0,cardinalities[node]))
         
         return spaces
     
     def fetchCsv(filepath="balke_pearl.csv"):        
-        # prefix = "/home/c4ai-wsl/projects/Canonical-Partition/causal_solver/"
-        prefix = "/home/joaog/Cpart/Canonical-Partition/causal_solver/"
+        prefix = "/home/c4ai-wsl/projects/Canonical-Partition/causal_solver/"
+        # prefix = "/home/joaog/Cpart/Canonical-Partition/causal_solver/"
         return pd.read_csv(prefix + filepath)
 
     def generateCrossProducts(sets: list[list[int]]):        
         crossProductsTuples = itertools.product(*sets)
         return [list(combination) for combination in crossProductsTuples]
     
-    def mechanisms_generator(latentNode: int, endogenousNodes: list[int], cardinalities: dict[int, int], parentsDict: dict[int, list[int]], v=True):
+    def mechanisms_generator(latentNode: int, endogenousNodes: list[int], cardinalities: dict[int, int], graphNodes: list[Node], v=True):
         """
         Generates an enumeration (list) of all mechanism a latent value can assume in its c-component. The c-component has to have
         exactly one latent variable.
@@ -79,7 +81,7 @@ class helper:
             header: str = f"determines variable: {var}"
             amount: int = 1
             orderedParents: list[int] = []
-            for parent in parentsDict[var]:
+            for parent in graphNodes[var].parents:
                 if parent != latentNode:
                     orderedParents.append(parent)
                     header = f"{parent}, " + header
@@ -134,19 +136,14 @@ class helper:
         
         return allPossibleMechanisms, dictKeys, mechanismDicts
 
-    def mechanismListGenerator(latentNode: int, cardinalities: dict[int, int], setU: list[int], 
-                               cCompDict: dict[int, list[int]], parents: dict[int, list[int]]):
+    def mechanismListGenerator(cardinalities: dict[int, int], setU: list[int], graphNodes: list[Node]):
         
         mechanismDictsList: list[list[dictAndIndex]] = [] # Same order as in list U
         globalIndex: int = 0
         latentCardinalities: dict[int, int] = {}
-        for latentVariable in setU:        
-            endogenousNodes = cCompDict[latentVariable]
-            if latentVariable in endogenousNodes:
-                endogenousNodes.remove(latentVariable)
-                    
-            _, _, mechanismDicts = helper.mechanisms_generator(latentNode=latentVariable,endogenousNodes=endogenousNodes,
-                                            cardinalities=cardinalities,parentsDict=parents,v=False)
+        for latentVariable in setU:                                                    
+            _, _, mechanismDicts = Helper.mechanisms_generator(latentNode=latentVariable,endogenousNodes=graphNodes[latentVariable].children,
+                                            cardinalities=cardinalities,graphNodes=graphNodes,v=False)
                     
             mechanismIndexDict: list[dictAndIndex] = []            
             initVal: int = globalIndex

@@ -24,7 +24,7 @@ def findExogen(graph : Graph):
     exogenIndex : list[int] = []
     endogenIndex : list[int] = []
     
-    for i in range(1, graph.num_nodes + 1):
+    for i in range(1, graph.numberOfNodes + 1):
         if not (bool(graph.parents[i])) :
            exogenIndex.append(i)
         else :
@@ -35,7 +35,7 @@ def findExogen(graph : Graph):
 #test function
 if __name__ == "__main__":
     graph: Graph = Graph.parse()
-    for i in range(1, graph.num_nodes + 1):
+    for i in range(1, graph.numberOfNodes + 1):
         if graph.cardinalities[i] < 1:
             graph.cardinalities[i] = 2
     

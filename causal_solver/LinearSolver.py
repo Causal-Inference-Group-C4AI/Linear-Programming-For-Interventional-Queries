@@ -1,9 +1,9 @@
 from partition_methods.relaxed_problem.python.graph import Graph
 from scipy.optimize import linprog
 import pandas as pd
-from helper import helper
+from causal_solver.Helper import helper
 
-class linear_solver:    
+class LinearSolver:    
     def checkValues(mechanismDict: dict[str, int], parents: dict[int, list[int]], topoOrder: list[int],
                  tailValues: dict[int, int], endogenousValues: dict[int, int], v=True):
         """
@@ -123,7 +123,7 @@ class linear_solver:
                     print(f"key: {key} & value: {expectedValues[key]}")                            
             
             for mechanismDict in mechanismDicts:
-                isValid: bool = linear_solver.checkValues(mechanismDict=mechanismDict, parents=endoParents, topoOrder=topoOrder,
+                isValid: bool = LinearSolver.checkValues(mechanismDict=mechanismDict, parents=endoParents, topoOrder=topoOrder,
                                                              tailValues=conditionalVars, endogenousValues=expectedValues, v=False) 
                 systemCoefficients.append(isValid)
             matrix.append(systemCoefficients)
@@ -206,8 +206,8 @@ class linear_solver:
 
     def interventionalQuery(probabilities: list[int], empiricalEquations: list[list[int]], objectiveFunctionPos: list[int],
                              objectiveFunctionNeg: list[int]):
-        PosLower, PosUpper = linear_solver.createLinearProblem(probabilities, empiricalEquations, objectiveFunctionPos)
-        NegLower, NegUpper = linear_solver.createLinearProblem(probabilities, empiricalEquations, objectiveFunctionNeg)
+        PosLower, PosUpper = LinearSolver.createLinearProblem(probabilities, empiricalEquations, objectiveFunctionPos)
+        NegLower, NegUpper = LinearSolver.createLinearProblem(probabilities, empiricalEquations, objectiveFunctionNeg)
 
         print(f"The positive query has bounds: [{PosLower},{PosUpper}]")
         print(f"The negative query has bounds: [{NegLower},{NegUpper}]")
@@ -268,7 +268,7 @@ def testBalkePearl():
         
     # Balke & Pearl graph in which: Z = 3, U = 0, X = 1, Y = 2
     print("\n=== Call equation generator ===\n")
-    probabilities, equations = linear_solver.equations_generator(mechanismDicts, [3], {3: 2}, [1, 2], {1: 2, 2: 2}, {1: [3], 2: [1]} ,
+    probabilities, equations = LinearSolver.equations_generator(mechanismDicts, [3], {3: 2}, [1, 2], {1: 2, 2: 2}, {1: [3], 2: [1]} ,
                                           [1, 2], {0: "U", 1: "X", 2: "Y", 3: "Z"}, "balke_pearl.csv", 3, False)    
 
     for i, eq in enumerate(equations):
@@ -277,15 +277,15 @@ def testBalkePearl():
     # mockObj = [0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0, 0, 1, -1, 0]    
     # mockPos = [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]         
     # mockNeg = [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1]    
-    # linear_solver.createLinearProblem(probabilities, equations, mockObj)
+    # LinearSolver.createLinearProblem(probabilities, equations, mockObj)
     
     # print("Test the second approach:")
-    # linear_solver.interventionalQuery(probabilities, equations, mockPos, mockNeg)
+    # LinearSolver.interventionalQuery(probabilities, equations, mockPos, mockNeg)
         
     # tail: list[int], tailCardinalities: dict[int,int], v: True):
     # P(Y=1|do(X=0))
     df = helper.fetchCsv()
-    linear_solver.generateObjectiveFunction(df, {3: "Z", 2: "Y", 1: "X"},mechanismDicts=mechanismDicts, targetVariable=2, targetValue=1, interventionVariable=1, 
+    LinearSolver.generateObjectiveFunction(df, {3: "Z", 2: "Y", 1: "X"},mechanismDicts=mechanismDicts, targetVariable=2, targetValue=1, interventionVariable=1, 
                                                 interventionValue=0, topoOrder=[1, 2], tail=[3], tailCardinalities={3: 2}, v=True,
                                                 endoParents={1: [0, 3], 2: [0, 1]}, latent=0)
 
@@ -301,7 +301,7 @@ def testItau():
         
     # Itau graph in which: U = 0, T = 1, Y = 2, D = 3
     print("\n=== Call equation generator ===\n")
-    probabilities, equations = linear_solver.equations_generator(mechanismDicts, [3], {3: 2}, [1, 2], {1: 2, 2: 2}, {1: [3], 2: [1, 3]} ,
+    probabilities, equations = LinearSolver.equations_generator(mechanismDicts, [3], {3: 2}, [1, 2], {1: 2, 2: 2}, {1: [3], 2: [1, 3]} ,
                                           [1, 2], {0: "U", 1: "T", 2: "Y", 3: "D"}, "itau.csv", 3, False)  
 
     for i, eq in enumerate(equations):

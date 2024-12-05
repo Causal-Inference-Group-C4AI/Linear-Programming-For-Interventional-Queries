@@ -3,7 +3,7 @@ from .graph import Graph
 class DfsRunner:            
     def dfs(node: int, graph: Graph):
         graph.visited[node] = True
-        graph.curr_nodes.append(node)
+        graph.currNodes.append(node)
         is_observable = graph.cardinalities[node] > 1
 
         if not is_observable:
