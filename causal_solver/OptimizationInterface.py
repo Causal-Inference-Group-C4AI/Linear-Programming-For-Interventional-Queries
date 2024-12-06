@@ -3,8 +3,8 @@ from partition_methods.relaxed_problem.python.graph import Graph
 from causal_solver.Helper import Helper
 from causal_solver.SupertailFinder import Node, SupertailFinder
 from collections import namedtuple
-equationsObject = namedtuple('equationsObject', ['probability', 'dictionary'])
 
+equationsObject = namedtuple('equationsObject', ['probability', 'dictionary'])
 latentAndCcomp = namedtuple('latentAndCcomp', ['latent', 'nodes'])
 
 class OptimizationInterface:
@@ -39,7 +39,6 @@ class OptimizationInterface:
                                     verbose=verbose
                                     )
 
-        print("\n\n---- equations generator ----\n\n")        
         equations: list[equationsObject] = NonLinearConstraints.equationsGenerator(mechanismDictsList=mechanismDictsList,
                                     setT=list(setT),
                                     setS=list(setS),

@@ -1,5 +1,6 @@
 import pyomo.environ  as pyo
 from collections import namedtuple
+from causal_solver.OptimizationInterface import OptimizationInterface
 from causal_solver.NonLinearConstraints import *
 from pyomo.opt import SolverFactory
 
@@ -31,25 +32,25 @@ def createModel(objective : dict[str, float], constraints : list[equationsObject
     model.q = pyo.Var(list(range(1, numVar + 1)), bounds=(0,1), initialize = initVal)
     model.eqConstrain = pyo.ConstraintList()
     expr = 0
-    
+
     for key in objective:
         coef = objective[key]
         unobs = dictKey_to_index(key= key)
-        
+
         if coef > 0:
             aux = coef
             for u in unobs:
                 aux *= model.q[u]
             expr += aux
-    
+
     model.obj = pyo.Objective(expr= expr)
-     
+
     for eqn in constraints:
         expr = 0
         for key in eqn.dictionary:
           coef = eqn.dictionary[key]
           unobs = dictKey_to_index(key= key)
-          if coef > 0:         
+          if coef > 0:
                 aux = coef
                 for u in unobs:
                     aux *= model.q[u]
@@ -59,6 +60,6 @@ def createModel(objective : dict[str, float], constraints : list[equationsObject
     return model
 
 if __name__ == "__main__":
-    objectFun = itauTest()
-    model = createModel(objective= objectFun, constraints= [],)
+    objectFun, constraints = OptimizationInterface.optimizationProblem(verbose=False)
+    model = createModel(objective= objectFun, constraints= constraints)
     print()
