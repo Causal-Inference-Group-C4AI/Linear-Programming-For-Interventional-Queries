@@ -10,27 +10,25 @@ class SupertailFinder:
     """
     Finds the supertail T given a DAG and an intervention (target and intervention variables)
     """
-    def findSuperTail(node1: int, node2: int, graphNodes: list[Node]):
+    def findSuperTail(interventionNode: int, targetNode: int, graphNodes: list[Node]):
         """
         Given a graph, the node under intervention and the target node, it computes the supertail T and the set of latent
         variables U such that T and U are independent.
         """
-        setS: set[int] = set([node1, node2])
-        setU: set[int] = set([graphNodes[node1].latentParent, graphNodes[node2].latentParent])
-        setT: set[int] = set()
-        
+        setS: set[int] = set([targetNode])
+        setU: set[int] = set([graphNodes[targetNode].latentParent])
+        setT: set[int] = set([interventionNode])            
+
         for node in setS:
             for parentNode in graphNodes[node].parents:
                 if (parentNode not in setU) and (parentNode not in setS):
                     setT.add(parentNode)
-        
-        print(f"Init: setS: {setS}; setU: {setU}; setT: {setT}")
 
         independencyCondition = False
         while not independencyCondition:
             independencyCondition = True
             for supertailVar in setT:
-                if not SupertailFinder.areDSeparated(node=supertailVar, targetNodes=setU, graphNodes=graphNodes):                    
+                if not SupertailFinder.areDSeparated(node=supertailVar, targetNodes=setU, graphNodes=graphNodes):
                     independencyCondition = False
                     setT.remove(supertailVar)
                     setU.add(graphNodes[supertailVar].latentParent)
@@ -92,8 +90,38 @@ def testDseparation():
         if tests[i] != expectedResults[i]:
             print(f"ASSERTION ERROR IN TEST {i + 1}")
 
+def testSupertailFinder():
+    graphNodes: list[Node] = [
+        Node(children=[1],parents=[4],latentParent=4),
+        Node(children=[2],parents=[0,4],latentParent=4),
+        Node(children=[3],parents=[1,5],latentParent=5),
+        Node(children=[],parents=[2,5],latentParent=5),
+        Node(children=[0,1],parents=[],latentParent=None),
+        Node(children=[2,3],parents=[],latentParent=None)
+    ]
+    
+    setS, setT, setU = SupertailFinder.findSuperTail(1, 3, graphNodes)
+    result = [setS, setT, setU]    
+    expectedResult = [{2,3}, {1}, {5}]    
+    cases: str = "STU"
+    
+    for i in range(len(expectedResult)):
+        check = True
+        set1: set[int] = result[i].copy()
+        for element in expectedResult[i]:
+            if element not in set1:
+                check = False
+                break
+
+            set1.remove(element)                        
+        
+        if (not check) or (len(set1) > 0):            
+            print(f"Error in set{cases[i]} ")
+
+
 def main():
     testDseparation()
+    testSupertailFinder()
 
 if __name__ == "__main__":
     main() 
