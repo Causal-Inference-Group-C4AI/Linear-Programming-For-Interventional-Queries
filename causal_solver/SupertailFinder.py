@@ -1,23 +1,47 @@
-from dataclasses import dataclass
-
-@dataclass
-class Node:
-    children    : list[int]
-    parents     : list[int]
-    latentParent: int
+from causal_solver.Node import Node
 
 class SupertailFinder:
     """
-    Finds the supertail T given a DAG and an intervention (target and intervention variables)
+    Finds the supertail T given a DAG and an intervention (target and intervention variables).
     """
     def findSuperTail(interventionNode: int, targetNode: int, graphNodes: list[Node]):
         """
-        Given a graph, the node under intervention and the target node, it computes the supertail T and the set of latent
-        variables U such that T and U are independent.
+        Given a graph, the node under intervention X and the target node Y, it computes the supertail T and the set of latent
+        variables U such that T is independent of U and X.
         """
         setS: set[int] = set([targetNode])
         setU: set[int] = set([graphNodes[targetNode].latentParent])
-        setT: set[int] = set([interventionNode])            
+        setT: set[int] = set() 
+
+        for node in setS:
+            for parentNode in graphNodes[node].parents:
+                if (parentNode not in setU) and (parentNode not in setS) and (parentNode != interventionNode):
+                    setT.add(parentNode)
+
+        independencyCondition = False
+        while not independencyCondition:
+            independencyCondition = True
+            for supertailVar in setT:
+                if not SupertailFinder.areDSeparated(node=supertailVar, targetNodes=(setU|set([interventionNode])), graphNodes=graphNodes):
+                    independencyCondition = False
+                    setT.remove(supertailVar)
+                    setU.add(graphNodes[supertailVar].latentParent)
+                    setS.add(supertailVar)
+                    setT.update(set(graphNodes[supertailVar].parents) - (setS | setU | set([interventionNode])))    
+                    break
+                
+        return setS, setT, setU
+    
+    def findSuperTailLatent(latentNode: int, graphNodes: list[Node], completeSetS: set[int]):
+        """
+        Given a graph, it determines the minimal U,S,T such that latentNode is in U and T is independent of U.
+        latentNode: latentNode which should be included in U
+        graphNodes: the graph - all nodes parents and children
+        completeSetS: variables in the setS of the objective function plus the intervention variable
+        """
+        setU: set[int] = set([latentNode])
+        setS: set[int] = set(graphNodes[latentNode].children) & completeSetS
+        setT: set[int] = set()
 
         for node in setS:
             for parentNode in graphNodes[node].parents:
@@ -28,26 +52,25 @@ class SupertailFinder:
         while not independencyCondition:
             independencyCondition = True
             for supertailVar in setT:
-                if not SupertailFinder.areDSeparated(node=supertailVar, targetNodes=setU, graphNodes=graphNodes):
+                if not SupertailFinder.areDSeparated(node=supertailVar, targetNodes=(setU), graphNodes=graphNodes):
                     independencyCondition = False
                     setT.remove(supertailVar)
                     setU.add(graphNodes[supertailVar].latentParent)
                     setS.add(supertailVar)
-                    setT.update(set(graphNodes[supertailVar].parents) - setS.union(setU))                    
+                    setT.update(set(graphNodes[supertailVar].parents) - (setS | setU))    
                     break
                 
-        return setS, setT, setU
+        return list(setS), list(setT), list(setU)
 
     def areDSeparated(node: int, targetNodes: set[int], graphNodes: list[Node]):
         """
         checks if a node is d-separated from a set of targetNodes in a given a DAG. Returns true if there is independency
         between then node and any in the set.            
         """
-        
-        visited: set[int] = set()        
+        visited: set[int] = set()
         SupertailFinder.customDfs(node, graphNodes, visited, 2)
 
-        return 1 if len(visited.intersection(targetNodes)) == 0 else 0            
+        return 1 if len(visited.intersection(targetNodes)) == 0 else 0
 
     def customDfs(currNode: int, graphNodes: list[Node], visited: set[int], lastDirection: int):
         """
@@ -101,10 +124,11 @@ def testSupertailFinder():
     ]
     
     setS, setT, setU = SupertailFinder.findSuperTail(1, 3, graphNodes)
-    result = [setS, setT, setU]    
-    expectedResult = [{2,3}, {1}, {5}]    
+    result = [setS, setT, setU]
+    print(f"Obtained result: {result}")
+    expectedResult = [{2,3}, set(), {5}]
     cases: str = "STU"
-    
+
     for i in range(len(expectedResult)):
         check = True
         set1: set[int] = result[i].copy()
@@ -113,9 +137,9 @@ def testSupertailFinder():
                 check = False
                 break
 
-            set1.remove(element)                        
+            set1.remove(element)
         
-        if (not check) or (len(set1) > 0):            
+        if (not check) or (len(set1) > 0):
             print(f"Error in set{cases[i]} ")
 
 
@@ -124,5 +148,4 @@ def main():
     testSupertailFinder()
 
 if __name__ == "__main__":
-    main() 
- 
+    main()

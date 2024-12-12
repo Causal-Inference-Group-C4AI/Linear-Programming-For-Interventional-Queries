@@ -2,7 +2,8 @@ import pandas as pd
 from collections import namedtuple
 import itertools
 
-from causal_solver.SupertailFinder import Node
+from causal_solver.Node import Node
+from causal_solver.Supersets import Supersets
 
 dictAndIndex = namedtuple('dictAndIndex', ['mechanisms', 'index'])
 
@@ -10,29 +11,77 @@ class Helper:
     """
     Common methods used to create the optimization problem
     """
+    def equationsSimplifier(triples: list[Supersets], latentList: list[int], latentSetsDict: dict[int, Supersets]):
+        """
+        Input:
+        Triples: list of (U,S,T) to be merged.
+        latentList: setU of the objective function
+        latentSetsDict: dictionary that receives a latent in latentList and returns an object with the setS, setT obtained from
+        the supertail finder algorithm when initialized with this latent variable.
+        
+        Output: 
+        list of merged(U,S,T).
+        """
+        adjNodes: dict[int, list[int]] ={}
+        for latent in latentList:
+            adjNodes[latent] = []
+
+        for triple in triples:
+            if len(triple.listU) > 1:
+                firstLatent: int = triple.listU[0]        
+                for adjLatent in triple.listU:                    
+                    if (adjLatent != firstLatent) and (adjLatent not in adjNodes[firstLatent]):
+                        adjNodes[firstLatent].append(adjLatent)
+                        adjNodes[adjLatent].append(firstLatent)
+    
+        maximalConnectedComponents: list[list[int]] = []
+        visited: dict[int, bool] = {}
+        for latentNode in latentList:
+            visited[latentNode] = False
+
+        for latentNode in latentList:
+            if not visited[latentNode]:
+                connectedSuperset = Supersets(listS=[],listT=[],listU=[])
+                Helper.dfsHelper(currNode=latentNode, visited=visited,connectedSuperset=connectedSuperset, adjNodes=adjNodes,
+                                 latentSetsDict=latentSetsDict)
+                maximalConnectedComponents.append(connectedSuperset)
+    
+        return maximalConnectedComponents
+
+    def dfsHelper(currNode: int, visited: dict[int, bool], connectedSuperset: Supersets, adjNodes: dict[int, list[int]],
+                  latentSetsDict: dict[int, Supersets]):        
+        visited[currNode] = True
+        connectedSuperset.listU.append(currNode)
+        connectedSuperset.listS = list(set(connectedSuperset.listS) | set(latentSetsDict[currNode].listS))
+        connectedSuperset.listT = list((set(connectedSuperset.listT) | set(latentSetsDict[currNode].listT)) - set(connectedSuperset.listS))
+
+        for node in adjNodes[currNode]:
+            if not visited[node]:
+                Helper.dfsHelper(node, visited, connectedSuperset, adjNodes, latentSetsDict)
+
     def findConditionalProbability(dataFrame, indexToLabel, targetRealization: dict[int, int], conditionRealization: dict[int, int], v=True):
         """
         dataFrame              : pandas dataFrama that contains the data from the csv
         indexToLabel           : dictionary that converts an endogenous variable index to its label
         targetRealization      : specifies the values assumed by the endogenous variables V
         conditionalRealization : specifies the values assumed by the c-component tail T
-        
+
         Calculates: P(V|T) = P(V,T) / P(T)
-        """            
+        """
         conditionProbability = Helper.findProbability(dataFrame, indexToLabel, conditionRealization, False)
 
         if conditionProbability == 0:
             return 0
 
         targetAndConditionProbability = Helper.findProbability(dataFrame, indexToLabel, targetRealization | conditionRealization, False)
-        
+
         return targetAndConditionProbability / conditionProbability
-    
-    def findProbability(dataFrame, indexToLabel, variableRealizations: dict[int, int], v=True):        
+
+    def findProbability(dataFrame, indexToLabel, variableRealizations: dict[int, int], v=True):
         conditions = pd.Series([True] * len(dataFrame), index=dataFrame.index)
         for variable in variableRealizations:
             conditions &= (dataFrame[indexToLabel[variable]] == variableRealizations[variable])
-            
+
         compatibleCasesCount = dataFrame[conditions].shape[0]
         if v:
             print(f"Count compatible cases: {compatibleCasesCount}")
@@ -56,7 +105,7 @@ class Helper:
     def generateCrossProducts(sets: list[list[int]]):        
         crossProductsTuples = itertools.product(*sets)
         return [list(combination) for combination in crossProductsTuples]
-    
+
     def mechanisms_generator(latentNode: int, endogenousNodes: list[int], cardinalities: dict[int, int], graphNodes: list[Node], v=True):
         """
         Generates an enumeration (list) of all mechanism a latent value can assume in its c-component. The c-component has to have
@@ -92,12 +141,12 @@ class Helper:
             functionDomain: list[list[int]] = [list(auxTuple) for auxTuple in itertools.product(*auxSpaces)]
             if v:
                 print(functionDomain)
-        
-            imageValues: list[int] = range(cardinalities[var])            
-            
+
+            imageValues: list[int] = range(cardinalities[var])
+
             varResult = [[domainCase + [c] for c in imageValues] for domainCase in functionDomain]
             if v:
-                print(f"For variable {var}:")                        
+                print(f"For variable {var}:")          
                 print(f"Function domain: {functionDomain}")
                 print(f"VarResult: {varResult}")
 
@@ -136,22 +185,22 @@ class Helper:
         
         return allPossibleMechanisms, dictKeys, mechanismDicts
 
-    def mechanismListGenerator(cardinalities: dict[int, int], setU: list[int], graphNodes: list[Node]):
-        
-        mechanismDictsList: list[list[dictAndIndex]] = [] # Same order as in list U
+    def mechanismListGenerator(cardinalities: dict[int, int], listU: list[int], setS: set[int], graphNodes: list[Node]):
+        mechanismDictsList: list[list[dictAndIndex]] = [] # Same order as in listU
         globalIndex: int = 0
         latentCardinalities: dict[int, int] = {}
-        for latentVariable in setU:                                                    
-            _, _, mechanismDicts = Helper.mechanisms_generator(latentNode=latentVariable,endogenousNodes=graphNodes[latentVariable].children,
+        for latentVariable in listU:
+            endogenousInS: list[int] = list(set(graphNodes[latentVariable].children) & setS)
+            _, _, mechanismDicts = Helper.mechanisms_generator(latentNode=latentVariable, endogenousNodes=endogenousInS,
                                             cardinalities=cardinalities,graphNodes=graphNodes,v=False)
-                    
-            mechanismIndexDict: list[dictAndIndex] = []            
+
+            mechanismIndexDict: list[dictAndIndex] = []
             initVal: int = globalIndex
             for mechanismDict in mechanismDicts:
                 mechanismIndexDict.append(dictAndIndex(mechanismDict, globalIndex))
-                globalIndex += 1            
-            
+                globalIndex += 1
+
             latentCardinalities[latentVariable] = globalIndex - initVal
-            mechanismDictsList.append(mechanismIndexDict)        
-        
+            mechanismDictsList.append(mechanismIndexDict)
+
         return mechanismDictsList, latentCardinalities

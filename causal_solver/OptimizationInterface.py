@@ -1,7 +1,9 @@
 from causal_solver.NonLinearConstraints import NonLinearConstraints
 from partition_methods.relaxed_problem.python.graph import Graph 
 from causal_solver.Helper import Helper
-from causal_solver.SupertailFinder import Node, SupertailFinder
+from causal_solver.SupertailFinder import SupertailFinder
+from causal_solver.Supersets import Supersets
+
 from collections import namedtuple
 
 equationsObject = namedtuple('equationsObject', ['probability', 'dictionary'])
@@ -14,21 +16,21 @@ class OptimizationInterface:
         
         print(f"For an inference P(Y=y|do(X=x)) please, enter, in this order: X, x, Y, y")
         interventionVariableLabel, interventionVariableValue, targetVariableLabel, targetVariableValue = input().split()
-        interventionVariable = dag.labelToIndex[interventionVariableLabel]
-        targetVariable       = dag.labelToIndex[targetVariableLabel]
+        interventionVariable      = dag.labelToIndex[interventionVariableLabel]
+        targetVariable            = dag.labelToIndex[targetVariableLabel]
         interventionVariableValue = int(interventionVariableValue)
-        targetVariableValue = int(targetVariableValue)
+        targetVariableValue       = int(targetVariableValue)
 
-        setS, setT, setU = SupertailFinder.findSuperTail(node1=interventionVariable, node2=targetVariable, graphNodes=dag.graphNodes)
-        print(f"Debug supertail algorithm:\nlistS: {setS}\nlistU: {setU}\nlistT: {setT}")
+        setS, setT, setU = SupertailFinder.findSuperTail(interventionNode=interventionVariable, targetNode=targetVariable, graphNodes=dag.graphNodes)
+        listS, listT, listU = (list(setS), list(setT), list(setU))
 
         mechanismDictsList, _ = Helper.mechanismListGenerator(cardinalities=dag.cardinalities,
-                                setU=list(setU), graphNodes=dag.graphNodes)
+                                listU=listU, setS=(setS|set([interventionVariable])), graphNodes=dag.graphNodes)        
 
         objectiveFunction: dict[str, int] = NonLinearConstraints.objectiveFunctionBuilder(mechanismDictsList=mechanismDictsList,
                                     graphNodes=dag.graphNodes,
                                     cardinalities=dag.cardinalities,
-                                    listS=list(setS), listT=list(setT), listU=list(setU),
+                                    listS=listS, listT=listT, listU=listU,
                                     interventionVariable=interventionVariable,
                                     interventionValue=interventionVariableValue,
                                     targetVariable=targetVariable,
@@ -39,32 +41,46 @@ class OptimizationInterface:
                                     verbose=verbose
                                     )
 
-        equations: list[equationsObject] = NonLinearConstraints.equationsGenerator(mechanismDictsList=mechanismDictsList,
-                                    setT=list(setT),
-                                    setS=list(setS),
-                                    setU=list(setU),
+        completeSetS = setS | set([interventionVariable])
+        triples: list[Supersets] = []
+        latentSetsDict: dict[int, Supersets] = {}
+        for latentCompanion in listU:
+            auxS, auxT, auxU = SupertailFinder.findSuperTailLatent(latentCompanion, dag.graphNodes, completeSetS)
+            triples.append(Supersets(listS=auxS, listU=auxU, listT=auxT))
+            latentSetsDict[latentCompanion] = Supersets(listS=auxS, listU=[latentCompanion], listT=auxT)
+        
+        simplifiedTriples: list[Supersets] = Helper.equationsSimplifier(triples=triples, 
+                                            latentSetsDict=latentSetsDict,latentList=listU) 
+
+        tripleEquations: list[list[equationsObject]] = []
+        for triple in simplifiedTriples:
+            equations: list[equationsObject] = NonLinearConstraints.equationsGenerator(mechanismDictsList=mechanismDictsList,
+                                    listT=triple.listT,
+                                    listS=triple.listS,
+                                    listU=triple.listU,
                                     cardinalities=dag.cardinalities,
                                     graphNodes=dag.graphNodes,
                                     topoOrder=dag.topologicalOrder,
                                     indexToLabel=dag.indexToLabel,
                                     filepath='itau.csv'
-                                    )      
-        return objectiveFunction, equations
-        
+                                    )
+            tripleEquations.append(equations)
+
+        return objectiveFunction, tripleEquations
+
 def main():
-    obj, equations = OptimizationInterface.optimizationProblem(verbose=True)    
+    obj, equations = OptimizationInterface.optimizationProblem(verbose=True)
 
     dbgCnt = 3
-    for i, eq in enumerate(equations):
-        if i == dbgCnt:
-            break        
+    for i, eq in enumerate(equations[0]):
+            if i == dbgCnt:
+                break
 
-        print(f"Equation {i + 1}:\nprob = {eq.probability}\n")
-        for j, key in enumerate(eq.dictionary):
-            if j == dbgCnt:
-                break            
-            print(f"for key = {key}, coefficient = {eq.dictionary[key]}")
+            print(f"Equation {i + 1}:\nprob = {eq.probability}\n")
+            for j, key in enumerate(eq.dictionary):
+                if j == dbgCnt:
+                    break
+                print(f"for key = {key}, coefficient = {eq.dictionary[key]}")
 
 if __name__ == "__main__":
     main()
-        

@@ -13,7 +13,7 @@ class NonLinearConstraints:
     are already inserted in the graph and assume d-separation to be its equivalent.
     The case1 is when both the variable under intervention as well as the target variable are in the same c-component
     """
-    def equationsGenerator(mechanismDictsList: list[list[dictAndIndex]], setT: list[int], setS: list[int], setU: list[int],
+    def equationsGenerator(mechanismDictsList: list[list[dictAndIndex]], listT: list[int], listS: list[int], listU: list[int],
                             cardinalities: dict[int,int], graphNodes: list[Node], topoOrder: list[int], indexToLabel: dict[int, str],
                             filepath: str):
         """
@@ -39,28 +39,28 @@ class NonLinearConstraints:
 
         topoOrderAux: list[int] = topoOrder.copy()
         for node in topoOrder:
-            if (node not in setS) and (node in topoOrderAux):
+            if (node not in listS) and (node in topoOrderAux):
                 topoOrderAux.remove(node)
 
         cardinalitiesTail: dict[int, int] = {}; cardinalitiesEndo: dict[int, int] = {}
         for key in cardinalities:
-            if key in setT:
+            if key in listT:
                 cardinalitiesTail[key] = cardinalities[key]
-            elif key in setS:
+            elif key in listS:
                 cardinalitiesEndo[key] = cardinalities[key]
 
-        tailSpace: list[list[int]] = Helper.helperGenerateSpaces(nodes=setT, cardinalities=cardinalitiesTail)
+        tailSpace: list[list[int]] = Helper.helperGenerateSpaces(nodes=listT, cardinalities=cardinalitiesTail)
         tailCombinations = Helper.generateCrossProducts(tailSpace)
-        endoSpace = Helper.helperGenerateSpaces(nodes=setS,  cardinalities=cardinalitiesEndo)
+        endoSpace = Helper.helperGenerateSpaces(nodes=listS,  cardinalities=cardinalitiesEndo)
         endoCombinations = Helper.generateCrossProducts(endoSpace)
         latentCombinations = Helper.generateCrossProducts(mechanismDictsList)
 
         equations: list[equationsObject] = []
 
         for tailRealization in tailCombinations:
-            tailRealizationDict = dict(zip(setT, tailRealization))
+            tailRealizationDict = dict(zip(listT, tailRealization))
             for endoRealization in endoCombinations:
-                endoRealizationDict = dict(zip(setS, endoRealization))
+                endoRealizationDict = dict(zip(listS, endoRealization))
                 probability: float = Helper.findConditionalProbability(dataFrame=df,indexToLabel=indexToLabel,targetRealization=tailRealizationDict,
                                                   conditionRealization=endoRealizationDict)
                 
@@ -70,7 +70,7 @@ class NonLinearConstraints:
                                                 graphNodes=graphNodes,
                                                 topoOrder=topoOrderAux,
                                                 tailValues=tailRealizationDict,
-                                                latentVariables=setU,
+                                                latentVariables=listU,
                                                 expectedRealizations=endoRealizationDict,
                                                 )
                     indexer: str = ""
@@ -178,7 +178,7 @@ class NonLinearConstraints:
 
         for key in tailValues:
             computedNodes[key] = tailValues[key]
-                
+
         for node in topoOrder:
             dictKey: str = ""
             for parentOfNode in graphNodes[node].parents:
