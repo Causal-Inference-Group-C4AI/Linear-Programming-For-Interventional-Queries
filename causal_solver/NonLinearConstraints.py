@@ -61,8 +61,8 @@ class NonLinearConstraints:
             tailRealizationDict = dict(zip(listT, tailRealization))
             for endoRealization in endoCombinations:
                 endoRealizationDict = dict(zip(listS, endoRealization))
-                probability: float = Helper.findConditionalProbability(dataFrame=df,indexToLabel=indexToLabel,targetRealization=tailRealizationDict,
-                                                  conditionRealization=endoRealizationDict)
+                probability: float = Helper.findConditionalProbability(dataFrame=df,indexToLabel=indexToLabel,targetRealization=endoRealizationDict,
+                                                  conditionRealization=tailRealizationDict)
                 
                 coefficientsDict: dict[str,int] = {}
                 for latentRealization in latentCombinations:

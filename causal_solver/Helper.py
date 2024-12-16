@@ -74,7 +74,6 @@ class Helper:
             return 0
 
         targetAndConditionProbability = Helper.findProbability(dataFrame, indexToLabel, targetRealization | conditionRealization, False)
-        print(targetAndConditionProbability/conditionProbability)
         return targetAndConditionProbability / conditionProbability
 
     def findProbability(dataFrame, indexToLabel, variableRealizations: dict[int, int], v=True):
@@ -98,7 +97,7 @@ class Helper:
         return spaces
     
     def fetchCsv(filepath="balke_pearl.csv"):        
-        #prefix = "/home/c4ai-wsl/projects/Canonical-Partition/causal_solver/"
+        # prefix = "/home/c4ai-wsl/projects/Canonical-Partition/causal_solver/"
         prefix = "/home/joaog/Cpart/Canonical-Partition/causal_solver/"
         return pd.read_csv(prefix + filepath)
 
