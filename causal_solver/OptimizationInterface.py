@@ -69,9 +69,9 @@ class OptimizationInterface:
         return objectiveFunction, tripleEquations, latentCardinalities
 
 def main():
-    obj, equations = OptimizationInterface.optimizationProblem(verbose=True)
+    obj, equations, _ = OptimizationInterface.optimizationProblem(verbose=True)
 
-    dbgCnt = 3
+    dbgCnt = 100
     for i, eq in enumerate(equations[0]):
             if i == dbgCnt:
                 break
