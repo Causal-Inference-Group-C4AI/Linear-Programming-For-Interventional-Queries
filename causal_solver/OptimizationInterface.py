@@ -24,7 +24,7 @@ class OptimizationInterface:
         setS, setT, setU = SupertailFinder.findSuperTail(interventionNode=interventionVariable, targetNode=targetVariable, graphNodes=dag.graphNodes)
         listS, listT, listU = (list(setS), list(setT), list(setU))
 
-        mechanismDictsList, _ = Helper.mechanismListGenerator(cardinalities=dag.cardinalities,
+        mechanismDictsList, latentCardinalities = Helper.mechanismListGenerator(cardinalities=dag.cardinalities,
                                 listU=listU, setS=(setS|set([interventionVariable])), graphNodes=dag.graphNodes)        
 
         objectiveFunction: dict[str, int] = NonLinearConstraints.objectiveFunctionBuilder(mechanismDictsList=mechanismDictsList,
@@ -36,7 +36,7 @@ class OptimizationInterface:
                                     targetVariable=targetVariable,
                                     targetValue=targetVariableValue,
                                     topoOrder=dag.topologicalOrder,
-                                    filepath="itau.csv",
+                                    filepath="balke_pearl.csv",
                                     indexToLabel=dag.indexToLabel,
                                     verbose=verbose
                                     )
@@ -62,11 +62,11 @@ class OptimizationInterface:
                                     graphNodes=dag.graphNodes,
                                     topoOrder=dag.topologicalOrder,
                                     indexToLabel=dag.indexToLabel,
-                                    filepath='itau.csv'
+                                    filepath='balke_pearl.csv'
                                     )
             tripleEquations.append(equations)
 
-        return objectiveFunction, tripleEquations
+        return objectiveFunction, tripleEquations, latentCardinalities
 
 def main():
     obj, equations = OptimizationInterface.optimizationProblem(verbose=True)
