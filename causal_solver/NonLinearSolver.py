@@ -32,7 +32,7 @@ def createModel(objective : dict[str, float], constraints : list[list[equationsO
     
     
     model = pyo.ConcreteModel(name = "opt")
-    model.q = pyo.Var(range(numVar), bounds=(0,1), within = pyo.Reals)
+    model.q = pyo.Var(range(numVar), bounds=(0,1), within = pyo.Reals, initialize = initVal)
     model.eqConstrain = pyo.ConstraintList()
     def o_rule(model):
         expr = 0
@@ -47,7 +47,7 @@ def createModel(objective : dict[str, float], constraints : list[list[equationsO
                 expr += aux
         return expr
     
-    model.obj = pyo.Objective( rule = o_rule ,sense=pyo.maximize)
+    model.obj = pyo.Objective(rule = o_rule, sense=pyo.maximize)
     for group in constraints:
         for eqn in group:
             expr = 0
@@ -59,7 +59,7 @@ def createModel(objective : dict[str, float], constraints : list[list[equationsO
                         for u in unobs:
                             aux *= model.q[u]
                         expr += aux
-            model.eqConstrain.add(expr == eqn.probability)
+            model.eqConstrain.add((expr == eqn.probability))
 
     for i in range(1, len(latentsNums)):
         expr = 0
@@ -75,4 +75,4 @@ if __name__ == "__main__":
     model.display()
     opt = SolverFactory("ipopt")
     results = opt.solve(model)
-    print(results)
+    print(pyo.value(model.obj))
