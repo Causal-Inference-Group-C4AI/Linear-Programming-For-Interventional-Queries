@@ -13,6 +13,8 @@ class OptimizationInterface:
     def optimizationProblem(verbose: bool):
         print(f"Please, enter the graph in the default format")
         dag: Graph = Graph.parse()
+        print("Please, enter a path for the csv")
+        csvPath: str = input()
         
         print(f"For an inference P(Y=y|do(X=x)) please, enter, in this order: X, x, Y, y")
         interventionVariableLabel, interventionVariableValue, targetVariableLabel, targetVariableValue = input().split()
@@ -36,7 +38,7 @@ class OptimizationInterface:
                                     targetVariable=targetVariable,
                                     targetValue=targetVariableValue,
                                     topoOrder=dag.topologicalOrder,
-                                    filepath="balke_pearl.csv",
+                                    filepath=csvPath,
                                     indexToLabel=dag.indexToLabel,
                                     verbose=verbose
                                     )
@@ -62,7 +64,7 @@ class OptimizationInterface:
                                     graphNodes=dag.graphNodes,
                                     topoOrder=dag.topologicalOrder,
                                     indexToLabel=dag.indexToLabel,
-                                    filepath='balke_pearl.csv'
+                                    filepath=csvPath
                                     )
             tripleEquations.append(equations)
 

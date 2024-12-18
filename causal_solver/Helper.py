@@ -154,7 +154,7 @@ class Helper:
                 for index, el in enumerate(domainCase):
                     key = key + f"{orderedParents[index]}={el},"
                 dictKeys.append(key[:-1])
-            
+
             allCasesList  = allCasesList + varResult
         
         if v:
