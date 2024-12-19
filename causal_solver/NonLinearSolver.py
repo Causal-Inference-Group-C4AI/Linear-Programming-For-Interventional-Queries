@@ -20,7 +20,7 @@ def dictKey_to_index(key : str):
     return unobCardinalities
 
 
-def createModel(objective : dict[str, float], constraints : list[list[equationsObject]],latentCardinalities: list[int],
+def createModel(objective : dict[str, float], constraints : list[list[equationsObject]],latentCardinalities: list[int], maximize : bool = False,
                  initVal: float = .5):
     
     numVar: int = 0
@@ -46,8 +46,10 @@ def createModel(objective : dict[str, float], constraints : list[list[equationsO
                     aux *= model.q[u]
                 expr += aux
         return expr
-    
-    model.obj = pyo.Objective(rule = o_rule, sense=pyo.maximize)
+    if maximize :
+        model.obj = pyo.Objective(rule = o_rule, sense = pyo.maximize)
+    else:
+        model.obj = pyo.Objective(rule = o_rule, sense = pyo.minimize)
     for group in constraints:
         for eqn in group:
             expr = 0
@@ -68,11 +70,66 @@ def createModel(objective : dict[str, float], constraints : list[list[equationsO
         model.eqConstrain.add(expr == 1.)
     return model
 
+def solvModel(objective : dict[str, float], constraints : list[list[equationsObject]],latentCardinalities: list[int],verbose: bool = False,
+                 initVal: float = .5):
+    
+    opt = SolverFactory("ipopt")
+    numVar: int = 0
+    latentsNums: list[int] = [0]
+    
+    for key in latentCardinalities:
+        latentsNums.append(latentCardinalities[key] + numVar)
+        numVar += latentCardinalities[key]
+    
+    
+    model = pyo.ConcreteModel(name = "opt")
+    model.q = pyo.Var(range(numVar), bounds=(0,1), within = pyo.Reals, initialize = initVal)
+    model.eqConstrain = pyo.ConstraintList()
+    def o_rule(model):
+        expr = 0
+        for key in objective:
+            coef = objective[key]
+            unobs = dictKey_to_index(key= key)
+                
+            if coef > 0:
+                aux = coef
+                for u in unobs:
+                    aux *= model.q[u]
+                expr += aux
+        return expr
+    
+    model.obj = pyo.Objective(rule = o_rule, sense = pyo.maximize)
+        
+    for group in constraints:
+        for eqn in group:
+            expr = 0
+            for key in eqn.dictionary:
+                coef = eqn.dictionary[key]
+                unobs = dictKey_to_index(key = key)
+                if coef > 0:
+                        aux = coef
+                        for u in unobs:
+                            aux *= model.q[u]
+                        expr += aux
+            model.eqConstrain.add((expr == eqn.probability))
+
+    for i in range(1, len(latentsNums)):
+        expr = 0
+        for var in range(latentsNums[i -1], latentsNums[i]):
+            expr += model.q[var]
+        model.eqConstrain.add(expr == 1.)
+    
+    results = opt.solve(model)
+    maximum = pyo.value(model.obj)
+    print(f"MAX Query:{maximum}")
+    model.del_component(model.obj)
+    model.obj = pyo.Objective(rule = o_rule, sense = pyo.minimize) 
+    results = opt.solve(model)
+    minimum = pyo.value(model.obj)
+    print(f"MIN query: {minimum}")
+    return minimum, maximum
+
 if __name__ == "__main__":
     objective, constraints, latentsCardinalities = OptimizationInterface.optimizationProblem(verbose = False)
-    model = createModel(objective= objective, constraints= constraints,latentCardinalities= latentsCardinalities)
-    #model.obj.pprint()
-    model.display()
-    opt = SolverFactory("ipopt")
-    results = opt.solve(model)
-    print(pyo.value(model.obj))
+    #model = createModel(objective= objective, constraints= constraints,latentCardinalities= latentsCardinalities, maximize= True)
+    _,_ = solvModel(objective= objective, constraints= constraints, latentCardinalities= latentsCardinalities)
