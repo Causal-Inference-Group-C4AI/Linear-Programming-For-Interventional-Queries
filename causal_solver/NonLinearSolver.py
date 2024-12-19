@@ -127,9 +127,12 @@ def solvModel(objective : dict[str, float], constraints : list[list[equationsObj
     results = opt.solve(model)
     minimum = pyo.value(model.obj)
     print(f"MIN query: {minimum}")
+    if verbose:
+        model.obj.pprint()
+        model.eqConstrain.pprint()
     return minimum, maximum
 
 if __name__ == "__main__":
     objective, constraints, latentsCardinalities = OptimizationInterface.optimizationProblem(verbose = False)
     #model = createModel(objective= objective, constraints= constraints,latentCardinalities= latentsCardinalities, maximize= True)
-    _,_ = solvModel(objective= objective, constraints= constraints, latentCardinalities= latentsCardinalities)
+    _, _ = solvModel(objective= objective, constraints= constraints, latentCardinalities= latentsCardinalities, verbose=True)
