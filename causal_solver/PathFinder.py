@@ -6,6 +6,7 @@ def inCcomponent(graph : Graph, node : int):
           if node in cComponent:
                return graph.dagComponents.index(cComponent)
      return None
+
 #Encontra o caminho de c-Components entre os nós
 def findPath_it(nodes : list[int], graph : Graph, possiblePath : set[tuple] = set()):
     # dest | do(src) 

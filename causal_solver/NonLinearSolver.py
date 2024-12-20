@@ -1,7 +1,5 @@
-from OptimizationInterface import OptimizationInterface
 import pyomo.environ  as pyo
 from collections import namedtuple
-from causal_solver.NonLinearConstraints import *
 from pyomo.opt import * 
 
 equationsObject = namedtuple('equationsObject', ['probability', 'dictionary'])
@@ -9,28 +7,25 @@ equationsObject = namedtuple('equationsObject', ['probability', 'dictionary'])
 def dictKey_to_index(key : str):
     unobCardinalities: list[int] = []
     commma_index: list[int] = [0]
-    
+
     for index,num in enumerate(key):
         if num == ",":
             unobCardinalities.append(int(key[commma_index[-1]:index]))
             commma_index.append(index + 1)
         elif index == len(key) - 1:
-            unobCardinalities.append(int(key[commma_index[-1]:]))    
-    
+            unobCardinalities.append(int(key[commma_index[-1]:]))
     return unobCardinalities
 
 
 def createModel(objective : dict[str, float], constraints : list[list[equationsObject]],latentCardinalities: list[int], maximize : bool = False,
                  initVal: float = .5):
-    
     numVar: int = 0
     latentsNums: list[int] = [0]
-    
+
     for key in latentCardinalities:
         latentsNums.append(latentCardinalities[key] + numVar)
         numVar += latentCardinalities[key]
-    
-    
+
     model = pyo.ConcreteModel(name = "opt")
     model.q = pyo.Var(range(numVar), bounds=(0,1), within = pyo.Reals, initialize = initVal)
     model.eqConstrain = pyo.ConstraintList()
@@ -39,7 +34,7 @@ def createModel(objective : dict[str, float], constraints : list[list[equationsO
         for key in objective:
             coef = objective[key]
             unobs = dictKey_to_index(key= key)
-                
+
             if coef > 0:
                 aux = coef
                 for u in unobs:
@@ -70,7 +65,7 @@ def createModel(objective : dict[str, float], constraints : list[list[equationsO
         model.eqConstrain.add(expr == 1.)
     return model
 
-def solvModel(objective : dict[str, float], constraints : list[list[equationsObject]],latentCardinalities: list[int],verbose: bool = False,
+def solveModel(objective : dict[str, float], constraints : list[list[equationsObject]],latentCardinalities: list[int],verbose: bool = False,
                  initVal: float = .5):
     
     opt = SolverFactory("ipopt")
@@ -127,12 +122,8 @@ def solvModel(objective : dict[str, float], constraints : list[list[equationsObj
     results = opt.solve(model)
     minimum = pyo.value(model.obj)
     print(f"MIN query: {minimum}")
+
     if verbose:
         model.obj.pprint()
         model.eqConstrain.pprint()
     return minimum, maximum
-
-if __name__ == "__main__":
-    objective, constraints, latentsCardinalities = OptimizationInterface.optimizationProblem(verbose = False)
-    #model = createModel(objective= objective, constraints= constraints,latentCardinalities= latentsCardinalities, maximize= True)
-    _, _ = solvModel(objective= objective, constraints= constraints, latentCardinalities= latentsCardinalities, verbose=True)

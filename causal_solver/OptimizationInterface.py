@@ -1,4 +1,5 @@
 from causal_solver.NonLinearConstraints import NonLinearConstraints
+from causal_solver.NonLinearSolver import solveModel
 from partition_methods.relaxed_problem.python.graph import Graph 
 from causal_solver.Helper import Helper
 from causal_solver.SupertailFinder import SupertailFinder
@@ -10,12 +11,12 @@ equationsObject = namedtuple('equationsObject', ['probability', 'dictionary'])
 latentAndCcomp = namedtuple('latentAndCcomp', ['latent', 'nodes'])
 
 class OptimizationInterface:
-    def optimizationProblem(verbose: bool):
+    def optimizationProblem(fromInterface=False, nodesStr="", edgesStr="", verbose=False):
         print(f"Please, enter the graph in the default format")
-        dag: Graph = Graph.parse()
+        dag: Graph = Graph.parse(fromInterface=fromInterface,nodesString=nodesStr, edgesString=edgesStr)
         print("Please, enter a path for the csv")
         csvPath: str = input()
-        
+
         print(f"For an inference P(Y=y|do(X=x)) please, enter, in this order: X, x, Y, y")
         interventionVariableLabel, interventionVariableValue, targetVariableLabel, targetVariableValue = input().split()
         interventionVariable      = dag.labelToIndex[interventionVariableLabel]
@@ -68,9 +69,9 @@ class OptimizationInterface:
                                     )
             tripleEquations.append(equations)
 
-        return objectiveFunction, tripleEquations, latentCardinalities
+        return solveModel(objective=objectiveFunction, constraints=tripleEquations,latentCardinalities=latentCardinalities,verbose=False,initVal=.5)
 
-def main():
+def testBuildProblem():
     obj, equations, _ = OptimizationInterface.optimizationProblem(verbose=True)
 
     dbgCnt = 100
@@ -84,5 +85,10 @@ def main():
                     break
                 print(f"for key = {key}, coefficient = {eq.dictionary[key]}")
 
+def testSolution():
+    lower, upper = OptimizationInterface.optimizationProblem(verbose = False)
+    print(f"Results: [{lower},{upper}]")
+
 if __name__ == "__main__":
-    main()
+    # testBuildProblem()
+    testSolution()

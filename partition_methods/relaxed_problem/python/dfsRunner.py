@@ -1,6 +1,6 @@
 from .graph import Graph
 
-class DfsRunner:            
+class DfsRunner:
     def dfs(node: int, graph: Graph):
         graph.visited[node] = True
         graph.currNodes.append(node)

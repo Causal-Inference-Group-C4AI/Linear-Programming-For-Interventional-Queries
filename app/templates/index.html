@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Define graph and query</title>
+</head>
+<body>
+    <h1>Graph and query definition</h1>
+    <form action="/upload" method="POST" enctype="multipart/form-data">
+        <label for="nodes">Cardinalities (use 0 for latent variables) </label><br>
+        <input type="text" id="nodes" name="nodes" placeholder="A=2,B=2,C=0,D=4" required><br><br>
+        
+        <label for="edges">Edges (from left to right)</label><br>
+        <input type="text" id="edges" name="edges" placeholder="A->B,B->C,C->D" required><br><br>
+
+        <label for="file">Upload csv</label>
+        <input type="file" id="file" name="file" accept=".csv" placeholder="data.csv" required>
+        <br><br>
+
+        <button type="submit">Send graph</button>
+    </form>
+</body>
+</html>

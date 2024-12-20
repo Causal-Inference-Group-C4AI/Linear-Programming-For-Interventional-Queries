@@ -3,8 +3,8 @@ from causal_solver.SupertailFinder import Node
 
 class Graph:
     def __init__(self, numberOfNodes: int, currNodes: list[int], visited: list[bool], cardinalities: dict[int, int],
-                 parents: list[int], adj: list[list[int]], labelToIndex: dict[str, int], indexToLabel: dict[int, str],
-                 dagComponents: list[list[int]], exogenous : list[int], endogenous : list[int], topologicalOrder: list[int], 
+                 parents: list[list[int]], adj: list[list[int]], labelToIndex: dict[str, int], indexToLabel: dict[int, str],
+                 dagComponents: list[list[int]], exogenous : list[int], endogenous : list[int], topologicalOrder: list[int],
                  DAG: nx.digraph, cComponentToUnob: dict[int, int], graphNodes: list[Node]):
 
         self.numberOfNodes = numberOfNodes
@@ -21,45 +21,70 @@ class Graph:
         self.topologicalOrder = topologicalOrder
         self.DAG = DAG
         self.cComponentToUnob = cComponentToUnob
-        
         self.graphNodes = graphNodes
 
-
-    def parse():
+    def parseTerminal():
         numberOfNodes = int(input())
         numberOfEdges = int(input())
-        
-        labelToIndexEx: dict[str, int] = {} 
-        indexToLabelEx: dict[int, str] = {} 
-        adjEx: list[list[int]] = [[] for _ in range(numberOfNodes)]
-        cardinalitiesEx = {}
-        visited_ex = [False] * (numberOfNodes)
-        parentsEx: list[list[int]] = [[] for _ in range(numberOfNodes)]
-        endogenIndex : list[int] = []
-        exogenIndex : list[int] = []
-        
+
+        labelToIndex: dict[str, int] = {}; indexToLabel: dict[int, str] = {}
+        adj: list[list[int]] = [[] for _ in range(numberOfNodes)]
+        cardinalities: dict[int, int] = {}
+        parents: list[list[int]] = [[] for _ in range(numberOfNodes)]
 
         for i in range(numberOfNodes):
             label, cardinality = input().split()
             cardinality = int(cardinality)
-            labelToIndexEx[label] = i
-            indexToLabelEx[i] = label
-            cardinalitiesEx[i] = cardinality
+            labelToIndex[label] = i
+            indexToLabel[i] = label
+            cardinalities[i] = cardinality
 
         for _ in range(numberOfEdges):
             u, v = input().split()
-            uIndex = labelToIndexEx[u]
-            vIndex = labelToIndexEx[v]
-            adjEx[uIndex].append(vIndex)
-            parentsEx[vIndex].append(uIndex)
+            uIndex = labelToIndex[u]
+            vIndex = labelToIndex[v]
+            adj[uIndex].append(vIndex)
+            parents[vIndex].append(uIndex)
 
+        return numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents
+
+    def parseInterface(nodesString: str, edgesString: str):
+        nodesAndCardinalitiesList: list[str] = nodesString.split(',')
+        numberOfNodes = len(nodesAndCardinalitiesList)
+
+        cardinalities: dict[int, int] = {}; labelToIndex: dict[str, int] = {}; indexToLabel: dict[int, str] = {}
+        adj    : list[list[int]] = [[] for _ in range(numberOfNodes)]
+        parents: list[list[int]] = [[] for _ in range(numberOfNodes)]
+
+        for i, element in enumerate(nodesAndCardinalitiesList):
+            auxPair = element.split('=')
+            cardinalities[i] = auxPair[1]
+            labelToIndex[auxPair[0]] = i
+            indexToLabel[i] = auxPair[0]
+            cardinalities[i] = int(auxPair[1])
+
+        for element in edgesString.split(','):            
+            elAux = element.split('->')            
+            fatherIndex = labelToIndex[elAux[0]] 
+            sonIndex = labelToIndex[elAux[1]]
+            adj[fatherIndex].append(sonIndex)
+            parents[sonIndex].append(fatherIndex)
+
+        return numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents
+
+    def parse(fromInterface=False, nodesString="", edgesString=""):
+        if fromInterface:            
+            auxTuple = Graph.parseInterface(nodesString, edgesString)
+        else:
+            auxTuple = Graph.parseTerminal()
+
+        numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents = auxTuple
 
         inpDAG: nx.DiGraph = nx.DiGraph()
-    
         for i in range(numberOfNodes):
             inpDAG.add_node(i)
     
-        for parent, edge in enumerate(adjEx):
+        for parent, edge in enumerate(adj):
             if bool(edge):
                for ch in edge:
                    inpDAG.add_edge(parent, ch)
@@ -68,36 +93,36 @@ class Graph:
         
         for i in range(numberOfNodes) :
         
-             name_node = indexToLabelEx[i] 
+             name_node = indexToLabel[i] 
 
              nx.relabel_nodes(inpDAG, {i : name_node}, copy=False)
-       
+
+        endogenIndex : list[int] = []; exogenIndex : list[int] = []
         for i in range(numberOfNodes):
-           
-           if not (bool(parentsEx[i])):
+           if not (bool(parents[i])):
                exogenIndex.append(i)
            else:
                endogenIndex.append(i)                
 
         graphNodes: list[Node] = [Node(latentParent=-1, parents=[], children=[]) for _ in range(numberOfNodes)]
         for node in range(numberOfNodes):
-            if cardinalitiesEx[node] == 0:
-                graphNodes[node] = Node(children=adjEx[node],parents=[],latentParent=None)
+            if cardinalities[node] == 0:
+                graphNodes[node] = Node(children=adj[node],parents=[],latentParent=None)
             else:
                 latentParent = -1
-                for nodeParent in parentsEx[node]:
-                    if cardinalitiesEx[nodeParent] == 0:
+                for nodeParent in parents[node]:
+                    if cardinalities[nodeParent] == 0:
                         latentParent = nodeParent
                         break
             
                 if latentParent == -1:
                     print(f"PARSE ERROR: ALL OBSERVABLE VARIABLES SHOULD HAVE A LATENT PARENT, BUT {node} DOES NOT.")
                 
-                graphNodes[node] = Node(children=adjEx[node],parents=parentsEx[node],latentParent=latentParent)
+                graphNodes[node] = Node(children=adj[node],parents=parents[node],latentParent=latentParent)
             pass
 
-        return Graph(numberOfNodes=numberOfNodes,currNodes=[], visited=visited_ex, cardinalities=cardinalitiesEx, parents=parentsEx, 
-                    adj=adjEx, indexToLabel=indexToLabelEx, labelToIndex=labelToIndexEx, dagComponents=[], exogenous= exogenIndex,endogenous = endogenIndex, topologicalOrder= order, DAG= inpDAG, 
+        return Graph(numberOfNodes=numberOfNodes,currNodes=[], visited=[False] * (numberOfNodes), cardinalities=cardinalities, parents=parents,
+                    adj=adj, indexToLabel=indexToLabel, labelToIndex=labelToIndex, dagComponents=[], exogenous= exogenIndex,endogenous = endogenIndex, topologicalOrder= order, DAG= inpDAG,
                     cComponentToUnob = {}, graphNodes=graphNodes)
     
     def dfs(self, node: int):        
