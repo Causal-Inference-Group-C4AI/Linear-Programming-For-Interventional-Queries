@@ -76,7 +76,6 @@ def solveModel(objective : dict[str, float], constraints : list[list[equationsOb
         latentsNums.append(latentCardinalities[key] + numVar)
         numVar += latentCardinalities[key]
     
-    
     model = pyo.ConcreteModel(name = "opt")
     model.q = pyo.Var(range(numVar), bounds=(0,1), within = pyo.Reals, initialize = initVal)
     model.eqConstrain = pyo.ConstraintList()
@@ -115,15 +114,15 @@ def solveModel(objective : dict[str, float], constraints : list[list[equationsOb
         model.eqConstrain.add(expr == 1.)
     
     results = opt.solve(model)
-    maximum = pyo.value(model.obj)
-    print(f"MAX Query:{maximum}")
+    upper = pyo.value(model.obj)
+    print(f"MAX Query:{upper}")
     model.del_component(model.obj)
     model.obj = pyo.Objective(rule = o_rule, sense = pyo.minimize) 
     results = opt.solve(model)
-    minimum = pyo.value(model.obj)
-    print(f"MIN query: {minimum}")
+    lower = pyo.value(model.obj)
+    print(f"MIN query: {lower}")
 
     if verbose:
         model.obj.pprint()
         model.eqConstrain.pprint()
-    return minimum, maximum
+    return lower, upper
