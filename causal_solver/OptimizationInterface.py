@@ -11,18 +11,29 @@ equationsObject = namedtuple('equationsObject', ['probability', 'dictionary'])
 latentAndCcomp = namedtuple('latentAndCcomp', ['latent', 'nodes'])
 
 class OptimizationInterface:
-    def optimizationProblem(fromInterface=False, nodesStr="", edgesStr="", verbose=False):
+    def optimizationProblem(fromInterface=False, nodesStr="", edgesStr="", filepath="", 
+                            labelTarget="", valueTarget=-1, labelIntervention="", valueIntervention=-1,
+                            verbose=False):
         print(f"Please, enter the graph in the default format")
         dag: Graph = Graph.parse(fromInterface=fromInterface,nodesString=nodesStr, edgesString=edgesStr)
-        print("Please, enter a path for the csv")
-        csvPath: str = input()
-
-        print(f"For an inference P(Y=y|do(X=x)) please, enter, in this order: X, x, Y, y")
-        interventionVariableLabel, interventionVariableValue, targetVariableLabel, targetVariableValue = input().split()
-        interventionVariable      = dag.labelToIndex[interventionVariableLabel]
-        targetVariable            = dag.labelToIndex[targetVariableLabel]
-        interventionVariableValue = int(interventionVariableValue)
-        targetVariableValue       = int(targetVariableValue)
+        
+        csvPath = ""
+        if fromInterface:
+            csvPath = filepath
+            print(f"dbg: {labelIntervention}")
+            interventionVariable      = dag.labelToIndex[labelIntervention]
+            targetVariable            = dag.labelToIndex[labelTarget]
+            interventionVariableValue = int(valueIntervention)
+            targetVariableValue       = int(valueTarget)
+        else:
+            print("Please, enter a path for the csv")
+            csvPath = input()
+            print(f"For an inference P(Y=y|do(X=x)) please, enter, in this order: X, x, Y, y")
+            interventionVariableLabel, interventionVariableValue, targetVariableLabel, targetVariableValue = input().split()
+            interventionVariable      = dag.labelToIndex[interventionVariableLabel]
+            targetVariable            = dag.labelToIndex[targetVariableLabel]
+            interventionVariableValue = int(interventionVariableValue)
+            targetVariableValue       = int(targetVariableValue)
 
         setS, setT, setU = SupertailFinder.findSuperTail(interventionNode=interventionVariable, targetNode=targetVariable, graphNodes=dag.graphNodes)
         listS, listT, listU = (list(setS), list(setT), list(setU))

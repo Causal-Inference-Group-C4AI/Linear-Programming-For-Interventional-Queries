@@ -9,7 +9,7 @@ class Graph:
 
         self.numberOfNodes = numberOfNodes
         self.currNodes = currNodes
-        self.visited = visited 
+        self.visited = visited
         self.cardinalities = cardinalities
         self.parents = parents
         self.adj = adj

@@ -1,38 +1,39 @@
 from partition_methods.relaxed_problem.python.graph import Graph
 
-#verifica em qual c-compnent o no esta
 def inCcomponent(graph : Graph, node : int):
      for cComponent in graph.dagComponents:
           if node in cComponent:
                return graph.dagComponents.index(cComponent)
      return None
 
-#Encontra o caminho de c-Components entre os nós
+
 def findPath_it(nodes : list[int], graph : Graph, possiblePath : set[tuple] = set()):
+     """
+     Find the c-components path between nodes
+     """
     # dest | do(src) 
      src : int = nodes[0]
      dest : int = nodes[1]
 
      if not(dest in graph.currNodes):
           graph.currNodes.append(dest)
-                    
+
           path : set[tuple] = set()
-          possiblePath.add((inCcomponent(node=dest, graph= graph),dest))          
+          possiblePath.add((inCcomponent(node=dest, graph= graph),dest))
           if dest == src :
                return  possiblePath
-                    
+
           if not(graph.parents[dest]):
                return {}
-                    
-          for parent in graph.parents[dest]: 
-                         
-               path.update(findPath_it(nodes= [src,parent], graph= graph, possiblePath= possiblePath.copy()))   
-                    
+
+          for parent in graph.parents[dest]:
+
+               path.update(findPath_it(nodes= [src,parent], graph= graph, possiblePath= possiblePath.copy()))
+
           return path
      return possiblePath
 
 def findPath(nodes : list[str], graph : Graph):
-     
      src = graph.labelToIndex[nodes[0]]
      dest = graph.labelToIndex[nodes[1]]
      graph.currNodes.clear()
