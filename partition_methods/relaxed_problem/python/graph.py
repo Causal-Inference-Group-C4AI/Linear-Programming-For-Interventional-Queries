@@ -72,9 +72,41 @@ class Graph:
 
         return numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents
 
-    def parse(fromInterface=False, nodesString="", edgesString=""):
-        if fromInterface:            
-            auxTuple = Graph.parseInterface(nodesString, edgesString)
+    def parseFile(file_path: str):
+        with open(file_path, 'r') as file:
+
+            numberOfNodes = file.readline().strip()
+            numberOfEdges = file.readline().strip()
+
+            numberOfNodes = int(numberOfNodes)
+            numberOfEdges = int(numberOfEdges)
+
+            labelToIndex: dict[str, int] = {}; indexToLabel: dict[int, str] = {}
+            adj: list[list[int]] = [[] for _ in range(numberOfNodes)]
+            cardinalities: dict[int, int] = {}
+            parents: list[list[int]] = [[] for _ in range(numberOfNodes)]
+
+            for i in range(numberOfNodes):
+                label, cardinality = file.readline().strip().split()
+                cardinality = int(cardinality)
+                labelToIndex[label] = i
+                indexToLabel[i] = label
+                cardinalities[i] = cardinality
+
+            for _ in range(numberOfEdges):
+                u, v = file.readline().strip().split()
+                uIndex = labelToIndex[u]
+                vIndex = labelToIndex[v]
+                adj[uIndex].append(vIndex)
+                parents[vIndex].append(uIndex)
+
+            return numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents
+
+
+    def parse(fromInterface=False, file_path="/home/lawand/Canonical-Partition/test_cases/inputs/balke_pearl.txt", nodesString="", edgesString=""):
+        if fromInterface:     
+            auxTuple = Graph.parseFile(file_path)
+            # auxTuple = Graph.parseInterface(nodesString, edgesString)
         else:
             auxTuple = Graph.parseTerminal()
 

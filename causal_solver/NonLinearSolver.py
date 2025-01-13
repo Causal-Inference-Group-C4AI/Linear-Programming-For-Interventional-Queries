@@ -1,6 +1,7 @@
 import pyomo.environ  as pyo
 from collections import namedtuple
-from pyomo.opt import * 
+from pyomo.opt import *
+from causal_solver.GurobiSolver import solveModelGurobi
 
 equationsObject = namedtuple('equationsObject', ['probability', 'dictionary'])
 
@@ -67,8 +68,14 @@ def createModel(objective : dict[str, float], constraints : list[list[equationsO
 
 def solveModel(objective : dict[str, float], constraints : list[list[equationsObject]],latentCardinalities: list[int],verbose: bool = False,
                  initVal: float = .5):
+
+    return solveModelGurobi(objective, constraints, latentCardinalities, verbose, initVal)
+    # return solveModelPyomoGurobi(objective, constraints, latentCardinalities, verbose, initVal)
+    # return solveModelIpopt(objective, constraints, latentCardinalities, verbose, initVal)
+
+def solveModelPyomoGurobi(objective : dict[str, float], constraints : list[list[equationsObject]],latentCardinalities: list[int],verbose: bool = False,
+                 initVal: float = .5):
     
-    opt = SolverFactory("ipopt")
     numVar: int = 0
     latentsNums: list[int] = [0]
     
@@ -76,9 +83,11 @@ def solveModel(objective : dict[str, float], constraints : list[list[equationsOb
         latentsNums.append(latentCardinalities[key] + numVar)
         numVar += latentCardinalities[key]
     
-    model = pyo.ConcreteModel(name = "opt")
+    model = pyo.ConcreteModel()
     model.q = pyo.Var(range(numVar), bounds=(0,1), within = pyo.Reals, initialize = initVal)
     model.eqConstrain = pyo.ConstraintList()
+
+    # Regra que defini a expressão objetivo
     def o_rule(model):
         expr = 0
         for key in objective:
@@ -94,6 +103,71 @@ def solveModel(objective : dict[str, float], constraints : list[list[equationsOb
     
     model.obj = pyo.Objective(rule = o_rule, sense = pyo.maximize)
         
+    for group in constraints:
+        for eqn in group:
+            expr = 0
+            for key in eqn.dictionary:
+                coef = eqn.dictionary[key]
+                unobs = dictKey_to_index(key = key)
+                if coef > 0:
+                        aux = coef
+                        for u in unobs:
+                            aux *= model.q[u]
+                        expr += aux
+            model.eqConstrain.add((expr == eqn.probability))
+
+    for i in range(1, len(latentsNums)):
+        expr = 0
+        for var in range(latentsNums[i -1], latentsNums[i]):
+            expr += model.q[var]
+        model.eqConstrain.add(expr == 1.)
+    
+    solver = SolverFactory("gurobi")
+    results = solver.solve(model)
+    upper = pyo.value(model.obj)
+    print(f"MAX Query:{upper}")
+    model.del_component(model.obj)
+    model.obj = pyo.Objective(rule = o_rule, sense = pyo.minimize) 
+    results = solver.solve(model)
+    lower = pyo.value(model.obj)
+    print(f"MIN query: {lower}")
+
+    if verbose:
+        model.obj.pprint()
+        model.eqConstrain.pprint()
+    return lower, upper
+
+def solveModelIpopt(objective : dict[str, float], constraints : list[list[equationsObject]],latentCardinalities: list[int],verbose: bool = False,
+                 initVal: float = .5):
+    
+    opt = SolverFactory("ipopt")
+    numVar: int = 0
+    latentsNums: list[int] = [0]
+    
+    for key in latentCardinalities:
+        latentsNums.append(latentCardinalities[key] + numVar)
+        numVar += latentCardinalities[key]
+    
+    model = pyo.ConcreteModel(name = "opt")
+    model.q = pyo.Var(range(numVar), bounds=(0,1), within = pyo.Reals, initialize = initVal)
+    # É bom ter um valor inicial
+    
+    def o_rule(model):
+        expr = 0
+        for key in objective:
+            coef = objective[key]
+            unobs = dictKey_to_index(key= key)
+                
+            if coef > 0:
+                aux = coef
+                for u in unobs:
+                    aux *= model.q[u]
+                expr += aux
+        return expr
+    
+    model.obj = pyo.Objective(rule = o_rule, sense = pyo.maximize)
+        
+    model.eqConstrain = pyo.ConstraintList()
     for group in constraints:
         for eqn in group:
             expr = 0
