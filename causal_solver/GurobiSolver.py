@@ -1,8 +1,12 @@
 from collections import namedtuple
 from pyomo.opt import * 
 import gurobipy as gp
-from gurobipy import GRB
+from gurobipy import GRB, Model
 import numpy as np
+
+import pandas as pd
+
+
 
 equationsObject = namedtuple('equationsObject', ['probability', 'dictionary'])
 
@@ -176,3 +180,87 @@ def minimizeModel(objective: dict[str, float], constraints: list[list[equationsO
         print(f"Minimal solution not found. Gurobi status code: {model_min.Status}")
         lower = 0
     return lower
+
+
+def noExplicitMechanisms():
+    # s1: 1 <= P(!X | !U1 and !U2 and !Z) <= 1
+    # s2: 1 <= P(!X | !U1 and !U2 and Z) <= 1
+    # s3: 1 <= P(!X | !U1 and U2 and !Z) <= 1
+    # s4: 1 <= P(X | !U1 and U2 and Z) <= 1
+    # s5: 1 <= P(X | U1 and !U2 and !Z) <= 1
+    # s6: 1 <= P(!X | U1 and !U2 and Z) <= 1
+    # s7: 1 <= P(X | U1 and U2 and !Z) <= 1
+    # s8: 1 <= P(X | U1 and U2 and Z) <= 1
+
+    # s9: 1 <= P(!Y | !U3 and !U4 and !X) <= 1
+    # s10: 1 <= P(!Y | !U3 and !U4 and X) <= 1
+    # s11: 1 <= P(!Y | !U3 and U4 and !X) <= 1
+    # s12: 1 <= P(Y | !U3 and U4 and X) <= 1
+    # s13: 1 <= P(Y | U3 and !U4 and !X) <= 1
+    # s14: 1 <= P(!Y | U3 and !U4 and X) <= 1
+    # s15: 1 <= P(Y | U3 and U4 and !X) <= 1
+    # s16: 1 <= P(Y | U3 and U4 and X) <= 1
+
+
+
+    # Load your dataset
+    data = pd.read_csv("balke_pearl.csv")  # Replace with your actual dataset path
+    #  Group by Z, D, and T and count occurrences
+    joint_frequencies = data.groupby(['Z', 'D', 'T']).size().reset_index(name='count')
+
+    # Total number of observations
+    total_count = joint_frequencies['count'].sum()
+
+    # Add a column for the empirical probabilities
+    joint_frequencies['probability'] = joint_frequencies['count'] / total_count
+
+    # Create a dictionary for the empirical distribution
+    empirical = {
+        (row['Z'], row['X'], row['T']): row['probability']
+        for _, row in joint_frequencies.iterrows()
+    }
+
+
+    # Initialize model
+    model = Model("IV_Causal_Inference")
+    z_vals = (0, 1)
+    d_vals = (0, 1)
+    t_vals = (0, 1)
+
+    # Variables: probabilities for P(Z, D, T), P(T|D), P(D|Z)
+    P_ZDT = model.addVars([z_vals, d_vals, t_vals], lb=0, ub=1, name="P_ZDT")
+    P_T_given_D = model.addVars([d_vals, t_vals], lb=0, ub=1, name="P_T_given_D")
+    P_D_given_Z = model.addVars([z_vals, d_vals], lb=0, ub=1, name="P_D_given_Z")
+
+    # Compute P(Z=z) from empirical joint distribution
+    P_Z = {}
+
+    for (z, d, t), prob in empirical.items():
+        if z not in P_Z:
+            P_Z[z] = 0
+        P_Z[z] += prob
+
+    # Constraints: normalization
+    for z in z_vals:
+        model.addConstr(sum(P_D_given_Z[z, d] for d in d_vals) == 1)
+    for d in d_vals:
+        model.addConstr(sum(P_T_given_D[d, t] for t in t_vals) == 1)
+    model.addConstr(sum(P_ZDT[z, d, t] for z in z_vals for d in d_vals for t in t_vals) == 1)
+
+    # Constraints: marginal and conditional relations
+    for z in z_vals:
+        for d in d_vals:
+            for t in t_vals:
+                model.addConstr(P_ZDT[z, d, t] == P_D_given_Z[z, d] * P_T_given_D[d, t] * P_Z[z])
+
+    # Objective: minimize squared error
+    objective = sum((P_ZDT[z, d, t] - empirical[z, d, t])**2 for z in z_vals for d in d_vals for t in t_vals)
+    model.setObjective(objective, GRB.MINIMIZE)
+
+    # Solve the model
+    model.optimize()
+
+    # Extract results
+    if model.status == GRB.OPTIMAL:
+        print("Optimal solution found")
+        causal_effects = {d: P_T_given_D[d].X for d in d_vals}
