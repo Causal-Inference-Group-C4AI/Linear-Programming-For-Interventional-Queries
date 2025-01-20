@@ -1,0 +1,25 @@
+numNodes
+numEdges
+numInterventions
+cardinalities:
+    U 0
+    V 0
+    W 0
+    A 2
+    B 2
+    C 2
+    D 2
+    Y 2
+edges:
+    A B
+    B Y
+    U A
+    U B
+    C D
+    D Y
+    V C
+    V D
+    W Y
+interventions
+    A 1
+    C 1

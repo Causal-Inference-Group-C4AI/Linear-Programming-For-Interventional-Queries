@@ -40,13 +40,13 @@ def maximizeModel(objective: dict[str, float], constraints: list[list[equationsO
     numVar = sum(latentCardinalities.values())
     q_max = model_max.addVars(numVar, lb=0, ub=1, vtype=GRB.CONTINUOUS, name="q")
 
-    # Initialize variables
-    if isinstance(initVal, (list, np.ndarray)):
-        for i in range(numVar):
-            q_max[i].start = initVal[i]
-    else:
-        for i in range(numVar):
-            q_max[i].start = initVal
+    # # Initialize variables
+    # if isinstance(initVal, (list, np.ndarray)):
+    #     for i in range(numVar):
+    #         q_max[i].start = initVal[i]
+    # else:
+    #     for i in range(numVar):
+    #         q_max[i].start = initVal
     
     # Build the objective expression for maximization
     expr_max = 0
@@ -114,16 +114,18 @@ def minimizeModel(objective: dict[str, float], constraints: list[list[equationsO
     model_min.setParam("FeasibilityTol", 1e-2)
     # model_min.setParam("NonConvex", 2)
     
+    # O número de variáveis no problema de otimização tem a ver com a cardinalidade das latentes
+      
     numVar = sum(latentCardinalities.values())
     q_min = model_min.addVars(numVar, lb=0, ub=1, vtype=GRB.CONTINUOUS, name="q")
 
-    # Initialize variables
-    if isinstance(initVal, (list, np.ndarray)):
-        for i in range(numVar):
-            q_min[i].start = initVal[i]
-    else:
-        for i in range(numVar):
-            q_min[i].start = initVal
+    # # Initialize variables
+    # if isinstance(initVal, (list, np.ndarray)):
+    #     for i in range(numVar):
+    #         q_min[i].start = initVal[i]
+    # else:
+    #     for i in range(numVar):
+    #         q_min[i].start = initVal
     
     # Build the objective expression for minimization
     expr_min = 0
@@ -206,7 +208,7 @@ def noExplicitMechanisms():
     # Load your dataset
     data = pd.read_csv("balke_pearl.csv")  # Replace with your actual dataset path
     #  Group by Z, D, and T and count occurrences
-    joint_frequencies = data.groupby(['Z', 'D', 'T']).size().reset_index(name='count')
+    joint_frequencies = data.groupby(['Z', 'X', 'Y']).size().reset_index(name='count')
 
     # Total number of observations
     total_count = joint_frequencies['count'].sum()
@@ -216,7 +218,7 @@ def noExplicitMechanisms():
 
     # Create a dictionary for the empirical distribution
     empirical = {
-        (row['Z'], row['X'], row['T']): row['probability']
+        (row['Z'], row['X'], row['Y']): row['probability']
         for _, row in joint_frequencies.iterrows()
     }
 
@@ -224,37 +226,37 @@ def noExplicitMechanisms():
     # Initialize model
     model = Model("IV_Causal_Inference")
     z_vals = (0, 1)
-    d_vals = (0, 1)
-    t_vals = (0, 1)
+    x_vals = (0, 1)
+    y_vals = (0, 1)
 
     # Variables: probabilities for P(Z, D, T), P(T|D), P(D|Z)
-    P_ZDT = model.addVars([z_vals, d_vals, t_vals], lb=0, ub=1, name="P_ZDT")
-    P_T_given_D = model.addVars([d_vals, t_vals], lb=0, ub=1, name="P_T_given_D")
-    P_D_given_Z = model.addVars([z_vals, d_vals], lb=0, ub=1, name="P_D_given_Z")
+    P_ZXY = model.addVars([z_vals, x_vals, y_vals], lb=0, ub=1, name="P_ZXY")
+    P_Y_given_X = model.addVars([x_vals, y_vals], lb=0, ub=1, name="P_Y_given_X")
+    P_X_given_Z = model.addVars([z_vals, x_vals], lb=0, ub=1, name="P_X_given_Z")
 
     # Compute P(Z=z) from empirical joint distribution
     P_Z = {}
 
-    for (z, d, t), prob in empirical.items():
+    for (z, x, y), prob in empirical.items():
         if z not in P_Z:
             P_Z[z] = 0
         P_Z[z] += prob
 
     # Constraints: normalization
     for z in z_vals:
-        model.addConstr(sum(P_D_given_Z[z, d] for d in d_vals) == 1)
-    for d in d_vals:
-        model.addConstr(sum(P_T_given_D[d, t] for t in t_vals) == 1)
-    model.addConstr(sum(P_ZDT[z, d, t] for z in z_vals for d in d_vals for t in t_vals) == 1)
+        model.addConstr(sum(P_X_given_Z[z, x] for x in x_vals) == 1)
+    for x in x_vals:
+        model.addConstr(sum(P_Y_given_X[x, y] for y in y_vals) == 1)
+    model.addConstr(sum(P_ZXY[z, x, y] for z in z_vals for x in x_vals for y in y_vals) == 1)
 
     # Constraints: marginal and conditional relations
     for z in z_vals:
-        for d in d_vals:
-            for t in t_vals:
-                model.addConstr(P_ZDT[z, d, t] == P_D_given_Z[z, d] * P_T_given_D[d, t] * P_Z[z])
+        for x in x_vals:
+            for y in y_vals:
+                model.addConstr(P_ZXY[z, x, y] == P_X_given_Z[z, x] * P_Y_given_X[x, y] * P_Z[z])
 
     # Objective: minimize squared error
-    objective = sum((P_ZDT[z, d, t] - empirical[z, d, t])**2 for z in z_vals for d in d_vals for t in t_vals)
+    objective = sum((P_ZXY[z, x, y] - empirical[z, x, y])**2 for z in z_vals for x in x_vals for y in y_vals)
     model.setObjective(objective, GRB.MINIMIZE)
 
     # Solve the model
@@ -263,4 +265,4 @@ def noExplicitMechanisms():
     # Extract results
     if model.status == GRB.OPTIMAL:
         print("Optimal solution found")
-        causal_effects = {d: P_T_given_D[d].X for d in d_vals}
+        causal_effects = {x: P_Y_given_X[x].X for x in x_vals}
