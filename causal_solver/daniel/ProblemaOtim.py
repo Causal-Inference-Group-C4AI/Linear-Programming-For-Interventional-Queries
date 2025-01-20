@@ -4,7 +4,7 @@ class ProblemaOtim:
         self.gurobi_variables = variables # Cria aqui as variaveis do gurobi
         self.data = data
         self.important_observables = important_observables # vars que entram no problema de otim
-        self.intervention_dict = intervention_dict
+        self.intervention_dict = {"A": 1, "C": 1}
 
         self.V = [i for i in range(8)]
         self.U = [i for i in range(8)]
@@ -14,8 +14,13 @@ class ProblemaOtim:
         #                 \----v------/   \-----------v-----------/  \----v------/
         #                    FROM DATA           MECHANISMS             VARIABLES (8 FROM U AND 8 FROM V)
 
-        doA = self.intervention_dict[A]
-        doC = self.intervention_dict[C]
+        doA = self.intervention_dict["A"]
+        doC = self.intervention_dict["C"]
+
+        P_Y_given_B_D = {(1.0, 0.0, 1.0): 0.450,
+                        (0.0, 0.0, 0.0): 0.124,
+                        (0.0, 1.0, 1.0): 0.350,
+                        (0.0, 1.0, 0.0): 0.076}
 
         expression = 0 # É de um tipo do Gurobi
         B = (0, 1)
