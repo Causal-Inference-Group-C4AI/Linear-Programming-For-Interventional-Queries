@@ -69,9 +69,9 @@ def createModel(objective : dict[str, float], constraints : list[list[equationsO
 def solveModel(objective : dict[str, float], constraints : list[list[equationsObject]],latentCardinalities: list[int],verbose: bool = False,
                  initVal: float = .5):
 
-    return solveModelGurobi(objective, constraints, latentCardinalities, verbose, initVal)
+    # return solveModelGurobi(objective, constraints, latentCardinalities, verbose, initVal)
     # return solveModelPyomoGurobi(objective, constraints, latentCardinalities, verbose, initVal)
-    # return solveModelIpopt(objective, constraints, latentCardinalities, verbose, initVal)
+    return solveModelIpopt(objective, constraints, latentCardinalities, verbose, initVal)
 
 def solveModelPyomoGurobi(objective : dict[str, float], constraints : list[list[equationsObject]],latentCardinalities: list[int],verbose: bool = False,
                  initVal: float = .5):
