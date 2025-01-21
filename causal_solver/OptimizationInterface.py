@@ -4,7 +4,7 @@ from partition_methods.relaxed_problem.python.graph import Graph
 from causal_solver.Helper import Helper
 from causal_solver.SupertailFinder import SupertailFinder
 from causal_solver.Supersets import Supersets
-
+import argparse
 from collections import namedtuple
 
 equationsObject = namedtuple('equationsObject', ['probability', 'dictionary'])
@@ -13,9 +13,9 @@ latentAndCcomp = namedtuple('latentAndCcomp', ['latent', 'nodes'])
 class OptimizationInterface:
     def optimizationProblem(fromInterface=False, nodesStr="", edgesStr="", filepath="", 
                             labelTarget="", valueTarget=-1, labelIntervention="", valueIntervention=-1,
-                            verbose=False):
-        test_name = "balke_pearl"
-        print(f"Please, enter the graph in the default format")
+                            verbose=False, solver_name="ipopt"):
+        test_name = "itau"
+        # print(f"Please, enter the graph in the default format")
         # dag: Graph = Graph.parse(fromInterface=fromInterface,nodesString=nodesStr, edgesString=edgesStr)
         dag: Graph = Graph.parse(fromInterface=True,file_path=f"/home/lawand/Canonical-Partition/test_cases/inputs/{test_name}.txt")
         
@@ -28,10 +28,10 @@ class OptimizationInterface:
             interventionVariableValue = int(valueIntervention)
             targetVariableValue       = int(valueTarget)
         else:
-            print("Please, enter a path for the csv")
+            # print("Please, enter a path for the csv")
             csvPath = f"{test_name}.csv"
 
-            print(f"For an inference P(Y=y|do(X=x)) please, enter, in this order: X, x, Y, y")
+            # print(f"For an inference P(Y=y|do(X=x)) please, enter, in this order: X, x, Y, y")
             interventionVariableLabel, interventionVariableValue, targetVariableLabel, targetVariableValue = f"X {valueIntervention} Y 1".split()
             interventionVariable      = dag.labelToIndex[interventionVariableLabel]
             targetVariable            = dag.labelToIndex[targetVariableLabel]
@@ -83,7 +83,7 @@ class OptimizationInterface:
                                     )
             tripleEquations.append(equations)
 
-        return solveModel(objective=objectiveFunction, constraints=tripleEquations,latentCardinalities=latentCardinalities,verbose=False,initVal=.5)
+        return solveModel(objective=objectiveFunction, constraints=tripleEquations,latentCardinalities=latentCardinalities,verbose=False,initVal=.5, solver_name=solver_name)
 
 def testBuildProblem():
     obj, equations, _ = OptimizationInterface.optimizationProblem(verbose=True)
@@ -99,15 +99,21 @@ def testBuildProblem():
                     break
                 print(f"for key = {key}, coefficient = {eq.dictionary[key]}")
 
-def testSolution():
-    lowerdo1, upperdo1 = OptimizationInterface.optimizationProblem(valueIntervention=1, verbose = False)
+def testSolution(solver_name):
+    lowerdo1, upperdo1 = OptimizationInterface.optimizationProblem(valueIntervention=1, verbose = False, solver_name=solver_name)
+    lowerdo0, upperdo0 = OptimizationInterface.optimizationProblem(valueIntervention=0, verbose = False, solver_name=solver_name)
     print(f"P(Y=1|do(X=1)): [{lowerdo1},{upperdo1}]")
-    lowerdo0, upperdo0 = OptimizationInterface.optimizationProblem(valueIntervention=0, verbose = False)
     print(f"P(Y=1|do(X=0)): [{lowerdo0},{upperdo0}]")
-    print(f"ATE = P(Y=1|do(X=1)) - P(Y=1|do(X=0)):")
-    print(f"      : [{upperdo1-lowerdo0},{lowerdo1-upperdo0}]")
+    # print(f"ATE = P(Y=1|do(X=1)) - P(Y=1|do(X=0)):")
+    # print(f"      : [{upperdo1-lowerdo0},{lowerdo1-upperdo0}]")
 
 if __name__ == "__main__":
     # testBuildProblem()
-
-    testSolution()
+    parser = argparse.ArgumentParser(
+        description="Runs tests of Causal Effect under Partial-Observability."
+    )
+    parser.add_argument('solver_name',
+                        help='The solver name you want to test (ipopt, gurobi)'
+                        )
+    args = parser.parse_args()
+    testSolution(args.solver_name)

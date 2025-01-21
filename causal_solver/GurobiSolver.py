@@ -77,10 +77,7 @@ def maximizeModel(objective: dict[str, float], constraints: list[list[equationsO
                     for u in unobs:
                         aux *= q_max[u]
                     expr += aux
-            print(f"eqn.probability: {eqn.probability}")
             model_max.addConstr(expr == eqn.probability)
-    
-    print(f"Model max variables: {[var for var in model_max.getVars()]}")
     
     # Add latent sum constraints (same for both models)
     latentsNums = [0]
@@ -97,7 +94,7 @@ def maximizeModel(objective: dict[str, float], constraints: list[list[equationsO
     model_max.optimize()
     if model_max.Status == GRB.OPTIMAL: # OPTIMAL
         upper = model_max.objVal
-        print(f"Maximal solution found!\nMAX Query: {upper}")
+        # print(f"Maximal solution found!\nMAX Query: {upper}")
     else:
         print(f"Maximal solution not found. Gurobi status code: {model_max.Status}")
         upper = 0
@@ -157,10 +154,7 @@ def minimizeModel(objective: dict[str, float], constraints: list[list[equationsO
                     for u in unobs:
                         aux *= q_min[u]
                     expr += aux
-            print(f"eqn.probability: {eqn.probability}")
             model_min.addConstr(expr == eqn.probability)
-    
-    print(f"Model min variables: {[var for var in model_min.getVars()]}")
     
     # Add latent sum constraints (same for both models)
     latentsNums = [0]
@@ -177,7 +171,7 @@ def minimizeModel(objective: dict[str, float], constraints: list[list[equationsO
     model_min.optimize()
     if model_min.Status == GRB.OPTIMAL: # OPTIMAL
         lower = model_min.objVal
-        print(f"Minimal solution found!\nMIN Query: {lower}")
+        # print(f"Minimal solution found!\nMIN Query: {lower}")
     else:
         print(f"Minimal solution not found. Gurobi status code: {model_min.Status}")
         lower = 0

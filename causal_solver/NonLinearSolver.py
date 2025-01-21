@@ -67,11 +67,13 @@ def createModel(objective : dict[str, float], constraints : list[list[equationsO
     return model
 
 def solveModel(objective : dict[str, float], constraints : list[list[equationsObject]],latentCardinalities: list[int],verbose: bool = False,
-                 initVal: float = .5):
+                 initVal: float = .5, solver_name="ipopt"):
 
-    # return solveModelGurobi(objective, constraints, latentCardinalities, verbose, initVal)
+    if solver_name == "ipopt":
+        return solveModelIpopt(objective, constraints, latentCardinalities, verbose, initVal)
+    else:
+        return solveModelGurobi(objective, constraints, latentCardinalities, verbose, initVal)
     # return solveModelPyomoGurobi(objective, constraints, latentCardinalities, verbose, initVal)
-    return solveModelIpopt(objective, constraints, latentCardinalities, verbose, initVal)
 
 def solveModelPyomoGurobi(objective : dict[str, float], constraints : list[list[equationsObject]],latentCardinalities: list[int],verbose: bool = False,
                  initVal: float = .5):
@@ -189,12 +191,12 @@ def solveModelIpopt(objective : dict[str, float], constraints : list[list[equati
     
     results = opt.solve(model)
     upper = pyo.value(model.obj)
-    print(f"MAX Query:{upper}")
+    # print(f"MAX Query:{upper}")
     model.del_component(model.obj)
     model.obj = pyo.Objective(rule = o_rule, sense = pyo.minimize) 
     results = opt.solve(model)
     lower = pyo.value(model.obj)
-    print(f"MIN query: {lower}")
+    # print(f"MIN query: {lower}")
 
     if verbose:
         model.obj.pprint()
