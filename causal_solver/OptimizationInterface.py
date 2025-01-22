@@ -80,7 +80,7 @@ class OptimizationInterface:
                                     )
             tripleEquations.append(equations)
 
-        return solveModel(objective=objectiveFunction, constraints=tripleEquations,latentCardinalities=latentCardinalities,verbose=False,initVal=.5)
+        return solveModel(objective=objectiveFunction, constraints=tripleEquations,latentCardinalities=latentCardinalities,verbose=verbose,initVal=.5)
 
 def testBuildProblem():
     obj, equations, _ = OptimizationInterface.optimizationProblem(verbose=True)
@@ -97,9 +97,9 @@ def testBuildProblem():
                 print(f"for key = {key}, coefficient = {eq.dictionary[key]}")
 
 def testSolution():
-    lower, upper = OptimizationInterface.optimizationProblem(verbose = False)
+    lower, upper = OptimizationInterface.optimizationProblem(verbose = True)
     print(f"Results: [{lower},{upper}]")
 
 if __name__ == "__main__":
-    # testBuildProblem()
+    #testBuildProblem()
     testSolution()

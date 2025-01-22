@@ -65,7 +65,7 @@ def createModel(objective : dict[str, float], constraints : list[list[equationsO
         model.eqConstrain.add(expr == 1.)
     return model
 
-def solveModel(objective : dict[str, float], constraints : list[list[equationsObject]],latentCardinalities: list[int],verbose: bool = False,
+def solveModel(objective : dict[str, float], constraints : list[list[equationsObject]],latentCardinalities: list[int],verbose: bool = True,
                  initVal: float = .5):
     
     opt = SolverFactory("ipopt")
@@ -113,6 +113,10 @@ def solveModel(objective : dict[str, float], constraints : list[list[equationsOb
             expr += model.q[var]
         model.eqConstrain.add(expr == 1.)
     
+    if verbose:
+        model.obj.pprint()
+        model.eqConstrain.pprint()
+    
     results = opt.solve(model)
     upper = pyo.value(model.obj)
     print(f"MAX Query:{upper}")
@@ -122,7 +126,4 @@ def solveModel(objective : dict[str, float], constraints : list[list[equationsOb
     lower = pyo.value(model.obj)
     print(f"MIN query: {lower}")
 
-    if verbose:
-        model.obj.pprint()
-        model.eqConstrain.pprint()
     return lower, upper

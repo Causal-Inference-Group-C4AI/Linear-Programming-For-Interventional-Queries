@@ -96,15 +96,16 @@ class Helper:
         
         return spaces
     
-    def fetchCsv(filepath="balke_pearl.csv"):
-        prefix = "/home/c4ai-wsl/projects/Canonical-Partition/"
-        # prefix = "/home/joaog/Cpart/Canonical-Partition/causal_solver/"
+    def fetchCsv(filepath="balke_pearl.csv"):        
+        #prefix = "/home/c4ai-wsl/projects/Canonical-Partition/causal_solver/"
+        prefix = "/home/joaog/Cpart/Canonical-Partition/causal_solver/"
         return pd.read_csv(prefix + filepath)
 
     def generateCrossProducts(sets: list[list[int]]):
         crossProductsTuples = itertools.product(*sets)
         return [list(combination) for combination in crossProductsTuples]
 
+    
     def mechanisms_generator(latentNode: int, endogenousNodes: list[int], cardinalities: dict[int, int], graphNodes: list[Node], v=True):
         """
         Generates an enumeration (list) of all mechanism a latent value can assume in its c-component. The c-component has to have
