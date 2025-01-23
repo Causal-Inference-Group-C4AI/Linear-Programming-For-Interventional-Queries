@@ -35,11 +35,9 @@ def main(dag : Graph):
                                                         graphNodes = dag.graphNodes, v= False )
     y0: int = 1
     x0: int = 1
-    yRlt : dict[int,int] = {}
     xRlt: dict[int, int] = {}
     dRlt : dict[int, int] = {}
-    yxRlt : dict[int, int] = {}
-    x: int = 1
+    yxdRlt : dict[int, int] = {}
     c: list[float] = []
     a:list[list[float]] = []
     b: list[float] = []
@@ -53,7 +51,7 @@ def main(dag : Graph):
         coef = 0
         for d in range(2):
             dRlt[dag.labelToIndex["D"]] = d
-            if mechanism[u]["3="+str(x)+",4="+str(d)] == y0:
+            if mechanism[u]["3="+str(x0)+",4="+str(d)] == y0:
                 coef += Helper.findConditionalProbability(dataFrame=df, indexToLabel= dag.indexToLabel, targetRealization=dRlt, conditionRealization= xRlt)
         c.append(coef)
     a.append([1 for _ in range(len(mechanism))])
@@ -62,17 +60,23 @@ def main(dag : Graph):
         for x in range(2):
             for d in range(2):
                 aux: list[float] = []
-                yxRlt[dag.labelToIndex["Y"]] = y
-                yxRlt[dag.labelToIndex["X"]] = x
+                yxdRlt[dag.labelToIndex["Y"]] = y
+                yxdRlt[dag.labelToIndex["X"]] = x
+                yxdRlt[dag.labelToIndex["D"]] = d
+                xRlt[dag.labelToIndex["X"]] = x
                 dRlt[dag.labelToIndex["D"]] = d
-                b.append(Helper.findConditionalProbability(dataFrame=df, indexToLabel= dag.indexToLabel, targetRealization=yxRlt, conditionRealization=dRlt))
+                b.append(Helper.findProbability(dataFrame=df, indexToLabel= dag.indexToLabel, variableRealizations=yxdRlt))
+                coefAUx = Helper.findConditionalProbability(dataFrame= df, indexToLabel= dag.indexToLabel, targetRealization= dRlt, conditionRealization= xRlt, v=False)
                 for u in range(len(mechanism)):
-                    if mechanism[u]["3="+str(x)+",4="+str(d)] == y:
-                        aux.append(1)
+                    if (mechanism[u]["3="+str(x)+",4="+str(d)] == y) and (mechanism[u][""] == x):
+                        aux.append(coefAUx)
                     else:
                         aux.append(0)
                 a.append(aux)
     optProblem(objFunction=c,Aeq=a, Beq=b, interval=bounds, v=True )
+    #print(a)
+    #print(b)
+    #print(c)
 if __name__ == "__main__":
     dag = Graph.parse()#use itau_simplified
     main(dag= dag)
