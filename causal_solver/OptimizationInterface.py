@@ -13,6 +13,77 @@ latentAndCcomp = namedtuple('latentAndCcomp', ['latent', 'nodes'])
 class OptimizationInterface:
     def optimizationProblem(fromInterface=False, nodesStr="", edgesStr="", filepath="", 
                             labelTarget="", valueTarget=-1, labelIntervention="", valueIntervention=-1,
+                            verbose=False):
+        print(f"Please, enter the graph in the default format")
+        dag: Graph = Graph.parse(fromInterface=fromInterface,nodesString=nodesStr, edgesString=edgesStr)
+        
+        csvPath = ""
+        if fromInterface:
+            csvPath = filepath
+            print(f"dbg: {labelIntervention}")
+            interventionVariable      = dag.labelToIndex[labelIntervention]
+            targetVariable            = dag.labelToIndex[labelTarget]
+            interventionVariableValue = int(valueIntervention)
+            targetVariableValue       = int(valueTarget)
+        else:
+            print("Please, enter a path for the csv")
+            csvPath = input()
+            print(f"For an inference P(Y=y|do(X=x)) please, enter, in this order: X, x, Y, y")
+            interventionVariableLabel, interventionVariableValue, targetVariableLabel, targetVariableValue = input().split()
+            interventionVariable      = dag.labelToIndex[interventionVariableLabel]
+            targetVariable            = dag.labelToIndex[targetVariableLabel]
+            interventionVariableValue = int(interventionVariableValue)
+            targetVariableValue       = int(targetVariableValue)
+
+        setS, setT, setU = SupertailFinder.findSuperTail(interventionNode=interventionVariable, targetNode=targetVariable, graphNodes=dag.graphNodes)
+        listS, listT, listU = (list(setS), list(setT), list(setU))
+
+        mechanismDictsList, latentCardinalities = Helper.mechanismListGenerator(cardinalities=dag.cardinalities,
+                                listU=listU, setS=(setS|set([interventionVariable])), graphNodes=dag.graphNodes)        
+
+        objectiveFunction: dict[str, int] = NonLinearConstraints.objectiveFunctionBuilder(mechanismDictsList=mechanismDictsList,
+                                    graphNodes=dag.graphNodes,
+                                    cardinalities=dag.cardinalities,
+                                    listS=listS, listT=listT, listU=listU,
+                                    interventionVariable=interventionVariable,
+                                    interventionValue=interventionVariableValue,
+                                    targetVariable=targetVariable,
+                                    targetValue=targetVariableValue,
+                                    topoOrder=dag.topologicalOrder,
+                                    filepath=csvPath,
+                                    indexToLabel=dag.indexToLabel,
+                                    verbose=verbose
+                                    )
+
+        completeSetS = setS | set([interventionVariable])
+        triples: list[Supersets] = []
+        latentSetsDict: dict[int, Supersets] = {}
+        for latentCompanion in listU:
+            auxS, auxT, auxU = SupertailFinder.findSuperTailLatent(latentCompanion, dag.graphNodes, completeSetS)
+            triples.append(Supersets(listS=auxS, listU=auxU, listT=auxT))
+            latentSetsDict[latentCompanion] = Supersets(listS=auxS, listU=[latentCompanion], listT=auxT)
+        
+        simplifiedTriples: list[Supersets] = Helper.equationsSimplifier(triples=triples, 
+                                            latentSetsDict=latentSetsDict,latentList=listU) 
+
+        tripleEquations: list[list[equationsObject]] = []
+        for triple in simplifiedTriples:
+            equations: list[equationsObject] = NonLinearConstraints.equationsGenerator(mechanismDictsList=mechanismDictsList,
+                                    listT=triple.listT,
+                                    listS=triple.listS,
+                                    listU=triple.listU,
+                                    cardinalities=dag.cardinalities,
+                                    graphNodes=dag.graphNodes,
+                                    topoOrder=dag.topologicalOrder,
+                                    indexToLabel=dag.indexToLabel,
+                                    filepath=csvPath
+                                    )
+            tripleEquations.append(equations)
+
+        return solveModel(objective=objectiveFunction, constraints=tripleEquations,latentCardinalities=latentCardinalities,verbose=verbose,initVal=.5)
+    
+    def automaticOptimizationProblem(fromInterface=False, nodesStr="", edgesStr="", filepath="", 
+                            labelTarget="", valueTarget=-1, labelIntervention="", valueIntervention=-1,
                             verbose=False, solver_name="ipopt"):
         test_name = "itau"
         # print(f"Please, enter the graph in the default format")
@@ -84,6 +155,7 @@ class OptimizationInterface:
             tripleEquations.append(equations)
 
         return solveModel(objective=objectiveFunction, constraints=tripleEquations,latentCardinalities=latentCardinalities,verbose=False,initVal=.5, solver_name=solver_name)
+
 
 def testBuildProblem():
     obj, equations, _ = OptimizationInterface.optimizationProblem(verbose=True)
