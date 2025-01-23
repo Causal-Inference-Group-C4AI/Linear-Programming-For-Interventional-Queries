@@ -156,7 +156,6 @@ class OptimizationInterface:
 
         return solveModel(objective=objectiveFunction, constraints=tripleEquations,latentCardinalities=latentCardinalities,verbose=False,initVal=.5, solver_name=solver_name)
 
-
 def testBuildProblem():
     obj, equations, _ = OptimizationInterface.optimizationProblem(verbose=True)
 
@@ -178,7 +177,7 @@ def automaticTestSolution(solver_name):
     print(f"P(Y=1|do(X=0)): [{lowerdo0},{upperdo0}]")
 
 def testSolution():
-    lower, upper = OptimizationInterface.optimizationProblem(verbose = False)
+    lower, upper = OptimizationInterface.optimizationProblem(verbose = True)
     print(f"Results: [{lower},{upper}]")
 
 if __name__ == "__main__":

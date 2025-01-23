@@ -45,7 +45,7 @@ def findPath(nodes : list[str], graph : Graph):
      for pair in path:
         if not(pair[0] in componentsPath):
           componentsPath.append(pair[0])
-        
+
         if not(pair[1] in nodesPath): 
           nodesPath.append(graph.indexToLabel[pair[1]])
      
