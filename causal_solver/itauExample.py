@@ -74,9 +74,7 @@ def main(dag : Graph):
                         aux.append(0)
                 a.append(aux)
     optProblem(objFunction=c,Aeq=a, Beq=b, interval=bounds, v=True )
-    #print(a)
-    #print(b)
-    #print(c)
+
 if __name__ == "__main__":
     dag = Graph.parse()#use itau_simplified
     main(dag= dag)
