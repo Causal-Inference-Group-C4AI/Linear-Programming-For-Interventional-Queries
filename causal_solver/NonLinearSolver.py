@@ -1,6 +1,7 @@
 import pyomo.environ  as pyo
 from collections import namedtuple
-from pyomo.opt import * 
+from pyomo.opt import *
+from causal_solver.GurobiSolver import solveModelGurobi
 
 equationsObject = namedtuple('equationsObject', ['probability', 'dictionary'])
 
@@ -66,7 +67,14 @@ def createModel(objective : dict[str, float], constraints : list[list[equationsO
     return model
 
 def solveModel(objective : dict[str, float], constraints : list[list[equationsObject]],latentCardinalities: list[int],verbose: bool = True,
-                 initVal: float = .5):
+                 initVal: float = .5, solver_name="ipopt"):
+
+    if solver_name == "ipopt":
+        return solveModelIpopt(objective, constraints, latentCardinalities, verbose, initVal)
+    else:
+        return solveModelGurobi(objective, constraints, latentCardinalities, verbose, initVal)
+
+def solveModelIpopt(objective : dict[str, float], constraints : list[list[equationsObject]],latentCardinalities: list[int],verbose: bool = True, initVal: float = .5):
     
     opt = SolverFactory("ipopt")
     numVar: int = 0
@@ -79,6 +87,7 @@ def solveModel(objective : dict[str, float], constraints : list[list[equationsOb
     model = pyo.ConcreteModel(name = "opt")
     model.q = pyo.Var(range(numVar), bounds=(0,1), within = pyo.Reals, initialize = initVal)
     model.eqConstrain = pyo.ConstraintList()
+    
     def o_rule(model):
         expr = 0
         for key in objective:
