@@ -171,21 +171,24 @@ def testBuildProblem():
                     break
                 print(f"for key = {key}, coefficient = {eq.dictionary[key]}")
 
-def testSolution(solver_name):
+def automaticTestSolution(solver_name):
     lowerdo1, upperdo1 = OptimizationInterface.optimizationProblem(valueIntervention=1, verbose = False, solver_name=solver_name)
     lowerdo0, upperdo0 = OptimizationInterface.optimizationProblem(valueIntervention=0, verbose = False, solver_name=solver_name)
     print(f"P(Y=1|do(X=1)): [{lowerdo1},{upperdo1}]")
     print(f"P(Y=1|do(X=0)): [{lowerdo0},{upperdo0}]")
-    # print(f"ATE = P(Y=1|do(X=1)) - P(Y=1|do(X=0)):")
-    # print(f"      : [{upperdo1-lowerdo0},{lowerdo1-upperdo0}]")
+
+def testSolution():
+    lower, upper = OptimizationInterface.optimizationProblem(verbose = False)
+    print(f"Results: [{lower},{upper}]")
 
 if __name__ == "__main__":
     # testBuildProblem()
-    parser = argparse.ArgumentParser(
-        description="Runs tests of Causal Effect under Partial-Observability."
-    )
-    parser.add_argument('solver_name',
-                        help='The solver name you want to test (ipopt, gurobi)'
-                        )
-    args = parser.parse_args()
-    testSolution(args.solver_name)
+    # parser = argparse.ArgumentParser(
+    #     description="Runs tests of Causal Effect under Partial-Observability."
+    # )
+    # parser.add_argument('solver_name',
+    #                     help='The solver name you want to test (ipopt, gurobi)'
+    #                     )
+    # args = parser.parse_args()
+    # automaticTestSolution(args.solver_name)
+    testSolution()
