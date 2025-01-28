@@ -171,8 +171,8 @@ def testBuildProblem():
                 print(f"for key = {key}, coefficient = {eq.dictionary[key]}")
 
 def automaticTestSolution(solver_name):
-    lowerdo1, upperdo1 = OptimizationInterface.optimizationProblem(valueIntervention=1, verbose = False, solver_name=solver_name)
-    lowerdo0, upperdo0 = OptimizationInterface.optimizationProblem(valueIntervention=0, verbose = False, solver_name=solver_name)
+    lowerdo1, upperdo1 = OptimizationInterface.automaticOptimizationProblem(valueIntervention=1, verbose = False, solver_name=solver_name)
+    lowerdo0, upperdo0 = OptimizationInterface.automaticOptimizationProblem(valueIntervention=0, verbose = False, solver_name=solver_name)
     print(f"P(Y=1|do(X=1)): [{lowerdo1},{upperdo1}]")
     print(f"P(Y=1|do(X=0)): [{lowerdo0},{upperdo0}]")
 
