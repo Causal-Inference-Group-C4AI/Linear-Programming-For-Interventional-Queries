@@ -5,7 +5,7 @@ class Graph:
     def __init__(self, numberOfNodes: int, currNodes: list[int], visited: list[bool], cardinalities: dict[int, int],
                  parents: list[list[int]], adj: list[list[int]], labelToIndex: dict[str, int], indexToLabel: dict[int, str],
                  dagComponents: list[list[int]], exogenous : list[int], endogenous : list[int], topologicalOrder: list[int],
-                 DAG: nx.digraph, cComponentToUnob: dict[int, int], graphNodes: list[Node]):
+                 DAG: nx.digraph, cComponentToUnob: dict[int, int], graphNodes: list[Node]):#, interventions: list[(str, int)]):
 
         self.numberOfNodes = numberOfNodes
         self.currNodes = currNodes
@@ -22,6 +22,7 @@ class Graph:
         self.DAG = DAG
         self.cComponentToUnob = cComponentToUnob
         self.graphNodes = graphNodes
+        # self.interventions = interventions
 
     def parseTerminal():
         numberOfNodes = int(input())
@@ -77,7 +78,7 @@ class Graph:
 
             numberOfNodes = file.readline().strip()
             numberOfEdges = file.readline().strip()
-            numberOfInterventions = file.readline().strip()
+            # numberOfInterventions = file.readline().strip()
 
             numberOfNodes = int(numberOfNodes)
             numberOfEdges = int(numberOfEdges)
@@ -101,18 +102,20 @@ class Graph:
                 adj[uIndex].append(vIndex)
                 parents[vIndex].append(uIndex)
 
-            interventions = []
-            for _ in range(numberOfInterventions):
-                intervene, value = file.readline().strip().split()
-                interventions.append((intervene, value))
+            # interventions = []
+            # for _ in range(numberOfInterventions):
+            #     intervene, value = file.readline().strip().split()
+            #     interventions.append((intervene, value))
 
-            return numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents, interventions
+            return numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents#, interventions
 
-    def parse(fromInterface=False, nodesString="", edgesString=""):
-        if fromInterface:            
-            auxTuple = Graph.parseInterface(nodesString, edgesString)
-        else:
-            auxTuple = Graph.parseTerminal()
+    def parse(fromInterface=False, file_path="/home/lawand/Canonical-Partition/test_cases/inputs/balke_pearl.txt", nodesString="", edgesString=""):
+        # if fromInterface:            
+        #     auxTuple = Graph.parseInterface(nodesString, edgesString)
+        # else:
+        #     auxTuple = Graph.parseTerminal()
+
+        auxTuple = Graph.parseFile(file_path)
 
         numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents = auxTuple
 

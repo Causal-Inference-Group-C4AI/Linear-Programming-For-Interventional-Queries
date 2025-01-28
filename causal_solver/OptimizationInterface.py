@@ -182,12 +182,12 @@ def testSolution():
 
 if __name__ == "__main__":
     # testBuildProblem()
-    # parser = argparse.ArgumentParser(
-    #     description="Runs tests of Causal Effect under Partial-Observability."
-    # )
-    # parser.add_argument('solver_name',
-    #                     help='The solver name you want to test (ipopt, gurobi)'
-    #                     )
-    # args = parser.parse_args()
-    # automaticTestSolution(args.solver_name)
-    testSolution()
+    parser = argparse.ArgumentParser(
+        description="Runs tests of Causal Effect under Partial-Observability."
+    )
+    parser.add_argument('solver_name',
+                        help='The solver name you want to test (ipopt, gurobi)'
+                        )
+    args = parser.parse_args()
+    automaticTestSolution(args.solver_name)
+    # testSolution()
