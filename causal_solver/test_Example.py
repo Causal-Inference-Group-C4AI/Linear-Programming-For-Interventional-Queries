@@ -34,46 +34,42 @@ def main(dag : Graph):
     _,_,mechanism = Helper.mechanisms_generator(latentNode =dag.labelToIndex["U1"], endogenousNodes = [dag.labelToIndex["Y"], dag.labelToIndex["X"]], cardinalities=dag.cardinalities , 
                                                         graphNodes = dag.graphNodes, v= False )
     y0: int = 1
-    x0: int = 1
-    xRlt: dict[int, int] = {}
-    dRlt : dict[int, int] = {}
-    yxdRlt : dict[int, int] = {}
+    a0: int = 1
+    aRlt: dict[int, int] = {}
+    bRlt : dict[int, int] = {}
+    yRlt : dict[int, int] = {}
+    abRlt : dict[int, int] = {}
     c: list[float] = []
     a:list[list[float]] = []
-    b: list[float] = []
+    b_eq: list[float] = []
     df: pd.DataFrame = pd.read_csv("/home/joaog/Cpart/Canonical-Partition/causal_solver/itau.csv")
     bounds : list[tuple[float]] = [(0,1) for _ in range(len(mechanism))]
 
-
-    xRlt[dag.labelToIndex["X"]] = x0
+    yRlt[dag.indexToLabel["Y"]] = y0
+    aRlt[dag.labelToIndex["X"]] = a0
 
     for u in range(len(mechanism)):
         coef = 0
-        for d in range(2):
-            dRlt[dag.labelToIndex["D"]] = d
-            if mechanism[u]["3="+str(x0)+",4="+str(d)] == y0:
-                coef += Helper.findConditionalProbability(dataFrame=df, indexToLabel= dag.indexToLabel, targetRealization=dRlt, conditionRealization= xRlt)
+        for b in range(2):
+            bRlt[dag.labelToIndex["B"]] = b
+            if mechanism[u][str(dag.labelToIndex["A"])+"="+str(a0)] == y0:
+                coef += Helper.findConditionalProbability(dataFrame=df, indexToLabel= dag.indexToLabel, targetRealization=yRlt, conditionRealization= bRlt)
         c.append(coef)
     a.append([1 for _ in range(len(mechanism))])
-    b.append(1)
-    for y in range(2):
-        for x in range(2):
-            for d in range(2):
-                aux: list[float] = []
-                yxdRlt[dag.labelToIndex["Y"]] = y
-                yxdRlt[dag.labelToIndex["X"]] = x
-                yxdRlt[dag.labelToIndex["D"]] = d
-                xRlt[dag.labelToIndex["X"]] = x
-                dRlt[dag.labelToIndex["D"]] = d
-                b.append(Helper.findProbability(dataFrame=df, indexToLabel= dag.indexToLabel, variableRealizations=yxdRlt))
-                coefAUx = Helper.findConditionalProbability(dataFrame= df, indexToLabel= dag.indexToLabel, targetRealization= dRlt, conditionRealization= xRlt, v=False)
-                for u in range(len(mechanism)):
-                    if (mechanism[u]["3="+str(x)+",4="+str(d)] == y) and (mechanism[u][""] == x):
-                        aux.append(coefAUx)
-                    else:
-                        aux.append(0)
-                a.append(aux)
-    optProblem(objFunction=c,Aeq=a, Beq=b, interval=bounds, v=True )
+    b_eq.append(1)
+    for aVal in range(2):
+        for bVal in range(2):
+            aux: list[float] = []
+            abRlt[dag.indexToLabel["A"]] = aVal
+            abRlt[dag.indexToLabel["B"]] = bVal
+            b_eq.append(Helper.findProbability(dataFrame=df, indexToLabel= dag.indexToLabel, variableRealizations=abRlt))
+            for u in range(len(mechanism)):
+                if (mechanism[u][str(dag.labelToIndex["A"])+"="+str(aVal)] == bVal) and (mechanism[u][""] == aVal):
+                    aux.append(1.)
+                else:
+                    aux.append(0.)
+            a.append(aux)
+    optProblem(objFunction=c,Aeq=a, Beq=b_eq, interval=bounds, v=True )
 
 if __name__ == "__main__":
     dag = Graph.parse()#use itau_simplified
