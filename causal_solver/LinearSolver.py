@@ -1,7 +1,5 @@
-from partition_methods.relaxed_problem.python.graph import Graph
 from scipy.optimize import linprog
-import pandas as pd
-from causal_solver.Helper import helper
+from causal_solver.Helper import Helper
 
 class LinearSolver:    
     def checkValues(mechanismDict: dict[str, int], parents: dict[int, list[int]], topoOrder: list[int],
@@ -64,11 +62,11 @@ class LinearSolver:
         
         
         # variablesOrder = tail + endoVars
-        df = helper.fetchCsv(filepath)
+        df = Helper.fetchCsv(filepath)
         
-        tailSpace = helper.helperGenerateSpaces(tail, cardinalitiesTail)
-        endoSpace = helper.helperGenerateSpaces(endoVars, cardinalitiesEndo)
-        combinationOfSpaces = helper.generateCrossProducts(tailSpace + endoSpace)
+        tailSpace = Helper.helperGenerateSpaces(tail, cardinalitiesTail)
+        endoSpace = Helper.helperGenerateSpaces(endoVars, cardinalitiesEndo)
+        combinationOfSpaces = Helper.generateCrossProducts(tailSpace + endoSpace)
 
         if v:
             for i, case in enumerate(combinationOfSpaces):
@@ -92,7 +90,7 @@ class LinearSolver:
             for index in range(len(endoVars)):
                 endoValues[endoVars[index]] = combination[index + len(tail)]
                         
-            probability: float = helper.findConditionalProbability(df, endoIndexToLabel,
+            probability: float = Helper.findConditionalProbability(df, endoIndexToLabel,
                                                                          endoValues, tailValues, False)            
             probability = round(probability * pow(10, precision)) / pow(10, precision)
 
@@ -153,8 +151,8 @@ class LinearSolver:
         same way, the topoOrder does NOT need to contain all endogenous variables of the c-component
         """        
         # Generate all tail spaces:        
-        tailSpaces = helper.helperGenerateSpaces(tail, tailCardinalities)        
-        tailRealizations = helper.generateCrossProducts(tailSpaces)
+        tailSpaces = Helper.helperGenerateSpaces(tail, tailCardinalities)        
+        tailRealizations = Helper.generateCrossProducts(tailSpaces)
         
         if v:
             print("Debug - Check all tail realizations")
@@ -195,7 +193,7 @@ class LinearSolver:
                     for tailIndex, tailVar in enumerate(tail):
                         tailDict[tailVar] = tailRealization[tailIndex]
                     
-                    tailProbability = helper.findProbability(df, indexToLabel, tailDict, False)                    
+                    tailProbability = Helper.findProbability(df, indexToLabel, tailDict, False)                    
                     objectiveFunction[Uindex] += tailProbability
                     print(f"Sum to index {Uindex} P = {tailProbability} ") 
         
@@ -251,15 +249,15 @@ class LinearSolver:
 def testMechanismGenerator():    
     print(f"Test case 1:")
     
-    helper.mechanisms_generator(0, [3, 6], {0: 2, 1: 2, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2}, {3: [0, 1, 2], 6: [0, 4, 5] })
+    Helper.mechanisms_generator(0, [3, 6], {0: 2, 1: 2, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2}, {3: [0, 1, 2], 6: [0, 4, 5] })
     print(f"Test case 2: Balke & Pearl")
-    helper.mechanisms_generator(0, [1, 2], {0: 2, 1: 2, 2: 2, 3: 2}, {1: [0, 3], 2: [0, 1] })
+    Helper.mechanisms_generator(0, [1, 2], {0: 2, 1: 2, 2: 2, 3: 2}, {1: [0, 3], 2: [0, 1] })
 
 def testBalkePearl():
     print("Teste for Balke & Pearl")
     #mechanismDicts: dict[str, int], tail: list[int], cardinalitiesTail: dict[int,int], endoVars: list[int],
                             # cardinalitiesEndo: dict[int,int]):        
-    _, _, mechanismDicts = helper.mechanisms_generator(0, [1, 2], {1: 2, 2: 2, 3: 2}, {1: [0, 3], 2: [0, 1] }, False)
+    _, _, mechanismDicts = Helper.mechanisms_generator(0, [1, 2], {1: 2, 2: 2, 3: 2}, {1: [0, 3], 2: [0, 1] }, False)
     print("Checking the dictionary")
     for element in mechanismDicts:
         for key in element:
@@ -284,7 +282,7 @@ def testBalkePearl():
         
     # tail: list[int], tailCardinalities: dict[int,int], v: True):
     # P(Y=1|do(X=0))
-    df = helper.fetchCsv()
+    df = Helper.fetchCsv()
     LinearSolver.generateObjectiveFunction(df, {3: "Z", 2: "Y", 1: "X"},mechanismDicts=mechanismDicts, targetVariable=2, targetValue=1, interventionVariable=1, 
                                                 interventionValue=0, topoOrder=[1, 2], tail=[3], tailCardinalities={3: 2}, v=True,
                                                 endoParents={1: [0, 3], 2: [0, 1]}, latent=0)
@@ -292,7 +290,7 @@ def testBalkePearl():
 def testItau():
     print("Teste grafo itau")
 
-    _, _, mechanismDicts = helper.mechanisms_generator(0, [1, 2], {1: 2, 2: 2, 3: 2}, {1: [0, 3], 2: [0, 1, 3] }, False)
+    _, _, mechanismDicts = Helper.mechanisms_generator(0, [1, 2], {1: 2, 2: 2, 3: 2}, {1: [0, 3], 2: [0, 1, 3] }, False)
     print("Checking the dictionary")
     for element in mechanismDicts:
         for key in element:

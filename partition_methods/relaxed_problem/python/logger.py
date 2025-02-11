@@ -1,4 +1,4 @@
-from .graph import Graph
+from utils.graph import Graph
 class Logger:        
     def debugGraph(graph: Graph):        
         print("debug indexToLabel", graph.cardinalities)        

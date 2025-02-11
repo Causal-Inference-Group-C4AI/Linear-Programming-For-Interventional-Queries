@@ -1,11 +1,15 @@
+import inspect
+import sys
 import networkx as nx
-from causal_solver.SupertailFinder import Node
+from causal_solver.MoralNode import MoralNode
+from causal_solver.Node import Node
 
 class Graph:
     def __init__(self, numberOfNodes: int, currNodes: list[int], visited: list[bool], cardinalities: dict[int, int],
                  parents: list[list[int]], adj: list[list[int]], labelToIndex: dict[str, int], indexToLabel: dict[int, str],
                  dagComponents: list[list[int]], exogenous : list[int], endogenous : list[int], topologicalOrder: list[int],
-                 DAG: nx.digraph, cComponentToUnob: dict[int, int], graphNodes: list[Node]):
+                 DAG: nx.digraph, cComponentToUnob: dict[int, int], graphNodes: list[Node],
+                 moralGraphNodes: list[MoralNode]):
 
         self.numberOfNodes = numberOfNodes
         self.currNodes = currNodes
@@ -22,6 +26,7 @@ class Graph:
         self.DAG = DAG
         self.cComponentToUnob = cComponentToUnob
         self.graphNodes = graphNodes
+        self.moralGraphNodes = moralGraphNodes
 
     def parseTerminal():
         numberOfNodes = int(input())
@@ -33,7 +38,11 @@ class Graph:
         parents: list[list[int]] = [[] for _ in range(numberOfNodes)]
 
         for i in range(numberOfNodes):
-            label, cardinality = input().split()
+            label, cardinality = input().split()            
+            if not any(char.isalpha() for char in label):                
+                print("Error: The label must contain only alphabetic characters.")
+                sys.exit(1)
+
             cardinality = int(cardinality)
             labelToIndex[label] = i
             indexToLabel[i] = label
@@ -139,6 +148,14 @@ class Graph:
                 if not self.visited[parent_node] and self.cardinalities[parent_node] < 1:
                     self.dfs(parent_node)
     
+    def base_dfs(self, node: int):
+        self.visited[node] = True
+        self.currNodes.append(node)
+
+        for adj_node in self.graphNodes[node].children:
+            if not self.visited[adj_node]:
+                self.dfs(adj_node)
+    
     def find_cComponents(self):
         for i in range(1, self.numberOfNodes + 1):
             if not self.visited[i] and self.cardinalities[i] < 1:            
@@ -146,5 +163,49 @@ class Graph:
                 self.dfs(i)
                 self.dagComponents.append(self.currNodes[:])
                 self.cComponentToUnob[len(self.dagComponents) - 1] = i
+
+    def secure_node_access(self, node: any):
+        """
+        Checks if the graph node is being accessed as a label or as an index and chooses
+        the correct way to parse it.
+        """
+        stack = inspect.stack()
+        
+        if node in self.indexToLabel.keys():
+            return node
+        elif node in self.labelToIndex.keys() :
+            return self.labelToIndex[node]          
+        else:
+            caller_function_name = stack[1].function
+            print(f"Called from: {caller_function_name}")
+            sys.exit(1)
+
+    def is_descendant(self, ancester, descendant):
+        for i in range(len(self.visited)):
+            self.visited[i] = False        
+
+        self.currNodes = []
+        self.base_dfs(node=ancester)
+
+        return self.visited[descendant]
+    
+    def build_moral(self, consideredNodes: list[int]):
+        """
+        Builds the moral graph, considering only part of the nodes.
+        """
+        for node in range(self.numberOfNodes):
+            if node in consideredNodes:
+                for parent in self.graphNodes[node].parents:
+                    for parent2 in self.graphNodes[node].parents:
+                        if parent < parent2:
+                            if parent in consideredNodes and parent2 in consideredNodes:
+                                self.moralGraphNodes[parent].adjacent.append(parent2)
+                                self.moralGraphNodes[parent2].adjacent.append(parent)
+    
+    def find_ancesters(self, node: int):
+        # TODO
+        pass
+
+
 if __name__ == "__main__":
     graph: Graph = Graph.parse()

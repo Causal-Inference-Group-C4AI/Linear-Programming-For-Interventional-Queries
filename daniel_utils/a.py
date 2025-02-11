@@ -5,7 +5,7 @@ import os
 sys.path.append(os.path.abspath("/home/lawand/Canonical-Partition/"))
 
 from causal_solver.Helper import Helper
-from partition_methods.relaxed_problem.python.graph import Graph
+from utils.graph import Graph
 
 def trimDecimal(precision: int, value: float):
     return round(pow(10, precision) * value) / pow(10, precision)

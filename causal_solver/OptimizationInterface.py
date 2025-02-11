@@ -1,6 +1,6 @@
 from causal_solver.NonLinearConstraints import NonLinearConstraints
 from causal_solver.NonLinearSolver import solveModel
-from partition_methods.relaxed_problem.python.graph import Graph 
+from utils.graph import Graph 
 from causal_solver.Helper import Helper
 from causal_solver.SupertailFinder import SupertailFinder
 from causal_solver.Supersets import Supersets

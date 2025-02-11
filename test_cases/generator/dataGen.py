@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from partition_methods.relaxed_problem.python.graph import Graph
+from utils.graph import Graph
 from test_cases.generator.probabilityGen import distribution
 from test_cases.generator.generator import generateMechanisms
 

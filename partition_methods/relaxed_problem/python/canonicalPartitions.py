@@ -1,6 +1,6 @@
 import math
 from .logger import Logger
-from .graph import Graph
+from utils.graph import Graph
 
 def bound_canonical_partitions(dagComponents: list[list[int]], cardinalities: list[int], parents: list[int]):
     partitions: list[int] = []
