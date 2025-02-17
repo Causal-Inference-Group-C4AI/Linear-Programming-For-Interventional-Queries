@@ -132,7 +132,7 @@ class Graph:
 
         return Graph(numberOfNodes=numberOfNodes,currNodes=[], visited=[False] * (numberOfNodes), cardinalities=cardinalities, parents=parents,
                     adj=adj, indexToLabel=indexToLabel, labelToIndex=labelToIndex, dagComponents=[], exogenous= exogenIndex,endogenous = endogenIndex, topologicalOrder= order, DAG= inpDAG,
-                    cComponentToUnob = {}, graphNodes=graphNodes)
+                    cComponentToUnob = {}, graphNodes=graphNodes, moralGraphNodes=[])
     
     def dfs(self, node: int):        
         self.visited[node] = True
@@ -164,22 +164,6 @@ class Graph:
                 self.dagComponents.append(self.currNodes[:])
                 self.cComponentToUnob[len(self.dagComponents) - 1] = i
 
-    def secure_node_access(self, node: any):
-        """
-        Checks if the graph node is being accessed as a label or as an index and chooses
-        the correct way to parse it.
-        """
-        stack = inspect.stack()
-        
-        if node in self.indexToLabel.keys():
-            return node
-        elif node in self.labelToIndex.keys() :
-            return self.labelToIndex[node]          
-        else:
-            caller_function_name = stack[1].function
-            print(f"Called from: {caller_function_name}")
-            sys.exit(1)
-
     def is_descendant(self, ancester, descendant):
         for i in range(len(self.visited)):
             self.visited[i] = False        
@@ -189,23 +173,65 @@ class Graph:
 
         return self.visited[descendant]
     
-    def build_moral(self, consideredNodes: list[int]):
+    def build_moral(self, consideredNodes: list[int], flag: bool, intervention: int):
         """
         Builds the moral graph, considering only part of the nodes.
+        flag: if true, the outgoing edges of the intervention should not be considered.
         """
+
+        self.moralGraphNodes = [MoralNode(adjacent=[]) for _ in range(self.numberOfNodes)]
         for node in range(self.numberOfNodes):
             if node in consideredNodes:
                 for parent in self.graphNodes[node].parents:
+                    if flag and (parent == intervention):
+                            continue
                     for parent2 in self.graphNodes[node].parents:
+                        if flag and (parent2 == intervention):
+                            continue
+                        if node < parent:
+                            if node in consideredNodes and parent in consideredNodes:
+                                self.moralGraphNodes[node].adjacent.append(parent)
+                                self.moralGraphNodes[parent].adjacent.append(node)
+                        if node < parent2:
+                            if node in consideredNodes and parent2 in consideredNodes:
+                                self.moralGraphNodes[node].adjacent.append(parent2)
+                                self.moralGraphNodes[parent2].adjacent.append(node)
                         if parent < parent2:
-                            if parent in consideredNodes and parent2 in consideredNodes:
+                            if (parent in consideredNodes and parent2 in consideredNodes):
                                 self.moralGraphNodes[parent].adjacent.append(parent2)
                                 self.moralGraphNodes[parent2].adjacent.append(parent)
-    
-    def find_ancesters(self, node: int):
-        # TODO
-        pass
 
+    def find_ancesters(self, node: int):
+        self.currNodes.clear()
+        self.visited =  [False] * self.numberOfNodes
+
+        self.dfs_ancester(node)
+        ancesters: list[int] = []
+        for i in range(0,self.numberOfNodes):
+            if self.visited[i]:
+                ancesters.append(i)
+
+        return ancesters
+
+    def dfs_ancester(self, node):
+        self.visited[node] = True
+
+        for parent in self.graphNodes[node].parents:
+            if not self.visited[parent]:
+                self.dfs_ancester(parent)
+    
+    def independency_moral(self, node1: int, node2: int):
+        self.visited = [False] * self.numberOfNodes
+        self.dfs_moral(node1)
+        
+        return not self.visited[node2]
+
+    def dfs_moral(self, node):
+        self.visited[node] = True
+
+        for adj in self.moralGraphNodes[node].adjacent:
+            if not self.visited[adj]:
+                self.dfs_moral(node=adj)
 
 if __name__ == "__main__":
     graph: Graph = Graph.parse()
