@@ -1,4 +1,3 @@
-import inspect
 import sys
 import networkx as nx
 from causal_solver.MoralNode import MoralNode
@@ -148,14 +147,6 @@ class Graph:
                 if not self.visited[parent_node] and self.cardinalities[parent_node] < 1:
                     self.dfs(parent_node)
     
-    def base_dfs(self, node: int):
-        self.visited[node] = True
-        self.currNodes.append(node)
-
-        for adj_node in self.graphNodes[node].children:
-            if not self.visited[adj_node]:
-                self.dfs(adj_node)
-    
     def find_cComponents(self):
         for i in range(1, self.numberOfNodes + 1):
             if not self.visited[i] and self.cardinalities[i] < 1:            
@@ -163,62 +154,74 @@ class Graph:
                 self.dfs(i)
                 self.dagComponents.append(self.currNodes[:])
                 self.cComponentToUnob[len(self.dagComponents) - 1] = i
+    
+    def base_dfs(self, node: int):
+        self.visited[node] = True        
 
-    def is_descendant(self, ancester, descendant):
+        for adj_node in self.graphNodes[node].children:
+            if not self.visited[adj_node]:
+                self.dfs(adj_node)
+
+    def is_descendant(self, ancestor, descendant):
         for i in range(len(self.visited)):
             self.visited[i] = False        
 
         self.currNodes = []
-        self.base_dfs(node=ancester)
+        self.base_dfs(node=ancestor)
 
         return self.visited[descendant]
     
-    def build_moral(self, consideredNodes: list[int], flag: bool, intervention: int):
+    def build_moral(self, consideredNodes: list[int], flag=False, intervention=-1):
         """
         Builds the moral graph, considering only part of the nodes.
         flag: if true, the outgoing edges of the intervention should not be considered.
         """
-
         self.moralGraphNodes = [MoralNode(adjacent=[]) for _ in range(self.numberOfNodes)]
         for node in range(self.numberOfNodes):
-            if node in consideredNodes:
-                for parent in self.graphNodes[node].parents:
-                    if flag and (parent == intervention):
-                            continue
-                    for parent2 in self.graphNodes[node].parents:
-                        if flag and (parent2 == intervention):
-                            continue
-                        if node < parent:
-                            if node in consideredNodes and parent in consideredNodes:
-                                self.moralGraphNodes[node].adjacent.append(parent)
-                                self.moralGraphNodes[parent].adjacent.append(node)
-                        if node < parent2:
-                            if node in consideredNodes and parent2 in consideredNodes:
-                                self.moralGraphNodes[node].adjacent.append(parent2)
-                                self.moralGraphNodes[parent2].adjacent.append(node)
-                        if parent < parent2:
-                            if (parent in consideredNodes and parent2 in consideredNodes):
-                                self.moralGraphNodes[parent].adjacent.append(parent2)
-                                self.moralGraphNodes[parent2].adjacent.append(parent)
+            if node not in consideredNodes: 
+                continue
+            
+            for parent in self.graphNodes[node].parents:
+                if (parent not in consideredNodes) or (flag and parent == intervention):
+                    continue
 
-    def find_ancesters(self, node: int):
+                for parent2 in self.graphNodes[node].parents:
+                    if flag and (parent2 == intervention):
+                        continue
+
+                    if parent not in self.moralGraphNodes[node].adjacent:
+                        self.moralGraphNodes[node].adjacent.append(parent)
+                    if node not in self.moralGraphNodes[parent].adjacent:
+                        self.moralGraphNodes[parent].adjacent.append(node)
+
+                    if parent2 not in self.moralGraphNodes[node].adjacent:
+                            self.moralGraphNodes[node].adjacent.append(parent2)
+                    if node not in self.moralGraphNodes[parent2].adjacent:
+                            self.moralGraphNodes[parent2].adjacent.append(node)
+
+                    if parent2 not in self.moralGraphNodes[parent].adjacent:
+                            self.moralGraphNodes[parent].adjacent.append(parent2)
+                    if parent not in self.moralGraphNodes[parent2].adjacent:
+                            self.moralGraphNodes[parent2].adjacent.append(parent)
+
+    def find_ancestors(self, node: int):
         self.currNodes.clear()
         self.visited =  [False] * self.numberOfNodes
 
-        self.dfs_ancester(node)
-        ancesters: list[int] = []
+        self.dfs_ancestor(node)
+        ancestors: list[int] = []
         for i in range(0,self.numberOfNodes):
             if self.visited[i]:
-                ancesters.append(i)
+                ancestors.append(i)
 
-        return ancesters
+        return ancestors
 
-    def dfs_ancester(self, node):
+    def dfs_ancestor(self, node):
         self.visited[node] = True
 
         for parent in self.graphNodes[node].parents:
             if not self.visited[parent]:
-                self.dfs_ancester(parent)
+                self.dfs_ancestor(parent)
     
     def independency_moral(self, node1: int, node2: int):
         self.visited = [False] * self.numberOfNodes
