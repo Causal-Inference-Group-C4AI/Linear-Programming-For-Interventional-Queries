@@ -26,13 +26,20 @@ class restrictions_generator:
 
         empiricalProbabilitiesVariables = [] # If V in this array then it implies P(v) in the objective function
         mechanismVariables = []              # If V in this array then it implies a decision function: 1(Pa(v) => v= some value)
-        conditionalProbabilities = []        # If V|A,B,C in this array then it implies P(V|A,B,C) in the objective function
+        conditionalProbabilities: list[tuple[int, list[int]]] = []        # If V|A,B,C in this array then it implies P(V|A,B,C) in the objective function
         
         while len(current_targets) > 0:
-            # TODO: any node which is not a descendant of the intervention should be processed at the end.
-            # TODO: check using a DFS for some variable which is in Yt and has no descendants in it.
-
-            current_target = current_targets.pop()                       
+            print("---- Current targets array:")
+            for tg in current_targets:
+                print(f"- {tg}")
+            
+            # TODO: check if the topological order is reversed.
+            current_target = -1
+            for node in self.graph.topologicalOrder:
+                if node in current_targets and node > current_target:
+                    current_target = node                            
+            
+            current_targets.remove(current_target)                       
             print(f"Current target: {current_target}")
 
             if not self.graph.is_descendant(ancestor=self.intervention, descendant=current_target):
@@ -45,44 +52,44 @@ class restrictions_generator:
                         if (parent not in current_targets) and parent != intervention:
                             current_targets.append(parent)
             else:
-                    print(f"------- Case 3: Find d-sepator set")
+                    print(f"------- Case 3: Find d-separator set")
                     ancestors = self.graph.find_ancestors(node=current_target)
-                    conditionableAncestors = []
+                    conditionableAncestors: list[int] = []
                     for ancestor in ancestors:
-                        if self.graph.cardinalities[ancestor] > 0 and ancestor != intervention:
+                        # Question: does it need to not be the intervention?
+                        if self.graph.cardinalities[ancestor] > 0 and ancestor != current_target: 
                             conditionableAncestors.append(ancestor)
 
-                    for x in range(pow(2,len(conditionableAncestors))):
-                        # Consider the bits from LS to MS of x. The n-th element in conditionableAncestors is conditioned on if and only
-                        # if the n-th bit from LS to MS is 1.
+                    alwaysConditionedNodes: list[int] = current_targets.copy()
+                    if current_target in alwaysConditionedNodes: alwaysConditionedNodes.remove(current_target)                    
+                    
+                    if interventionLatent in alwaysConditionedNodes: alwaysConditionedNodes.remove(interventionLatent)
 
-                        self.graph.build_moral(consideredNodes=ancestors)
-                        # Remove the edges that involve any node in conditionableAncestors which is being conditioned on
+                    for x in range(pow(2,len(conditionableAncestors))):                                                                        
+                        conditionedNodes: list[int] = alwaysConditionedNodes.copy()
                         for i in range(len(conditionableAncestors)):
                             if (x >> i) % 2 == 1:
-                                conditioningNode = conditionableAncestors[i]
-                                self.graph.moralGraphNodes[conditioningNode].adjacent.clear()
+                                conditionedNodes.append(conditionableAncestors[i])
+                      
+                        self.graph.build_moral(consideredNodes=ancestors,conditionedNodes=conditionedNodes)                                             
+                        condition1 = self.graph.independency_moral(node2=interventionLatent, node1=current_target)
+                        
+                        self.graph.build_moral(consideredNodes=ancestors, conditionedNodes=conditionedNodes, flag=True, intervention=intervention)
+                        condition2 = self.graph.independency_moral(node2=intervention, node1=current_target)
 
-                                print(f"Conditioning on: {conditioningNode}")
-                                for index in range(self.graph.numberOfNodes):
-                                    if conditioningNode in self.graph.moralGraphNodes[index].adjacent:
-                                        self.graph.moralGraphNodes[index].adjacent.remove(conditioningNode)
+                        if condition1 and condition2:
+                            separator: list[int] = []
+                            print(f"The following set works:")
+                            for element in conditionedNodes:
+                                print(f"- {element}")
+                                separator.append(element)
 
-                            condition1 = self.graph.independency_moral(node2=interventionLatent, node1=current_target)
-
-                            # Remove intervention outgoing edges for condition 2
-                            self.graph.build_moral(consideredNodes=ancestors, flag=True, intervention=intervention)
-                            condition2 = self.graph.independency_moral(node2=intervention, node1=current_target)
-
-                            if condition1 and condition2:
-                                separator: list[int] = []
-                                print(f"The following set works:")
-                                for element in conditionableAncestors:
-                                    print(f"- {element}")
-                                    separator.append(element)
-
-                        # Choose one of the valid subsets - Last instance of "separator", for now.
-                        # TODO: Determine the new y_t+1
+                            current_targets = list((set(current_targets) | set(conditionedNodes)) - {intervention, current_target})
+                        
+                        # Choose one of the valid subsets - Last instance of "separator", for now
+                        conditionalProbabilities.append((current_target, conditionedNodes))
+                        
+                        
                         # Question: is any already solved variable selected for the second time? Does the program need to address this issue
                         # by forcing the set to not contain any of such variables?
 
@@ -96,13 +103,12 @@ class restrictions_generator:
         """
         graph: Graph = Graph.parse()        
         print("debug graph parsed by terminal:")
-        i = 0
-        for graphNode in graph.graphNodes:
-            print(f"node name: {graph.indexToLabel[i]}")
-            print(f"children: {graphNode.children}")
-            print(f"latentParent: {graphNode.latentParent}")
-            print(f"parents: {graphNode.parents}")
-            i += 1
+        
+        for i in range(graph.numberOfNodes):
+            print(f"node index {i} - node name: {graph.indexToLabel[i]}")
+            print(f"children: {graph.graphNodes[i].children}")
+            print(f"latentParent: {graph.graphNodes[i].latentParent}")
+            print(f"parents: {graph.graphNodes[i].parents}")            
         print("\n\n\n\n")
 
         rg = restrictions_generator(graph=graph, intervention=graph.labelToIndex["X"], target=graph.labelToIndex["Y"])

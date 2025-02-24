@@ -156,22 +156,21 @@ class Graph:
                 self.cComponentToUnob[len(self.dagComponents) - 1] = i
     
     def base_dfs(self, node: int):
-        self.visited[node] = True        
+        self.visited[node] = True
 
         for adj_node in self.graphNodes[node].children:
-            if not self.visited[adj_node]:
-                self.dfs(adj_node)
+            if not self.visited[adj_node]:                
+                self.base_dfs(adj_node)
 
-    def is_descendant(self, ancestor, descendant):
+    def is_descendant(self, ancestor, descendant):        
         for i in range(len(self.visited)):
             self.visited[i] = False        
-
-        self.currNodes = []
-        self.base_dfs(node=ancestor)
+                
+        self.base_dfs(node=ancestor)        
 
         return self.visited[descendant]
     
-    def build_moral(self, consideredNodes: list[int], flag=False, intervention=-1):
+    def build_moral(self, consideredNodes: list[int], conditionedNodes: list[int], flag=False, intervention=-1):
         """
         Builds the moral graph, considering only part of the nodes.
         flag: if true, the outgoing edges of the intervention should not be considered.
@@ -181,29 +180,27 @@ class Graph:
             if node not in consideredNodes: 
                 continue
             
-            for parent in self.graphNodes[node].parents:
-                if (parent not in consideredNodes) or (flag and parent == intervention):
-                    continue
-
-                for parent2 in self.graphNodes[node].parents:
-                    if flag and (parent2 == intervention):
-                        continue
-
-                    if parent not in self.moralGraphNodes[node].adjacent:
-                        self.moralGraphNodes[node].adjacent.append(parent)
-                    if node not in self.moralGraphNodes[parent].adjacent:
-                        self.moralGraphNodes[parent].adjacent.append(node)
-
-                    if parent2 not in self.moralGraphNodes[node].adjacent:
-                            self.moralGraphNodes[node].adjacent.append(parent2)
-                    if node not in self.moralGraphNodes[parent2].adjacent:
-                            self.moralGraphNodes[parent2].adjacent.append(node)
-
-                    if parent2 not in self.moralGraphNodes[parent].adjacent:
-                            self.moralGraphNodes[parent].adjacent.append(parent2)
-                    if parent not in self.moralGraphNodes[parent2].adjacent:
-                            self.moralGraphNodes[parent2].adjacent.append(parent)
-
+            if node in conditionedNodes:                
+                for parent1 in self.graphNodes[node].parents:
+                    if flag and parent1 == intervention: continue
+                    for parent2 in self.graphNodes[node].parents:
+                        if flag and parent2 == intervention: continue
+                        
+                        if (parent1 in conditionedNodes and parent2 in consideredNodes):
+                            if parent2 not in self.moralGraphNodes[parent1].adjacent:
+                                self.moralGraphNodes[parent1].adjacent.append(parent2)
+                            if parent1 not in self.moralGraphNodes[parent2].adjacent:
+                                self.moralGraphNodes[parent2].adjacent.append(parent1)                
+            else:
+                if (flag and node == intervention): continue
+                
+                for ch in self.graphNodes[node].children:                    
+                    if ch in consideredNodes and ch not in conditionedNodes:
+                        if node not in self.moralGraphNodes[ch].adjacent:
+                            self.moralGraphNodes[ch].adjacent.append(node)
+                        if ch not in self.moralGraphNodes[node].adjacent:
+                            self.moralGraphNodes[node].adjacent.append(ch)
+                
     def find_ancestors(self, node: int):
         self.currNodes.clear()
         self.visited =  [False] * self.numberOfNodes
