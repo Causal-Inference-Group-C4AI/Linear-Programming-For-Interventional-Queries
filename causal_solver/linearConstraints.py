@@ -1,4 +1,4 @@
-from partition_methods.relaxed_problem.python.graph import Graph
+from utils.graph import Graph 
 from Helper import Helper
 import pandas as pd
 def createDictIndex(parents: list[int],rlt:list[int], indexerList: list[int]):
@@ -26,7 +26,7 @@ def generateConstraints(data: pd.DataFrame,dag: Graph, unob: int, mecahanism:lis
     productTerms : list[dict[int, list[int]]] = []
     dictTarget: dict[int, int] = {}
     dictCond : dict[int,int] = {}
-    decisionMatrix : list[list[int]] = []
+    decisionMatrix : list[list[int]] = [[1 for _ in range(len(mechanism))]]
     for node in topoOrder:
         if (node in dag.dagComponents[unob]) and (node in cComponent):
             cCompOrder.append(node)
