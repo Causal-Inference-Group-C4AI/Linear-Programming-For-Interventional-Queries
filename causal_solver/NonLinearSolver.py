@@ -126,6 +126,10 @@ def solveModelIpopt(objective : dict[str, float], constraints : list[list[equati
         model.obj.pprint()
         model.eqConstrain.pprint()
     
+    if verbose:
+        model.obj.pprint()
+        model.eqConstrain.pprint()
+    
     results = opt.solve(model)
     upper = pyo.value(model.obj)
     print(f"MAX Query:{upper}")

@@ -178,6 +178,7 @@ def automaticTestSolution(solver_name):
 
 def testSolution():
     lower, upper = OptimizationInterface.optimizationProblem(verbose = True)
+    lower, upper = OptimizationInterface.optimizationProblem(verbose = True)
     print(f"Results: [{lower},{upper}]")
 
 if __name__ == "__main__":
