@@ -1,6 +1,6 @@
 from Helper import Helper
 from scipy.optimize import linprog
-from partition_methods.relaxed_problem.python.graph import Graph
+from utils.graph import Graph
 import pandas as pd
 import time as tm
 def trimDecimal(precision: int, value: float):

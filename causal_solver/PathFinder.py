@@ -1,4 +1,4 @@
-from partition_methods.relaxed_problem.python.graph import Graph
+from utils.graph import Graph
 
 def inCcomponent(graph : Graph, node : int):
      for cComponent in graph.dagComponents:

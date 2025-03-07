@@ -1,6 +1,6 @@
 from dowhy import CausalModel
 import pandas as pd
-from partition_methods.relaxed_problem.python.graph import Graph
+from utils.graph import Graph
 from test_cases.generator.dataGen import dataGen
 import networkx as nx
 
