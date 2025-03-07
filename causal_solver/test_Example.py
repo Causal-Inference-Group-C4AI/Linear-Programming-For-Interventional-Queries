@@ -45,7 +45,7 @@ def main(dag : Graph):
     df: pd.DataFrame = pd.read_csv("/home/joaog/Cpart/Canonical-Partition/causal_solver/itau.csv")
     bounds : list[tuple[float]] = [(0,1) for _ in range(len(mechanism))]
 
-    yRlt[dag.indexToLabel["Y"]] = y0
+    yRlt[dag.labelToIndex["Y"]] = y0
     aRlt[dag.labelToIndex["X"]] = a0
 
     for u in range(len(mechanism)):
@@ -60,8 +60,8 @@ def main(dag : Graph):
     for aVal in range(2):
         for bVal in range(2):
             aux: list[float] = []
-            abRlt[dag.indexToLabel["A"]] = aVal
-            abRlt[dag.indexToLabel["B"]] = bVal
+            abRlt[dag.labelToIndex["A"]] = aVal
+            abRlt[dag.labelToIndex["B"]] = bVal
             b_eq.append(Helper.findProbability(dataFrame=df, indexToLabel= dag.indexToLabel, variableRealizations=abRlt))
             for u in range(len(mechanism)):
                 if (mechanism[u][str(dag.labelToIndex["A"])+"="+str(aVal)] == bVal) and (mechanism[u][""] == aVal):

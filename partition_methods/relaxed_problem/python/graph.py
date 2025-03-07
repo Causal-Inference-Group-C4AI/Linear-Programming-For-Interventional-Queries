@@ -140,7 +140,7 @@ class Graph:
                     self.dfs(parent_node)
     
     def find_cComponents(self):
-        for i in range(1, self.numberOfNodes + 1):
+        for i in range(self.numberOfNodes):
             if not self.visited[i] and self.cardinalities[i] < 1:            
                 self.currNodes.clear()
                 self.dfs(i)
