@@ -1,10 +1,16 @@
 import itertools
 from causal_solver.Node import Node
 from collections import namedtuple
+import pandas as pd
 
 dictAndIndex = namedtuple('dictAndIndex', ['mechanisms', 'index'])
 
 class MechanismGenerator:
+    def fetchCsv(filepath="balke_pearl.csv"):        
+        prefix = "/home/c4ai-wsl/projects/Canonical-Partition/causal_solver/"
+        # prefix = "/home/joaog/Cpart/Canonical-Partition/causal_solver/"
+        return pd.read_csv(prefix + filepath)
+
     def helperGenerateSpaces(nodes: list[int], cardinalities: dict[int, int]):
             spaces: list[list[int]] = []
         
@@ -13,8 +19,8 @@ class MechanismGenerator:
         
             return spaces
 
-    def generateCrossProducts(sets: list[list[int]]):
-        crossProductsTuples = itertools.product(*sets)
+    def generateCrossProducts(listSpaces: list[list[int]]):
+        crossProductsTuples = itertools.product(*listSpaces)
         return [list(combination) for combination in crossProductsTuples]
 
 
@@ -96,14 +102,28 @@ class MechanismGenerator:
                     print(f"key: {key} & val: {mechanismDict[key]}")
                 print("------------")
 
+        """
+        mechanismDicts: list[dict[str, int]]
+        --- Has all the mechanisms for ONE latent variable. Each element of the list is a set of mechanisms, which specify 
+            the value of any c-component endogenous node given the values of its endogenous parents.
+        
+        --- The key to check how one node behaves given its parents is a string with the value of the parents:
+            "Parent1=Val1,Parent2=Val2,...,ParentN=ValN"
+
+        --- There is an specific order for the parents: it is the same as in graph.graphNodes.
+        
+        TODO: change the dictionary so that it also depends explicitly on the node we want to determine the value, otherwise the
+        key for two nodes with the same parents is the same.
+        """
+
         return allPossibleMechanisms, dictKeys, mechanismDicts
 
-    def mechanismListGenerator(cardinalities: dict[int, int], listU: list[int], setS: set[int], graphNodes: list[Node]):
-        mechanismDictsList: list[list[dictAndIndex]] = [] # Same order as in listU
+    def mechanismListGenerator(cardinalities: dict[int, int], listU: list[int], listSpaces: set[int], graphNodes: list[Node]):        
+        mechanismDictsList: list[list[dictAndIndex]] = []
         globalIndex: int = 0
         latentCardinalities: dict[int, int] = {}
         for latentVariable in listU:
-            endogenousInS: list[int] = list(set(graphNodes[latentVariable].children) & setS)
+            endogenousInS: list[int] = list(set(graphNodes[latentVariable].children) & listSpaces)
             _, _, mechanismDicts = MechanismGenerator.mechanisms_generator(latentNode=latentVariable, endogenousNodes=endogenousInS,
                                             cardinalities=cardinalities,graphNodes=graphNodes,v=False)
 

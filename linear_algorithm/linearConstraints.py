@@ -1,5 +1,5 @@
 from utils.graph import Graph 
-from Helper import Helper
+from causal_solver.Helper import Helper
 import pandas as pd
 def createDictIndex(parents: list[int],rlt:list[int], indexerList: list[int]):
     index: str = ""

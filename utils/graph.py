@@ -112,10 +112,10 @@ class Graph:
            else:
                endogenIndex.append(i)                
 
-        graphNodes: list[Node] = [Node(latentParent=-1, parents=[], children=[]) for _ in range(numberOfNodes)]
+        graphNodes: list[Node] = [Node(latentParent=-1, parents=[], children=[], isLatent=False) for _ in range(numberOfNodes)]
         for node in range(numberOfNodes):
             if cardinalities[node] == 0:
-                graphNodes[node] = Node(children=adj[node],parents=[],latentParent=None)
+                graphNodes[node] = Node(children=adj[node],parents=[],latentParent=None,isLatent=True)
             else:
                 latentParent = -1
                 for nodeParent in parents[node]:
@@ -126,7 +126,7 @@ class Graph:
                 if latentParent == -1:
                     print(f"PARSE ERROR: ALL OBSERVABLE VARIABLES SHOULD HAVE A LATENT PARENT, BUT {node} DOES NOT.")
                 
-                graphNodes[node] = Node(children=adj[node],parents=parents[node],latentParent=latentParent)
+                graphNodes[node] = Node(children=adj[node],parents=parents[node],latentParent=latentParent,isLatent=False)
             pass
 
         return Graph(numberOfNodes=numberOfNodes,currNodes=[], visited=[False] * (numberOfNodes), cardinalities=cardinalities, parents=parents,
