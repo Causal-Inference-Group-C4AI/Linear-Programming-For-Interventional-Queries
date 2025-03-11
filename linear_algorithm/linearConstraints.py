@@ -1,6 +1,7 @@
 from utils.graph import Graph 
-from causal_solver.Helper import Helper
+from utils.probabilities_helper import ProbabilitiesHelper
 import pandas as pd
+
 def createDictIndex(parents: list[int],rlt:list[int], indexerList: list[int]):
     index: str = ""
     for parNode in parents:
@@ -44,7 +45,7 @@ def generateConstraints(data: pd.DataFrame,dag: Graph, unob: int, mecahanism:lis
         productTerms.append({node:condVars.copy()})
         condVars.clear()
     spaces: list[list[int]] = [range(dag.cardinalities[var]) for var in usedVars] 
-    cartesianProduct = Helper.generateCrossProducts(sets = spaces)
+    cartesianProduct = ProbabilitiesHelper.generateCrossProducts(sets = spaces)
     for rlt in cartesianProduct:
         prob = 1.
         for term in productTerms:
@@ -52,7 +53,7 @@ def generateConstraints(data: pd.DataFrame,dag: Graph, unob: int, mecahanism:lis
                 dictTarget[key] = rlt[usedVars.index(key)]
                 for cVar in term[key]:
                     dictCond[cVar] = rlt[usedVars.index(cVar)]
-            prob *= Helper.findConditionalProbability(dataFrame= data, indexToLabel=dag.indexToLabel, targetRealization= dictTarget, conditionRealization= dictCond, v=False)    
+            prob *= ProbabilitiesHelper.findConditionalProbability(dataFrame= data, indexToLabel=dag.indexToLabel, targetRealization= dictTarget, conditionRealization= dictCond, v=False)    
             dictTarget.clear()
             dictCond.clear()
         probs.append(prob)
@@ -75,7 +76,7 @@ def generateConstraints(data: pd.DataFrame,dag: Graph, unob: int, mecahanism:lis
     return probs, decisionMatrix
 if __name__ == "__main__":
     graph: Graph = Graph.parse()
-    _,_,mechanism = Helper.mechanisms_generator(latentNode =graph.labelToIndex["U1"], endogenousNodes = [graph.labelToIndex["Y"], graph.labelToIndex["X"]], cardinalities=graph.cardinalities , 
+    _,_,mechanism = ProbabilitiesHelper.mechanisms_generator(latentNode =graph.labelToIndex["U1"], endogenousNodes = [graph.labelToIndex["Y"], graph.labelToIndex["X"]], cardinalities=graph.cardinalities , 
                                                         graphNodes = graph.graphNodes, v= False )
     
     df: pd.DataFrame = pd.read_csv("/home/joaog/Cpart/Canonical-Partition/causal_solver/balke_pearl.csv")
