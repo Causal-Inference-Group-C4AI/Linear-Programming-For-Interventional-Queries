@@ -1,5 +1,5 @@
-from utils.graph import Graph 
-from utils.probabilities_helper import ProbabilitiesHelper
+from causal_usp_icti.graph.graph import Graph 
+from causal_usp_icti.utils.probabilities_helper import ProbabilitiesHelper
 import pandas as pd
 
 def createDictIndex(parents: list[int],rlt:list[int], indexerList: list[int]):

@@ -1,7 +1,7 @@
 import sys
 import networkx as nx
-from causal_solver.MoralNode import MoralNode
-from causal_solver.Node import Node
+from causal_usp_icti.graph.moral_node import MoralNode
+from causal_usp_icti.graph.node import Node
 
 class Graph:
     def __init__(self, numberOfNodes: int, currNodes: list[int], visited: list[bool], cardinalities: dict[int, int],

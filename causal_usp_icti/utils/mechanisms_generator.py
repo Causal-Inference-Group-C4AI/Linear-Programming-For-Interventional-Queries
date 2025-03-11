@@ -1,5 +1,5 @@
 import itertools
-from causal_solver.Node import Node
+from causal_usp_icti.graph.node import Node
 from collections import namedtuple
 import pandas as pd
 

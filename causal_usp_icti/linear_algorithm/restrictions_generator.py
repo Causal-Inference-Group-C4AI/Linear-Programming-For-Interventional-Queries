@@ -1,4 +1,4 @@
-from utils.graph import Graph
+from causal_usp_icti.graph.graph import Graph
 from utils.mechanisms_generator import MechanismGenerator
 from utils.probabilities_helper import ProbabilitiesHelper
 
