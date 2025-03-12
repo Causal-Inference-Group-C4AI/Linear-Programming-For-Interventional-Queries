@@ -108,9 +108,9 @@ def str_to_joaos(versao_str: str, latent: list[str], custom_cardinalities: dict 
 
     return "\n".join(lines)
 
-def get_nodes(edges_str: str) -> List[Tuple[str, str]]:
+def get_tuple_edges(edges_str: str) -> List[Tuple[str, str]]:
     """
-    Extracts the nodes from the edges string.
+    Extracts the edges in tuple form from the edges string.
 
     Args:
         edges_str (str): The edges string.
@@ -139,7 +139,7 @@ def generate_example(edges_str : str,  latent: list[str], intervention: list[str
         edges (str): The edges string.
         custom_cardinalities (dict, optional): A dictionary with custom cardinalities for the nodes.
     """
-    edges = get_nodes(edges_str)
+    edges = get_tuple_edges(edges_str)
     graph = nx.DiGraph()
     graph.add_edges_from(edges)
 
