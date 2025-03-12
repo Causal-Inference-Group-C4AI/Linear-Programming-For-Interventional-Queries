@@ -8,12 +8,12 @@ from causal_usp_icti.graph.node import Node
 dictAndIndex = namedtuple('dictAndIndex', ['mechanisms', 'index'])
 
 class MechanismGenerator:
-    def fetchCsv(filepath="balke_pearl.csv"):        
+    def fetch_csv(filepath="balke_pearl.csv"):        
         prefix = "/home/c4ai-wsl/projects/Canonical-Partition/uploads/"
         # prefix = "/home/joaog/Cpart/Canonical-Partition/causal_solver/"
         return pd.read_csv(prefix + filepath)
 
-    def helperGenerateSpaces(nodes: list[int], cardinalities: dict[int, int]):
+    def helper_generate_spaces(nodes: list[int], cardinalities: dict[int, int]):
             spaces: list[list[int]] = []
         
             for node in nodes:
@@ -21,7 +21,7 @@ class MechanismGenerator:
         
             return spaces
 
-    def generateCrossProducts(listSpaces: list[list[int]]):
+    def generate_cross_products(listSpaces: list[list[int]]):
         crossProductsTuples = itertools.product(*listSpaces)
         return [list(combination) for combination in crossProductsTuples]
 
@@ -120,7 +120,9 @@ class MechanismGenerator:
 
         return allPossibleMechanisms, dictKeys, mechanismDicts
 
-    def mechanismListGenerator(cardinalities: dict[int, int], listU: list[int], listSpaces: set[int], graphNodes: list[Node]):        
+
+    # TODO: REMOVER?? SÓ DEFINIDA E NÃO USADA
+    def mechanism_list_generator(cardinalities: dict[int, int], listU: list[int], listSpaces: set[int], graphNodes: list[Node]):        
         mechanismDictsList: list[list[dictAndIndex]] = []
         globalIndex: int = 0
         latentCardinalities: dict[int, int] = {}

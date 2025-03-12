@@ -2,7 +2,7 @@ from scipy.optimize import linprog
 
 from causal_usp_icti.graph.graph import Graph
 from causal_usp_icti.linear_algorithm.linearConstraints import \
-    generateConstraints
+    generate_constraints
 from causal_usp_icti.linear_algorithm.obj_function_generator import \
     ObjFunctionGenerator
 from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
@@ -14,7 +14,7 @@ class OptProblemBuilder:
         
         csvPath: str = input("Provide the path for the .csv file:").strip()
         csvPath = csvPath if len(csvPath) else "itau.csv"
-        df = MechanismGenerator.fetchCsv(filepath=csvPath)
+        df = MechanismGenerator.fetch_csv(filepath=csvPath)
         
         interventionVariable = input("Provide the label of the intervention:").strip()
         interventionVariable = interventionVariable if len(interventionVariable) else "X"
@@ -37,7 +37,7 @@ class OptProblemBuilder:
         mechanisms = objFG.get_mechanisms_pruned()
         objFunctionCoefficients = objFG.build_objective_function(mechanisms)
 
-        probs, decisionMatrix = generateConstraints(data=df, dag=objFG.graph, 
+        probs, decisionMatrix = generate_constraints(data=df, dag=objFG.graph, 
                                                     unob=objFG.graph.graphNodes[objFG.intervention].latentParent, 
                                                     mechanism=mechanisms)
         probs.append(1)

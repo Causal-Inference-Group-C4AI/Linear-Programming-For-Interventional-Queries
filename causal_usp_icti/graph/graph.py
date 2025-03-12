@@ -30,7 +30,7 @@ class Graph:
         self.graphNodes = graphNodes
         self.moralGraphNodes = moralGraphNodes
 
-    def parseTerminal():
+    def parse_terminal():
         numberOfNodes = int(input())
         numberOfEdges = int(input())
 
@@ -59,7 +59,7 @@ class Graph:
 
         return numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents
 
-    def parseInterface(nodesString: str, edgesString: str):
+    def parse_interface(nodesString: str, edgesString: str):
         nodesAndCardinalitiesList: list[str] = nodesString.split(',')
         numberOfNodes = len(nodesAndCardinalitiesList)
 
@@ -85,9 +85,9 @@ class Graph:
 
     def parse(fromInterface=False, nodesString="", edgesString=""):
         if fromInterface:            
-            auxTuple = Graph.parseInterface(nodesString, edgesString)
+            auxTuple = Graph.parse_interface(nodesString, edgesString)
         else:
-            auxTuple = Graph.parseTerminal()
+            auxTuple = Graph.parse_terminal()
 
         numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents = auxTuple
 
