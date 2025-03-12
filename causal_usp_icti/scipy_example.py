@@ -1,5 +1,6 @@
 from scipy.optimize import linprog
 
+
 def trimDecimal(precision: int, value: float):
     return round(pow(10, precision) * value) / pow(10, precision)
 

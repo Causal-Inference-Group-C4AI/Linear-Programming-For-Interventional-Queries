@@ -1,6 +1,7 @@
 from causal_usp_icti.graph.graph import Graph
-from utils.mechanisms_generator import MechanismGenerator
-from utils.probabilities_helper import ProbabilitiesHelper
+from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
+from causal_usp_icti.utils.probabilities_helper import ProbabilitiesHelper
+
 
 class ObjFunctionGenerator:
     """

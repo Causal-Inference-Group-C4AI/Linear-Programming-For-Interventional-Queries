@@ -1,8 +1,12 @@
-from linear_algorithm.linearConstraints import generateConstraints
-from linear_algorithm.obj_function_generator import ObjFunctionGenerator
-from utils.graph import Graph
-from utils.mechanisms_generator import MechanismGenerator
 from scipy.optimize import linprog
+
+from causal_usp_icti.graph.graph import Graph
+from causal_usp_icti.linear_algorithm.linearConstraints import \
+    generateConstraints
+from causal_usp_icti.linear_algorithm.obj_function_generator import \
+    ObjFunctionGenerator
+from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
+
 
 class OptProblemBuilder:
     def builder_linear_problem():
