@@ -11,7 +11,7 @@ def createDictIndex(parents: list[int],rlt:list[int], indexerList: list[int]):
             index += str(parNode) + "=" + str(rlt[indexerList.index(parNode)]) + ","
     return index
 
-def generateConstraints(data: pd.DataFrame,dag: Graph, unob: int, mecahanism:list[dict[str, int]]):
+def generateConstraints(data: pd.DataFrame,dag: Graph, unob: int, mechanism:list[dict[str, int]]):
     dag.find_cComponents()
     cCompNum = -1
     for key in dag.cComponentToUnob:
@@ -45,7 +45,7 @@ def generateConstraints(data: pd.DataFrame,dag: Graph, unob: int, mecahanism:lis
         productTerms.append({node:condVars.copy()})
         condVars.clear()
     spaces: list[list[int]] = [range(dag.cardinalities[var]) for var in usedVars] 
-    cartesianProduct = ProbabilitiesHelper.generateCrossProducts(sets = spaces)
+    cartesianProduct = MechanismGenerator.generateCrossProducts(listSpaces = spaces)
     for rlt in cartesianProduct:
         prob = 1.
         for term in productTerms:
@@ -53,7 +53,7 @@ def generateConstraints(data: pd.DataFrame,dag: Graph, unob: int, mecahanism:lis
                 dictTarget[key] = rlt[usedVars.index(key)]
                 for cVar in term[key]:
                     dictCond[cVar] = rlt[usedVars.index(cVar)]
-            prob *= ProbabilitiesHelper.findConditionalProbability(dataFrame= data, indexToLabel=dag.indexToLabel, targetRealization= dictTarget, conditionRealization= dictCond, v=False)    
+            prob *= ProbabilitiesHelper.findConditionalProbability(dataFrame= data, indexToLabel=dag.indexToLabel, targetRealization= dictTarget, conditionRealization= dictCond, v=False)
             dictTarget.clear()
             dictCond.clear()
         probs.append(prob)
@@ -66,7 +66,7 @@ def generateConstraints(data: pd.DataFrame,dag: Graph, unob: int, mecahanism:lis
                     endoParents.remove(unob)
                     key  = createDictIndex(parents=endoParents, rlt= rlt, indexerList= usedVars)
                     endoParents.clear()
-                    if mecahanism[u][key] == rlt[usedVars.index(var)]:
+                    if mechanism[u][key] == rlt[usedVars.index(var)]:
                         coef *= 1
                     else:
                         coef *= 0
