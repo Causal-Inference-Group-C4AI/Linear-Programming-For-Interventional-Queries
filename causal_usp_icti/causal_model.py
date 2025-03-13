@@ -1,24 +1,25 @@
 import networkx as nx
 from typing import Optional
+from pandas import DataFrame
 
 from causal_usp_icti.utils.funcoes import get_tuple_edges
 from causal_usp_icti.graph.graph import Graph
-from pandas import DataFrame
+from causal_usp_icti.utils.parser import parse_edges, parse_state, parse_target
 
 class CausalModel:
     def __init__(
         self, 
         data: DataFrame,
         edges: str,
-        unobservables: list[str],
-        interventions: Optional[list[str]] = None,
-        target: Optional[str] = None
+        unobservables: list[str] | str | None = [],
+        interventions: list[str] | str | None = [],
+        target: str | None = ""
     ) -> None:
             self._data = data
-            self.unobservables = unobservables
-            self.interventions = interventions
-            self.target = target
             self.graph = input_processor()
+            self.unobservables = parse_state(unobservables)
+            self.interventions = parse_state(interventions)
+            self.target = parse_state(target)
 
     def visualize_graph(self):
         '''
@@ -26,21 +27,46 @@ class CausalModel:
         '''
         # TODO: Implement in the class Graph
         raise NotImplementedError
+
+    def _update_list(self, attr_name: str, values: list[str], reset: bool = False) -> None:
+        attr = getattr(self, attr_name)
+        if reset:
+            attr.clear()
+        if self.is_nodes_in_graph(values):
+            attr.extend(values)
+            return
+        raise Exception(f"Nodes '{values}' not present in the defined graph.")
     
     def add_interventions(self, interventions: list[str]) -> None:
-        # TODO: verify if the nodes in intervention is in the graph (nodes list)
-        for element in interventions:
-            self.interventions.append(element)
+        self._update_list("interventions", interventions)
 
     def set_interventions(self, interventions: list[str]) -> None:
-        self.interventions = []
-        self.add_interventions(interventions)
+        self._update_list("interventions", interventions, reset=True)
     
-    def set_target(self, target: str) -> None:
-        # TODO: verify if the 'target' node is in the graph (nodes list)
-        self.target = target
+    def add_unobservables(self, unobservables):
+        self._update_list("unobservables", unobservables)
 
-def input_processor(edges_str: str, latents: list[str]) -> str:
+    def set_unobservables(self, unobservables):
+        self._update_list("unobservables", unobservables, reset=True)
+
+    def set_target(self, target: str) -> None:
+        self.target.clear()
+        if self.is_nodes_in_graph([target]):
+            self.target = target
+            return
+        raise Exception(f"Nodes '{target}' not present in the defined graph.")
+
+    def is_nodes_in_graph(self, nodes: list[str]):
+        for node in nodes:
+            if node not in self.graph:
+                return False
+        return True
+
+
+
+
+
+def parse_str_to_nx_graph(edges_str: str, latents: list[str]) -> str:
     custom_cardinalities = {}
 
     edges_part = edges_str.split(",")
