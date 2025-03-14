@@ -1,9 +1,9 @@
-from linear_algorithm.linearConstraints import generateConstraints
-from linear_algorithm.obj_function_generator import ObjFunctionGenerator
-from utils.graph import Graph
-from utils.mechanisms_generator import MechanismGenerator
+from causal_usp_icti.linear_algorithm.linearConstraints import generateConstraints
+from causal_usp_icti.linear_algorithm.obj_function_generator import ObjFunctionGenerator
+from causal_usp_icti.graph.graph import Graph
+from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
 from scipy.optimize import linprog
-
+import pandas as pd
 class OptProblemBuilder:
     def builder_linear_problem():
         graph: Graph = Graph.parse()        
@@ -34,10 +34,8 @@ class OptProblemBuilder:
         objFunctionCoefficients = objFG.build_objective_function(mechanisms)
 
         probs, decisionMatrix = generateConstraints(data=df, dag=objFG.graph, 
-                                                    unob=objFG.graph.graphNodes[objFG.intervention].latentParent, 
+                                                    unob=objFG.graph.graphNodes[objFG.intervention].latentParent,consideredCcomp=[graph.labelToIndex["Y"], graph.labelToIndex["X"]],
                                                     mechanism=mechanisms)
-        probs.append(1)
-        decisionMatrix.append([1 for _ in range(len(mechanisms))])
         
         intervals = [(0, 1) for _ in range(len(mechanisms))]
         
@@ -57,4 +55,31 @@ class OptProblemBuilder:
         print(f"Bounds: {lowerBound} <= P <= {upperBound}")
 
 if __name__ == "__main__":
-    OptProblemBuilder.builder_linear_problem()
+    #OptProblemBuilder.builder_linear_problem()
+    graph: Graph = Graph.parse()
+    _,_,mechanism = MechanismGenerator.mechanisms_generator(latentNode =graph.labelToIndex["U1"], endogenousNodes = [graph.labelToIndex["Y"], graph.labelToIndex["X"]], cardinalities=graph.cardinalities , 
+                                                        graphNodes = graph.graphNodes, v= False )
+
+    df: pd.DataFrame = pd.read_csv("/home/joaog/Cpart/Canonical-Partition/causal_usp_icti/linear_algorithm/balke_pearl.csv")
+    probs, decisionMatrix = generateConstraints(data=df ,dag= graph, unob=graph.labelToIndex["U1"],consideredCcomp=[graph.labelToIndex["X"], graph.labelToIndex["Y"]],mechanism=mechanism)
+    objFun = []
+    for u in range(len(mechanism)):
+        coef = 0
+        if mechanism[u]["2=1"] == 1:
+            coef = 1
+        objFun.append(coef)
+    intervals = [(0, 1) for _ in range(len(mechanism))]
+        
+    lowerBoundSol = linprog(c=objFun, A_ub=None, b_ub=None, 
+                                A_eq=decisionMatrix, b_eq=probs, method="highs", bounds=intervals)        
+    lowerBound = lowerBoundSol.fun
+        
+    upperBoundSol = linprog(c=[-x for x in objFun], A_ub=None, b_ub=None, 
+                                A_eq=decisionMatrix, b_eq=probs, method="highs", bounds=intervals)
+    upperBound = -upperBoundSol.fun
+
+    print("-- DEBUG OBJ FUNCTION --")
+    for i, coeff in enumerate(objFun):
+        print(f"c_{i} = {coeff}")
+    
+    print(f"Bounds: {lowerBound} <= P <= {upperBound}")

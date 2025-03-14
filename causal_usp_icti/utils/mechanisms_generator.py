@@ -7,8 +7,8 @@ dictAndIndex = namedtuple('dictAndIndex', ['mechanisms', 'index'])
 
 class MechanismGenerator:
     def fetchCsv(filepath="balke_pearl.csv"):        
-        prefix = "/home/c4ai-wsl/projects/Canonical-Partition/uploads/"
-        # prefix = "/home/joaog/Cpart/Canonical-Partition/causal_solver/"
+        #prefix = "/home/c4ai-wsl/projects/Canonical-Partition/uploads/"
+        prefix = "/home/joaog/Cpart/Canonical-Partition/causal_usp_icti/linear_algorithm/"
         return pd.read_csv(prefix + filepath)
 
     def helperGenerateSpaces(nodes: list[int], cardinalities: dict[int, int]):
