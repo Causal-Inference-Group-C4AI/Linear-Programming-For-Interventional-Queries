@@ -24,7 +24,7 @@ def generateConstraints(data: pd.DataFrame,dag: Graph, unob: int,consideredCcomp
     dictCond : dict[int,int] = {}
     decisionMatrix : list[list[int]] = [[1 for _ in range(len(mechanism))]]
     for node in topoOrder:
-        if (node in dag.dagComponents[unob]) and (node in consideredCcomp):
+        if (unob in dag.graphNodes[node].parents) and (node in consideredCcomp):
             cCompOrder.append(node)
     cCompOrder.reverse()
     usedVars = cCompOrder.copy()
@@ -33,6 +33,7 @@ def generateConstraints(data: pd.DataFrame,dag: Graph, unob: int,consideredCcomp
         for par in dag.parents[cCompNode]:
             if not(par in Wc) and (par != unob):
                 Wc.append(par)
+
     while bool(cCompOrder):
         node = cCompOrder.pop(0)
         Wc.remove(node)
