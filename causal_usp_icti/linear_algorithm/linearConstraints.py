@@ -14,8 +14,7 @@ def create_dict_index(parents: list[int],rlt:list[int], indexerList: list[int]):
             index += str(parNode) + "=" + str(rlt[indexerList.index(parNode)]) + ","
     return index
 
-def generate_constraints(data: pd.DataFrame,dag: Graph, unob: int,consideredCcomp: list[int] ,mechanism:list[dict[str, int]]):
-    dag.find_cComponents()
+def generateConstraints(data: pd.DataFrame,dag: Graph, unob: int,consideredCcomp: list[int] ,mechanism:list[dict[str, int]]):
     topoOrder: list[int] = dag.topologicalOrder
     cCompOrder: list[int] = []
     probs: list[float] = [1.]
@@ -38,12 +37,12 @@ def generate_constraints(data: pd.DataFrame,dag: Graph, unob: int,consideredCcom
 
     while bool(cCompOrder):
         node = cCompOrder.pop(0)
-        Wc.remove(node)
         for cond in Wc:
-            if not(cond in condVars):
-                condVars.append(cond)
-            if not(cond in usedVars):
-                usedVars.append(cond)
+            if topoOrder.index(cond) < topoOrder.index(node):
+                if not(cond in condVars):
+                    condVars.append(cond)
+                if not(cond in usedVars):
+                    usedVars.append(cond)
         productTerms.append({node:condVars.copy()})
         condVars.clear()
     spaces: list[list[int]] = [range(dag.cardinalities[var]) for var in usedVars] 
@@ -82,8 +81,8 @@ if __name__ == "__main__":
     _,_,mechanism = MechanismGenerator.mechanisms_generator(latentNode =graph.labelToIndex["U1"], endogenousNodes = [graph.labelToIndex["Y"], graph.labelToIndex["X"]], cardinalities=graph.cardinalities , 
                                                         graphNodes = graph.graphNodes, v= False )
     
-    df: pd.DataFrame = pd.read_csv("/home/joaog/Cpart/Canonical-Partition/causal_usp_icti/linear_algorithm/balke_pearl.csv")
-    probs, decisionMatrix = generate_constraints(data=df ,dag= graph, unob=graph.labelToIndex["U1"],consideredCcomp=[graph.labelToIndex["X"], graph.labelToIndex["Y"]],mechanism=mechanism)
+    df: pd.DataFrame = pd.read_csv("/home/joaog/Cpart/Canonical-Partition/causal_usp_icti/linear_algorithm/itau.csv")
+    probs, decisionMatrix = generateConstraints(data=df ,dag= graph, unob=graph.labelToIndex["U1"],consideredCcomp=[graph.labelToIndex["X"], graph.labelToIndex["Y"]],mechanism=mechanism)
     print(probs)
     print("-------------------")
     print(decisionMatrix)

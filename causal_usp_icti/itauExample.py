@@ -37,12 +37,13 @@ def main(dag : Graph):
     y0: int = 1
     x0: int = 1
     xRlt: dict[int, int] = {}
+    yRlt: dict[int, int] = {}
     dRlt : dict[int, int] = {}
-    yxdRlt : dict[int, int] = {}
+    dxRlt : dict[int, int] = {}
     c: list[float] = []
     a:list[list[float]] = []
     b: list[float] = []
-    df: pd.DataFrame = pd.read_csv("/home/c4ai-wsl/projects/Canonical-Partition/uploads/itau.csv")
+    df: pd.DataFrame = pd.read_csv("/home/joaog/Cpart/Canonical-Partition/causal_usp_icti/linear_algorithm/itau.csv")
     
     bounds : list[tuple[float]] = [(0,1) for _ in range(len(mechanism))]
 
@@ -62,19 +63,20 @@ def main(dag : Graph):
         for x in range(2):
             for d in range(2):
                 aux: list[float] = []
-                yxdRlt[dag.labelToIndex["Y"]] = y
-                yxdRlt[dag.labelToIndex["X"]] = x
-                yxdRlt[dag.labelToIndex["D"]] = d
+                yRlt[dag.labelToIndex["Y"]] = y
+                dxRlt[dag.labelToIndex["X"]] = x
+                dxRlt[dag.labelToIndex["D"]] = d
                 xRlt[dag.labelToIndex["X"]] = x
                 dRlt[dag.labelToIndex["D"]] = d
-                b.append(ProbabilitiesHelper.findProbability(dataFrame=df, indexToLabel= dag.indexToLabel, variableRealizations=yxdRlt))
-                coefAUx = ProbabilitiesHelper.findConditionalProbability(dataFrame= df, indexToLabel= dag.indexToLabel, targetRealization= dRlt, conditionRealization= xRlt, v=False)
+                b.append(ProbabilitiesHelper.findConditionalProbability(dataFrame=df, indexToLabel= dag.indexToLabel, targetRealization=yRlt, conditionRealization=dxRlt)*ProbabilitiesHelper.findProbability(dataFrame=df,indexToLabel=dag.indexToLabel,variableRealizations=xRlt))
                 for u in range(len(mechanism)):
                     if (mechanism[u]["3="+str(x)+",4="+str(d)] == y) and (mechanism[u][""] == x):
-                        aux.append(coefAUx)
+                        aux.append(1)
                     else:
                         aux.append(0)
                 a.append(aux)
+    for i in range(len(a)):
+        print(f"{a[i]} = {b[i]}")
     optProblem(objFunction=c,Aeq=a, Beq=b, interval=bounds, v=True )
 
 if __name__ == "__main__":

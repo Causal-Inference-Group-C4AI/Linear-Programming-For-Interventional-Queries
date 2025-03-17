@@ -1,4 +1,5 @@
 from scipy.optimize import linprog
+import math
 
 from causal_usp_icti.graph.graph import Graph
 from causal_usp_icti.linear_algorithm.linearConstraints import \
@@ -45,17 +46,7 @@ class OptProblemBuilder:
                                                     unob=objFG.graph.graphNodes[objFG.intervention].latentParent,consideredCcomp=consideredEndogenousNodes,
                                                     mechanism=mechanisms)
                 
-        intervals = [(0, 1) for _ in range(len(mechanisms))]
         
-        lowerBoundSol = linprog(c=objFunctionCoefficients, A_ub=None, b_ub=None, 
-                                A_eq=decisionMatrix, b_eq=probs, method="highs", bounds=intervals)        
-        lowerBound = lowerBoundSol.fun        
-        
-        upperBoundSol = linprog(c=[-x for x in objFunctionCoefficients], A_ub=None, b_ub=None, 
-                                A_eq=decisionMatrix, b_eq=probs, method="highs", bounds=intervals)
-        
-        upperBound = -upperBoundSol.fun
-
         print("-- DEBUG OBJ FUNCTION --")
         for i, coeff in enumerate(objFunctionCoefficients):
             print(f"c_{i} = {coeff}")
@@ -65,6 +56,15 @@ class OptProblemBuilder:
             for j in range(len(decisionMatrix[i])):
                 print(f"{decisionMatrix[i][j]} ", end="")
             print(f" = {probs[i]}")
+        intervals = [(0,1) for _ in range(len(decisionMatrix[0]))]
+        lowerBoundSol = linprog(c=objFunctionCoefficients, A_ub=None, b_ub=None, 
+                                A_eq=decisionMatrix, b_eq=probs, method="highs", bounds=intervals)        
+        lowerBound = lowerBoundSol.fun        
+        
+        upperBoundSol = linprog(c=[-x for x in objFunctionCoefficients], A_ub=None, b_ub=None, 
+                                A_eq=decisionMatrix, b_eq=probs, method="highs", bounds=intervals)
+        
+        upperBound = -upperBoundSol.fun
 
         
         print(f"Causal query: P({targetVariable}={targetValue}|do({interventionVariable}={interventionValue}))")
@@ -72,3 +72,30 @@ class OptProblemBuilder:
 
 if __name__ == "__main__":
     OptProblemBuilder.builder_linear_problem()
+    # graph: Graph = Graph.parse()
+    # _,_,mechanism = MechanismGenerator.mechanisms_generator(latentNode = graph.labelToIndex["U1"], endogenousNodes = [graph.labelToIndex["Y"], graph.labelToIndex["X"]], cardinalities=graph.cardinalities , 
+    #                                                     graphNodes = graph.graphNodes, v= False )
+
+    # df: pd.DataFrame = pd.read_csv("/home/joaog/Cpart/Canonical-Partition/causal_usp_icti/linear_algorithm/balke_pearl.csv")
+    # probs, decisionMatrix = generateConstraints(data=df ,dag= graph, unob=graph.labelToIndex["U1"],consideredCcomp=[graph.labelToIndex["X"], graph.labelToIndex["Y"]],mechanism=mechanism)
+    # objFun = []
+    # for u in range(len(mechanism)):
+    #     coef = 0
+    #     if mechanism[u]["2=0"] == 1:
+    #         coef = 1
+    #     objFun.append(coef)
+    # intervals = [(0, 1) for _ in range(len(mechanism))]
+        
+    # lowerBoundSol = linprog(c=objFun, A_ub=None, b_ub=None, 
+    #                             A_eq=decisionMatrix, b_eq=probs, method="highs", bounds=intervals)        
+    # lowerBound = lowerBoundSol.fun
+        
+    # upperBoundSol = linprog(c=[-x for x in objFun], A_ub=None, b_ub=None, 
+    #                             A_eq=decisionMatrix, b_eq=probs, method="highs", bounds=intervals)
+    # upperBound = -upperBoundSol.fun
+
+    # print("-- DEBUG OBJ FUNCTION --")
+    # for i, coeff in enumerate(objFun):
+    #     print(f"c_{i} = {coeff}")
+    
+    # print(f"Bounds: {lowerBound} <= P <= {upperBound}")
