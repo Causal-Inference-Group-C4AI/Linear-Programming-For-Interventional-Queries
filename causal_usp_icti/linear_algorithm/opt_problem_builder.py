@@ -13,8 +13,8 @@ class OptProblemBuilder:
         graph: Graph = Graph.parse()        
         
         csvPath: str = input("Provide the path for the .csv file:").strip()
-        csvPath = csvPath if len(csvPath) else "itau.csv"
-        df = MechanismGenerator.fetch_csv(filepath=csvPath)
+        csvPath = csvPath if len(csvPath) else "balke_pearl.csv"
+        df = MechanismGenerator.fetchCsv(filepath=csvPath)
         
         interventionVariable = input("Provide the label of the intervention:").strip()
         interventionVariable = interventionVariable if len(interventionVariable) else "X"
@@ -35,28 +35,38 @@ class OptProblemBuilder:
                                     conditionalProbabilitiesVariables={}, debugOrder=[])
         objFG.find_linear_good_set()
         mechanisms = objFG.get_mechanisms_pruned()
-        objFunctionCoefficients = objFG.build_objective_function(mechanisms)
+        objFunctionCoefficients = objFG.build_objective_function(mechanisms)        
+
+        interventionLatentParent = objFG.graph.graphNodes[objFG.intervention].latentParent
+        cComponentEndogenous = objFG.graph.graphNodes[interventionLatentParent].children                
+        consideredEndogenousNodes = list((set(cComponentEndogenous) & set(objFG.debugOrder)) | { objFG.intervention })
 
         probs, decisionMatrix = generate_constraints(data=df, dag=objFG.graph, 
-                                                    unob=objFG.graph.graphNodes[objFG.intervention].latentParent, 
+                                                    unob=objFG.graph.graphNodes[objFG.intervention].latentParent,consideredCcomp=consideredEndogenousNodes,
                                                     mechanism=mechanisms)
-        probs.append(1)
-        decisionMatrix.append([1 for _ in range(len(mechanisms))])
-        
+                
         intervals = [(0, 1) for _ in range(len(mechanisms))]
         
         lowerBoundSol = linprog(c=objFunctionCoefficients, A_ub=None, b_ub=None, 
                                 A_eq=decisionMatrix, b_eq=probs, method="highs", bounds=intervals)        
-        lowerBound = lowerBoundSol.fun
+        lowerBound = lowerBoundSol.fun        
         
         upperBoundSol = linprog(c=[-x for x in objFunctionCoefficients], A_ub=None, b_ub=None, 
                                 A_eq=decisionMatrix, b_eq=probs, method="highs", bounds=intervals)
+        
         upperBound = -upperBoundSol.fun
 
         print("-- DEBUG OBJ FUNCTION --")
         for i, coeff in enumerate(objFunctionCoefficients):
             print(f"c_{i} = {coeff}")
     
+        print("-- DECISION MATRIX --") 
+        for i in range(len(decisionMatrix)):
+            for j in range(len(decisionMatrix[i])):
+                print(f"{decisionMatrix[i][j]} ", end="")
+            print(f" = {probs[i]}")
+
+        
         print(f"Causal query: P({targetVariable}={targetValue}|do({interventionVariable}={interventionValue}))")
         print(f"Bounds: {lowerBound} <= P <= {upperBound}")
 

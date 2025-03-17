@@ -1,5 +1,7 @@
-# Canonical-Partition
- Códigos para estimar as partições canônicas de DAGs. Este repositório é privado porque lida com um problema em aberto e portanto é possível que parte dos algoritmos usados/desenvolvidos sejam originais. Além disso, podem conter partes de códigos proprietários.
+# Canonical-Partition (WIP)
+
+## Relaxed problem:
+Determina cada confounded component (c-component) e monta um DAG equivalente. Nele, cada c-component contém apenas uma variável latente, cuja cardinalidade é determinada de forma exata. O problema resultante é menos restringido, e portanto o bound para cada query contém o bound que seria considerado sharp.
 
 ## Boas Práticas de Eng. de Software
 
@@ -57,48 +59,55 @@ In this example, isort has organized the imports into three distinct sections:
 
 This separation improves readability and maintainability of your code by clearly distinguishing between different types of dependencies.
 
+## Install
+### Linux
+We're using [poetry](https://python-poetry.org/docs/) as pyhton dependency management.
 
-
-## Relaxed problem:
-Determina cada confounded component (c-component) e monta um DAG equivalente. Nele, cada c-component contém apenas uma variável latente, cuja cardinalidade é determinada de forma exata. O problema resultante é menos restringido, e portanto o bound para cada query contém o bound que seria considerado sharp.
-
-### Input:
-O número de vérticos do DAG seguido pelo número de arestas. Em seguida, o label de cada variável seguido de sua cardinalidade - se latente colocar 0. Por fim, deve-se especificar cada uma das arestas, o que é feito colocando o label das duas variáveis envolvidas. A interpretação é que a variável da esquerda causa a da direita.
-
-### Como executar:
-**(cpp)**:
-- Primeiro, entre na pasta em que se encontra o código fonte.
+- Activate poetry virtual environment
 ```bash
-cd partition-methods/relaxed-problem/cpp
+poetry shell
 ```
-- Em seguida, compile o programa com:
+- Install dependencies
 ```bash
-g++ estimateCanonical.cpp Logger.cpp -o yourExecutableName
+poetry install
 ```
-- Por fim, rode com:
+
+## How to run
+### Linux
+- Activate poetry virtual environment
 ```bash
-./yourExecutableName
+poetry shell
 ```
 
-**(python)**:
-- Rode o programa com:
 ```bash
-python3 -m partition_methods.relaxed_problem.python.canonicalPartitions
-```
-O "-m" é necessário para executarmos como módulo, caso contrário o programa não consegue realizar os imports corretamente.
-Você pode montar seu próprio input ou usar os que já estão prontos na pasta test-cases/inputs.
-
-## Generator:
-- Ainda está sendo feito.
-
-### Como executar:
-É necessário adicionar o root do projeto ao seu .bashrc para que os imports entre arquivos funcionem. Abra o arquivo com o editor de sua escolha:
-```shell
-nano ~/.bashrc
+poetry run python script.py
 ```
 
-E adicione a linha abaixo ao arquivo, substituindo o caminho por como está em sua máquina.
-```shell
-export PYTHONPATH=$PYTHONPATH:/home/path/to/Canonical-Partition/
+Example:
+```bash
+poetry run python causal_usp_icti/scipy_example.py
+```
+The output should be:
+```
+Using the complete objective function, the results are:
+Lower bound: -0.23 - Upper bound: -0.15
+
+Using the complete objective function, the result for the positive query is:
+Lower bound: 0.45 - Upper bound: 0.52
+Using the complete objective function, the result for the negative query is:
+Lower bound: 0.67 - Upper bound: 0.68
+
+With the first method, we obtain the interval: [-0.23,-0.15]
+With the second method, we obtain the interval: [-0.23,-0.15]
 ```
 
+- To exit the poetry virtual environment run:
+
+```bash
+exit
+```
+or
+
+```bash
+deactivate
+```

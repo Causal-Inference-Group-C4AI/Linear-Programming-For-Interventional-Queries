@@ -1,3 +1,5 @@
+import networkx as nx
+
 def parse_state(state):
     if isinstance(state, str):
         return [state]
