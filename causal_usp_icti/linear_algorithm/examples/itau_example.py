@@ -1,9 +1,14 @@
+import os
+import time as tm
+
+from scipy.optimize import linprog
+import pandas as pd
+
 from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
 from causal_usp_icti.utils.probabilities_helper import ProbabilitiesHelper
-from scipy.optimize import linprog
 from causal_usp_icti.graph.graph import Graph
-import pandas as pd
-import time as tm
+
+
 def trimDecimal(precision: int, value: float):
     return round(pow(10, precision) * value) / pow(10, precision)
 
@@ -43,7 +48,7 @@ def main(dag : Graph):
     c: list[float] = []
     a:list[list[float]] = []
     b: list[float] = []
-    df: pd.DataFrame = pd.read_csv("/home/joaog/Cpart/Canonical-Partition/causal_usp_icti/linear_algorithm/itau.csv")
+    df: pd.DataFrame = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "itau.csv"))
     
     bounds : list[tuple[float]] = [(0,1) for _ in range(len(mechanism))]
 
@@ -55,7 +60,7 @@ def main(dag : Graph):
         for d in range(2):
             dRlt[dag.labelToIndex["D"]] = d
             if mechanism[u]["3="+str(x0)+",4="+str(d)] == y0:
-                coef += ProbabilitiesHelper.findConditionalProbability(dataFrame=df, indexToLabel= dag.indexToLabel, targetRealization=dRlt, conditionRealization= xRlt)
+                coef += ProbabilitiesHelper.find_conditional_probability(dataFrame=df, indexToLabel= dag.indexToLabel, targetRealization=dRlt, conditionRealization= xRlt)
         c.append(coef)
     a.append([1 for _ in range(len(mechanism))])
     b.append(1)
@@ -68,7 +73,7 @@ def main(dag : Graph):
                 dxRlt[dag.labelToIndex["D"]] = d
                 xRlt[dag.labelToIndex["X"]] = x
                 dRlt[dag.labelToIndex["D"]] = d
-                b.append(ProbabilitiesHelper.findConditionalProbability(dataFrame=df, indexToLabel= dag.indexToLabel, targetRealization=yRlt, conditionRealization=dxRlt)*ProbabilitiesHelper.findProbability(dataFrame=df,indexToLabel=dag.indexToLabel,variableRealizations=xRlt))
+                b.append(ProbabilitiesHelper.find_conditional_probability(dataFrame=df, indexToLabel= dag.indexToLabel, targetRealization=yRlt, conditionRealization=dxRlt)*ProbabilitiesHelper.find_probability(dataFrame=df,indexToLabel=dag.indexToLabel,variableRealizations=xRlt))
                 for u in range(len(mechanism)):
                     if (mechanism[u]["3="+str(x)+",4="+str(d)] == y) and (mechanism[u][""] == x):
                         aux.append(1)
