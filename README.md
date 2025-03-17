@@ -85,7 +85,7 @@ poetry run python script.py
 
 Example:
 ```bash
-poetry run python causal_usp_icti/scipy_example.py
+poetry run python causal_usp_icti/example/scipy_example.py
 ```
 The output should be:
 ```
