@@ -1,6 +1,7 @@
 from causal_usp_icti.graph.graph import Graph
-from utils.mechanisms_generator import MechanismGenerator
-from utils.probabilities_helper import ProbabilitiesHelper
+from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
+from causal_usp_icti.utils.probabilities_helper import ProbabilitiesHelper
+
 
 class ObjFunctionGenerator:
     """
@@ -148,10 +149,10 @@ class ObjFunctionGenerator:
 
         summandNodes = list (  set(self.debugOrder) - {self.intervention, self.graph.graphNodes[self.intervention].latentParent, self.target} )
         
-        spaces: list[list[int]] = MechanismGenerator.helperGenerateSpaces(nodes=summandNodes, 
+        spaces: list[list[int]] = MechanismGenerator.helper_generate_spaces(nodes=summandNodes, 
                                     cardinalities=self.graph.cardinalities)
         summandNodes.append(self.target); spaces.append([self.targetValue])
-        inputCases: list[list[int]] = MechanismGenerator.generateCrossProducts(listSpaces=spaces)
+        inputCases: list[list[int]] = MechanismGenerator.generate_cross_products(listSpaces=spaces)
         """
         TODO: Check the order of "inputCases": it should be the same as the order of the spaces, which is the same as in debugOrder.
         TODO: the case in which the summandNodes is empty (e.g Balke Pearl) has a very ugly fix
@@ -183,7 +184,7 @@ class ObjFunctionGenerator:
                     print(f"\nCurrent variable: {self.graph.indexToLabel[variable]} (index={variable})")
                     if variable in self.empiricalProbabilitiesVariables: # Case 1: coff *= P(V=value)
                         print("Case 1")
-                        variableProbability = ProbabilitiesHelper.findProbability(dataFrame=self.dataFrame,
+                        variableProbability = ProbabilitiesHelper.find_probability(dataFrame=self.dataFrame,
                                                             indexToLabel=self.graph.indexToLabel,
                                                             variableRealizations={variable: variablesValues[variable]},
                                                             v=False)
@@ -206,7 +207,7 @@ class ObjFunctionGenerator:
                         for conditionalVariable in self.conditionalProbabilities[variable]:
                             conditionRealization[conditionalVariable] = variablesValues[conditionalVariable]
 
-                        conditionalProbability = ProbabilitiesHelper.findConditionalProbability(dataFrame = self.dataFrame, 
+                        conditionalProbability = ProbabilitiesHelper.find_conditional_probability(dataFrame = self.dataFrame, 
                                                                     indexToLabel = self.graph.indexToLabel, 
                                                                     targetRealization = {variable: variablesValues[variable]},
                                                                     conditionRealization = conditionRealization,
@@ -238,8 +239,8 @@ class ObjFunctionGenerator:
                 print(f"parents: {graph.graphNodes[i].parents}")            
             print("\n\n\n\n")
         
-        # df = MechanismGenerator.fetchCsv(filepath="balke_pearl.csv")
-        df = MechanismGenerator.fetchCsv(filepath="itau.csv")
+        # df = MechanismGenerator.fetch_csv(filepath="balke_pearl.csv")
+        df = MechanismGenerator.fetch_csv(filepath="itau.csv")
 
         objFG = ObjFunctionGenerator(graph=graph, intervention=graph.labelToIndex["X"], interventionValue=0,target=graph.labelToIndex["Y"],
                                     targetValue=1,empiricalProbabilitiesVariables=[], mechanismVariables=[], conditionalProbabilitiesVariables={},

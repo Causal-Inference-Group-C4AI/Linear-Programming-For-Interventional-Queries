@@ -1,8 +1,12 @@
-from causal_usp_icti.linear_algorithm.linearConstraints import generateConstraints
-from causal_usp_icti.linear_algorithm.obj_function_generator import ObjFunctionGenerator
-from causal_usp_icti.graph.graph import Graph
-from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
 from scipy.optimize import linprog
+
+from causal_usp_icti.graph.graph import Graph
+from causal_usp_icti.linear_algorithm.linearConstraints import \
+    generate_constraints
+from causal_usp_icti.linear_algorithm.obj_function_generator import \
+    ObjFunctionGenerator
+from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
+
 
 class OptProblemBuilder:
     def builder_linear_problem():
@@ -37,7 +41,7 @@ class OptProblemBuilder:
         cComponentEndogenous = objFG.graph.graphNodes[interventionLatentParent].children                
         consideredEndogenousNodes = list((set(cComponentEndogenous) & set(objFG.debugOrder)) | { objFG.intervention })
 
-        probs, decisionMatrix = generateConstraints(data=df, dag=objFG.graph, 
+        probs, decisionMatrix = generate_constraints(data=df, dag=objFG.graph, 
                                                     unob=objFG.graph.graphNodes[objFG.intervention].latentParent,consideredCcomp=consideredEndogenousNodes,
                                                     mechanism=mechanisms)
                 

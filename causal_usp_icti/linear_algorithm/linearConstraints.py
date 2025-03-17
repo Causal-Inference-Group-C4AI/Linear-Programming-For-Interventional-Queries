@@ -1,9 +1,11 @@
-from causal_usp_icti.graph.graph import Graph 
-from causal_usp_icti.utils.probabilities_helper import ProbabilitiesHelper
-from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
 import pandas as pd
 
-def createDictIndex(parents: list[int],rlt:list[int], indexerList: list[int]):
+from causal_usp_icti.graph.graph import Graph
+from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
+from causal_usp_icti.utils.probabilities_helper import ProbabilitiesHelper
+
+
+def create_dict_index(parents: list[int],rlt:list[int], indexerList: list[int]):
     index: str = ""
     for parNode in parents:
         if parents.index(parNode) == len(parents) - 1:
@@ -12,7 +14,7 @@ def createDictIndex(parents: list[int],rlt:list[int], indexerList: list[int]):
             index += str(parNode) + "=" + str(rlt[indexerList.index(parNode)]) + ","
     return index
 
-def generateConstraints(data: pd.DataFrame,dag: Graph, unob: int,consideredCcomp: list[int] ,mechanism:list[dict[str, int]]):
+def generate_constraints(data: pd.DataFrame,dag: Graph, unob: int,consideredCcomp: list[int] ,mechanism:list[dict[str, int]]):
     dag.find_cComponents()
     topoOrder: list[int] = dag.topologicalOrder
     cCompOrder: list[int] = []
@@ -45,7 +47,7 @@ def generateConstraints(data: pd.DataFrame,dag: Graph, unob: int,consideredCcomp
         productTerms.append({node:condVars.copy()})
         condVars.clear()
     spaces: list[list[int]] = [range(dag.cardinalities[var]) for var in usedVars] 
-    cartesianProduct = MechanismGenerator.generateCrossProducts(listSpaces = spaces)
+    cartesianProduct = MechanismGenerator.generate_cross_products(listSpaces = spaces)
     for rlt in cartesianProduct:
         prob = 1.
         for term in productTerms:
@@ -53,7 +55,7 @@ def generateConstraints(data: pd.DataFrame,dag: Graph, unob: int,consideredCcomp
                 dictTarget[key] = rlt[usedVars.index(key)]
                 for cVar in term[key]:
                     dictCond[cVar] = rlt[usedVars.index(cVar)]
-            prob *= ProbabilitiesHelper.findConditionalProbability(dataFrame= data, indexToLabel=dag.indexToLabel, targetRealization= dictTarget, conditionRealization= dictCond, v=False)
+            prob *= ProbabilitiesHelper.find_conditional_probability(dataFrame= data, indexToLabel=dag.indexToLabel, targetRealization= dictTarget, conditionRealization= dictCond, v=False)
             dictTarget.clear()
             dictCond.clear()
         probs.append(prob)
@@ -64,7 +66,7 @@ def generateConstraints(data: pd.DataFrame,dag: Graph, unob: int,consideredCcomp
                 if var in consideredCcomp:
                     endoParents: list[int] = dag.parents[var].copy()
                     endoParents.remove(unob)
-                    key  = createDictIndex(parents=endoParents, rlt= rlt, indexerList= usedVars)
+                    key  = create_dict_index(parents=endoParents, rlt= rlt, indexerList= usedVars)
                     endoParents.clear()
                     if mechanism[u][key] == rlt[usedVars.index(var)]:
                         coef *= 1
@@ -81,7 +83,7 @@ if __name__ == "__main__":
                                                         graphNodes = graph.graphNodes, v= False )
     
     df: pd.DataFrame = pd.read_csv("/home/joaog/Cpart/Canonical-Partition/causal_usp_icti/linear_algorithm/balke_pearl.csv")
-    probs, decisionMatrix = generateConstraints(data=df ,dag= graph, unob=graph.labelToIndex["U1"],consideredCcomp=[graph.labelToIndex["X"], graph.labelToIndex["Y"]],mechanism=mechanism)
+    probs, decisionMatrix = generate_constraints(data=df ,dag= graph, unob=graph.labelToIndex["U1"],consideredCcomp=[graph.labelToIndex["X"], graph.labelToIndex["Y"]],mechanism=mechanism)
     print(probs)
     print("-------------------")
     print(decisionMatrix)

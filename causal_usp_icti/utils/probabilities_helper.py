@@ -1,5 +1,6 @@
-import pandas as pd
 from collections import namedtuple
+
+import pandas as pd
 
 dictAndIndex = namedtuple('dictAndIndex', ['mechanisms', 'index'])
 
@@ -8,7 +9,7 @@ class ProbabilitiesHelper:
     Common methods used to create the optimization problem.
     """    
     
-    def findConditionalProbability(dataFrame, indexToLabel, targetRealization: dict[int, int], conditionRealization: dict[int, int], v=True):
+    def find_conditional_probability(dataFrame, indexToLabel, targetRealization: dict[int, int], conditionRealization: dict[int, int], v=True):
         """
         dataFrame              : pandas dataFrama that contains the data from the csv
         indexToLabel           : dictionary that converts an endogenous variable index to its label
@@ -17,15 +18,15 @@ class ProbabilitiesHelper:
 
         Calculates: P(V|T) = P(V,T) / P(T)
         """
-        conditionProbability = ProbabilitiesHelper.findProbability(dataFrame, indexToLabel, conditionRealization, False)
+        conditionProbability = ProbabilitiesHelper.find_probability(dataFrame, indexToLabel, conditionRealization, False)
 
         if conditionProbability == 0:
             return 0
 
-        targetAndConditionProbability = ProbabilitiesHelper.findProbability(dataFrame, indexToLabel, targetRealization | conditionRealization, False)
+        targetAndConditionProbability = ProbabilitiesHelper.find_probability(dataFrame, indexToLabel, targetRealization | conditionRealization, False)
         return targetAndConditionProbability / conditionProbability
 
-    def findProbability(dataFrame, indexToLabel, variableRealizations: dict[int, int], v=True):
+    def find_probability(dataFrame, indexToLabel, variableRealizations: dict[int, int], v=True):
         conditions = pd.Series([True] * len(dataFrame), index=dataFrame.index)
         for variable in variableRealizations:
             conditions &= (dataFrame[indexToLabel[variable]] == variableRealizations[variable])
