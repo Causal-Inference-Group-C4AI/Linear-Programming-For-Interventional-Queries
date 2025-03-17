@@ -29,7 +29,113 @@ class Graph:
         self.cComponentToUnob = cComponentToUnob
         self.graphNodes = graphNodes
         self.moralGraphNodes = moralGraphNodes
-    
+
+    def parse_terminal():
+        numberOfNodes = int(input())
+        numberOfEdges = int(input())
+
+        labelToIndex: dict[str, int] = {}; indexToLabel: dict[int, str] = {}
+        adj: list[list[int]] = [[] for _ in range(numberOfNodes)]
+        cardinalities: dict[int, int] = {}
+        parents: list[list[int]] = [[] for _ in range(numberOfNodes)]
+
+        for i in range(numberOfNodes):
+            label, cardinality = input().split()            
+            if not any(char.isalpha() for char in label):                
+                print("Error: The label must contain only alphabetic characters.")
+                sys.exit(1)
+
+            cardinality = int(cardinality)
+            labelToIndex[label] = i
+            indexToLabel[i] = label
+            cardinalities[i] = cardinality
+
+        for _ in range(numberOfEdges):
+            u, v = input().split()
+            uIndex = labelToIndex[u]
+            vIndex = labelToIndex[v]
+            adj[uIndex].append(vIndex)
+            parents[vIndex].append(uIndex)
+
+        return numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents
+
+    def parse_interface(nodesString: str, edgesString: str):
+        nodesAndCardinalitiesList: list[str] = nodesString.split(',')
+        numberOfNodes = len(nodesAndCardinalitiesList)
+
+        cardinalities: dict[int, int] = {}; labelToIndex: dict[str, int] = {}; indexToLabel: dict[int, str] = {}
+        adj    : list[list[int]] = [[] for _ in range(numberOfNodes)]
+        parents: list[list[int]] = [[] for _ in range(numberOfNodes)]
+
+        for i, element in enumerate(nodesAndCardinalitiesList):
+            auxPair = element.split('=')
+            cardinalities[i] = auxPair[1]
+            labelToIndex[auxPair[0]] = i
+            indexToLabel[i] = auxPair[0]
+            cardinalities[i] = int(auxPair[1])
+
+        for element in edgesString.split(','):            
+            elAux = element.split('->')            
+            fatherIndex = labelToIndex[elAux[0]] 
+            sonIndex = labelToIndex[elAux[1]]
+            adj[fatherIndex].append(sonIndex)
+            parents[sonIndex].append(fatherIndex)
+
+        return numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents
+
+    def parse(fromInterface=False, nodesString="", edgesString=""):
+        if fromInterface:            
+            auxTuple = Graph.parse_interface(nodesString, edgesString)
+        else:
+            auxTuple = Graph.parse_terminal()
+
+        numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents = auxTuple
+
+        inpDAG: nx.DiGraph = nx.DiGraph()
+        for i in range(numberOfNodes):
+            inpDAG.add_node(i)
+
+        for parent, edge in enumerate(adj):
+            if bool(edge):
+               for ch in edge:
+                   inpDAG.add_edge(parent, ch)
+
+        order = list(nx.topological_sort(inpDAG))
+
+        for i in range(numberOfNodes) :
+
+             name_node = indexToLabel[i] 
+
+             nx.relabel_nodes(inpDAG, {i : name_node}, copy=False)
+
+        endogenIndex : list[int] = []; exogenIndex : list[int] = []
+        for i in range(numberOfNodes):
+           if not (bool(parents[i])):
+               exogenIndex.append(i)
+           else:
+               endogenIndex.append(i)                
+
+        graphNodes: list[Node] = [Node(latentParent=-1, parents=[], children=[], isLatent=False) for _ in range(numberOfNodes)]
+        for node in range(numberOfNodes):
+            if cardinalities[node] == 0:
+                graphNodes[node] = Node(children=adj[node],parents=[],latentParent=None,isLatent=True)
+            else:
+                latentParent = -1
+                for nodeParent in parents[node]:
+                    if cardinalities[nodeParent] == 0:
+                        latentParent = nodeParent
+                        break
+
+                if latentParent == -1:
+                    print(f"PARSE ERROR: ALL OBSERVABLE VARIABLES SHOULD HAVE A LATENT PARENT, BUT {node} DOES NOT.")
+
+                graphNodes[node] = Node(children=adj[node],parents=parents[node],latentParent=latentParent,isLatent=False)
+            pass
+
+        return Graph(numberOfNodes=numberOfNodes,currNodes=[], visited=[False] * (numberOfNodes), cardinalities=cardinalities, parents=parents,
+                    adj=adj, indexToLabel=indexToLabel, labelToIndex=labelToIndex, dagComponents=[], exogenous= exogenIndex,endogenous = endogenIndex, topologicalOrder= order, DAG= inpDAG,
+                    cComponentToUnob = {}, graphNodes=graphNodes, moralGraphNodes=[])
+
     def dfs(self, node: int):        
         self.visited[node] = True
         self.currNodes.append(node)
