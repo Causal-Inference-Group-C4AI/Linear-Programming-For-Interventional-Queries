@@ -58,9 +58,43 @@ class Graph:
             parents[vIndex].append(uIndex)
 
         return numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents
+    
+    def parse_file(file_path: str):
+        with open(file_path, 'r') as file:
 
-    def parse(nodesString="", edgesString=""):
-        auxTuple = Graph.parse_terminal()
+            numberOfNodes = file.readline().strip()
+            numberOfEdges = file.readline().strip()
+
+            numberOfNodes = int(numberOfNodes)
+            numberOfEdges = int(numberOfEdges)
+
+            labelToIndex: dict[str, int] = {}; indexToLabel: dict[int, str] = {}
+            adj: list[list[int]] = [[] for _ in range(numberOfNodes)]
+            cardinalities: dict[int, int] = {}
+            parents: list[list[int]] = [[] for _ in range(numberOfNodes)]
+
+            for i in range(numberOfNodes):
+                label, cardinality = file.readline().strip().split()
+                
+                cardinality = int(cardinality)
+                labelToIndex[label] = i
+                indexToLabel[i] = label
+                cardinalities[i] = cardinality
+
+            for _ in range(numberOfEdges):
+                u, v = file.readline().strip().split()
+                uIndex = labelToIndex[u]
+                vIndex = labelToIndex[v]
+                adj[uIndex].append(vIndex)
+                parents[vIndex].append(uIndex)
+
+            return numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents
+
+    def parse(nodesString="", edgesString="", file_path=None):
+        if file_path is None:
+            auxTuple = Graph.parse_terminal()
+        else :
+            auxTuple = Graph.parse_file(file_path)
 
         numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents = auxTuple
 

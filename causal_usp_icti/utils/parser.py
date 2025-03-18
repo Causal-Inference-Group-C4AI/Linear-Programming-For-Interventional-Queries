@@ -3,6 +3,8 @@ import networkx as nx
 from causal_usp_icti.graph.graph import Graph
 from causal_usp_icti.graph.node import Node
 
+# TODO: INTEGRAR PRIMEIRO A EXECUÇÃO COM O PARSE_FILE
+# EM QUE NÃO PRECISA COLAR O INPUT, MAS LÊ DIRETO DO FILE
 
 def parse_state(state):
     if isinstance(state, str):
@@ -81,9 +83,22 @@ def parse():
             graphNodes[node] = Node(children=adj[node],parents=parents[node],latentParent=latentParent,isLatent=False)
         pass
 
-    return Graph(numberOfNodes=numberOfNodes,currNodes=[], visited=[False] * (numberOfNodes), cardinalities=cardinalities, parents=parents,
-                adj=adj, indexToLabel=indexToLabel, labelToIndex=labelToIndex, dagComponents=[], exogenous= exogenIndex,endogenous = endogenIndex, topologicalOrder= order, DAG= inpDAG,
-                cComponentToUnob = {}, graphNodes=graphNodes, moralGraphNodes=[])
+    return Graph(numberOfNodes=numberOfNodes,
+                currNodes=[], 
+                visited=[False] * (numberOfNodes),
+                cardinalities=cardinalities,
+                parents=parents,
+                adj=adj,
+                indexToLabel=indexToLabel,
+                labelToIndex=labelToIndex,
+                dagComponents=[],
+                exogenous=exogenIndex,
+                endogenous = endogenIndex,
+                topologicalOrder= order,
+                DAG= inpDAG,
+                cComponentToUnob = {},
+                graphNodes=graphNodes,
+                moralGraphNodes=[])
 
 
 
