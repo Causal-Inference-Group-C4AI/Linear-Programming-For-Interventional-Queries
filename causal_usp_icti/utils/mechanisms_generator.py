@@ -1,17 +1,22 @@
+import os
 import itertools
 from collections import namedtuple
 
 import pandas as pd
 
 from causal_usp_icti.graph.node import Node
+from causal_usp_icti.utils._enum import DirectoriesPath
 
 dictAndIndex = namedtuple('dictAndIndex', ['mechanisms', 'index'])
 
 class MechanismGenerator:
-    def fetch_csv(filepath="balke_pearl.csv"):        
+    # TODO: Talvez não seja útil essa função para a refatoração
+    def fetch_csv(filename="balke_pearl.csv"):        
+        # TODO: remover esses paths
         #prefix = "/home/c4ai-wsl/projects/Canonical-Partition/uploads/"
-        prefix = "/home/joaog/Cpart/Canonical-Partition/causal_usp_icti/linear_algorithm/"
-        return pd.read_csv(prefix + filepath)
+        # prefix = "/home/joaog/Cpart/Canonical-Partition/causal_usp_icti/linear_algorithm/"
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"../../{DirectoriesPath.CSV_PATH.value}/{filename}")
+        return pd.read_csv(path)
 
     def helper_generate_spaces(nodes: list[int], cardinalities: dict[int, int]):
             spaces: list[list[int]] = []

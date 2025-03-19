@@ -6,7 +6,8 @@ import pandas as pd
 
 from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
 from causal_usp_icti.utils.probabilities_helper import ProbabilitiesHelper
-from causal_usp_icti.graph.graph import Graph
+from causal_usp_icti.graph.graph import Graph, parse
+from causal_usp_icti.utils._enum import DirectoriesPath, Examples
 
 
 def trimDecimal(precision: int, value: float):
@@ -48,7 +49,7 @@ def main(dag : Graph):
     c: list[float] = []
     a:list[list[float]] = []
     b: list[float] = []
-    df: pd.DataFrame = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "itau.csv"))
+    df: pd.DataFrame = pd.read_csv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "../data/itau.csv"))
     
     bounds : list[tuple[float]] = [(0,1) for _ in range(len(mechanism))]
 
@@ -85,7 +86,7 @@ def main(dag : Graph):
     optProblem(objFunction=c,Aeq=a, Beq=b, interval=bounds, v=True )
 
 if __name__ == "__main__":
-    dag = Graph.parse()#use itau_simplified
+    dag = parse(Examples.TXT_ITAU_EXAMPLE.value)#use itau_simplified
     start = tm.time()
     main(dag= dag)
     end = tm.time()

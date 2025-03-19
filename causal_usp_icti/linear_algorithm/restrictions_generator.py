@@ -1,3 +1,8 @@
+import argparse
+import os
+
+import pandas as pd
+
 from causal_usp_icti.graph.graph import Graph
 from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
 from causal_usp_icti.utils.probabilities_helper import ProbabilitiesHelper
@@ -224,11 +229,11 @@ class ObjFunctionGenerator:
 
         return  objFunctionCoefficients
 
-    def test():
+    def test(input_path, csv_path):
         """
         used for the development of the class. Uses the itau graph itau.txt.
         """
-        graph: Graph = Graph.parse()        
+        graph = parse(input_path)        
         if False:
             print("debug graph parsed by terminal:")
         
@@ -240,7 +245,8 @@ class ObjFunctionGenerator:
             print("\n\n\n\n")
         
         # df = MechanismGenerator.fetch_csv(filepath="balke_pearl.csv")
-        df = MechanismGenerator.fetch_csv(filepath="itau.csv")
+        # df = MechanismGenerator.fetch_csv(filepath="itau.csv")
+        df = pd.read_csv(csv_path)
 
         objFG = ObjFunctionGenerator(graph=graph, intervention=graph.labelToIndex["X"], interventionValue=0,target=graph.labelToIndex["Y"],
                                     targetValue=1,empiricalProbabilitiesVariables=[], mechanismVariables=[], conditionalProbabilitiesVariables={},
@@ -273,4 +279,17 @@ class ObjFunctionGenerator:
             print(f"c_{i} = {coeff}")
 
 if __name__ == "__main__":
-    ObjFunctionGenerator.test()
+    parser = argparse.ArgumentParser(
+        description="Gets causal inference under Partial-Observability."
+    )
+    parser.add_argument('input_filename',
+                        help='The name of the input file in test_case/input directory'
+                        )
+    parser.add_argument('csv_filename',
+                        help='The name of the csv'
+                        )
+    args = parser.parse_args()
+
+    input_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"../../{DirectoriesPath.TEST_CASES_INPUTS.value}/{args.input_filename}.txt")
+    csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"../../{DirectoriesPath.CSV_PATH.value}/{args.csv_filename}.csv")
+    ObjFunctionGenerator.test(input_path, csv_path)

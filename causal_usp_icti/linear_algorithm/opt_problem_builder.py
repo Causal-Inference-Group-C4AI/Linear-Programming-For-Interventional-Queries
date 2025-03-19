@@ -1,22 +1,29 @@
 from scipy.optimize import linprog
 import math
+import os
+import argparse
 
-from causal_usp_icti.graph.graph import Graph
-from causal_usp_icti.linear_algorithm.linearConstraints import \
+import pandas as pd
+
+from causal_usp_icti.graph.graph import Graph, parse
+from causal_usp_icti.linear_algorithm.linear_constraints import \
     generate_constraints
 from causal_usp_icti.linear_algorithm.obj_function_generator import \
     ObjFunctionGenerator
 from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
+from causal_usp_icti.utils._enum import DirectoriesPath
 
 
 class OptProblemBuilder:
-    def builder_linear_problem():
-        graph: Graph = Graph.parse()        
+    def builder_linear_problem(input_path, csv_path):
+        graph: Graph = parse(input_path)        
         
-        csvPath: str = input("Provide the path for the .csv file:").strip()
-        csvPath = csvPath if len(csvPath) else "balke_pearl.csv"
-        df = MechanismGenerator.fetchCsv(filepath=csvPath)
-        
+        # TODO: remover esse comentários
+        # csvPath: str = input("Provide the path for the .csv file:").strip()
+        # csvPath = csvPath if len(csvPath) else "balke_pearl.csv"
+        # df = MechanismGenerator.fetchCsv(filepath=csvPath)
+        df = pd.read_csv(csv_path)
+
         interventionVariable = input("Provide the label of the intervention:").strip()
         interventionVariable = interventionVariable if len(interventionVariable) else "X"
         
@@ -71,7 +78,20 @@ class OptProblemBuilder:
         print(f"Bounds: {lowerBound} <= P <= {upperBound}")
 
 if __name__ == "__main__":
-    OptProblemBuilder.builder_linear_problem()
+    parser = argparse.ArgumentParser(
+        description="Gets causal inference under Partial-Observability."
+    )
+    parser.add_argument('input_filename',
+                        help='The name of the input file in test_case/input directory'
+                        )
+    parser.add_argument('csv_filename',
+                        help='The name of the csv'
+                        )
+    args = parser.parse_args()
+
+    input_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"../../{DirectoriesPath.TEST_CASES_INPUTS.value}/{args.input_filename}.txt")
+    csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"../../{DirectoriesPath.CSV_PATH.value}/{args.csv_filename}.csv")
+    OptProblemBuilder.builder_linear_problem(input_path, csv_path)
     # graph: Graph = Graph.parse()
     # _,_,mechanism = MechanismGenerator.mechanisms_generator(latentNode = graph.labelToIndex["U1"], endogenousNodes = [graph.labelToIndex["Y"], graph.labelToIndex["X"]], cardinalities=graph.cardinalities , 
     #                                                     graphNodes = graph.graphNodes, v= False )
