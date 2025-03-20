@@ -32,121 +32,6 @@ class Graph:
         self.graphNodes = graphNodes
         self.moralGraphNodes = moralGraphNodes
 
-    def parse_terminal():
-        numberOfNodes = int(input())
-        numberOfEdges = int(input())
-
-        labelToIndex: dict[str, int] = {}; indexToLabel: dict[int, str] = {}
-        adj: list[list[int]] = [[] for _ in range(numberOfNodes)]
-        cardinalities: dict[int, int] = {}
-        parents: list[list[int]] = [[] for _ in range(numberOfNodes)]
-
-        for i in range(numberOfNodes):
-            label, cardinality = input().split()            
-            if not any(char.isalpha() for char in label):                
-                print("Error: The label must contain only alphabetic characters.")
-                sys.exit(1)
-
-            cardinality = int(cardinality)
-            labelToIndex[label] = i
-            indexToLabel[i] = label
-            cardinalities[i] = cardinality
-
-        for _ in range(numberOfEdges):
-            u, v = input().split()
-            uIndex = labelToIndex[u]
-            vIndex = labelToIndex[v]
-            adj[uIndex].append(vIndex)
-            parents[vIndex].append(uIndex)
-
-        return numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents
-    
-    def parse_file(file_path: str):
-        with open(file_path, 'r') as file:
-
-            numberOfNodes = file.readline().strip()
-            numberOfEdges = file.readline().strip()
-
-            numberOfNodes = int(numberOfNodes)
-            numberOfEdges = int(numberOfEdges)
-
-            labelToIndex: dict[str, int] = {}; indexToLabel: dict[int, str] = {}
-            adj: list[list[int]] = [[] for _ in range(numberOfNodes)]
-            cardinalities: dict[int, int] = {}
-            parents: list[list[int]] = [[] for _ in range(numberOfNodes)]
-
-            for i in range(numberOfNodes):
-                label, cardinality = file.readline().strip().split()
-                
-                cardinality = int(cardinality)
-                labelToIndex[label] = i
-                indexToLabel[i] = label
-                cardinalities[i] = cardinality
-
-            for _ in range(numberOfEdges):
-                u, v = file.readline().strip().split()
-                uIndex = labelToIndex[u]
-                vIndex = labelToIndex[v]
-                adj[uIndex].append(vIndex)
-                parents[vIndex].append(uIndex)
-
-            return numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents
-
-    def _parse(nodesString="", edgesString=""):
-
-        file_path=input()
-        if file_path is None:
-            auxTuple = Graph.parse_terminal()
-        else :
-            auxTuple = Graph.parse_file(file_path)
-
-        numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents = auxTuple
-
-        inpDAG: nx.DiGraph = nx.DiGraph()
-        for i in range(numberOfNodes):
-            inpDAG.add_node(i)
-
-        for parent, edge in enumerate(adj):
-            if bool(edge):
-               for ch in edge:
-                   inpDAG.add_edge(parent, ch)
-
-        order = list(nx.topological_sort(inpDAG))
-
-        for i in range(numberOfNodes) :
-
-             name_node = indexToLabel[i] 
-
-             nx.relabel_nodes(inpDAG, {i : name_node}, copy=False)
-
-        endogenIndex : list[int] = []; exogenIndex : list[int] = []
-        for i in range(numberOfNodes):
-           if not (bool(parents[i])):
-               exogenIndex.append(i)
-           else:
-               endogenIndex.append(i)                
-
-        graphNodes: list[Node] = [Node(latentParent=-1, parents=[], children=[], isLatent=False) for _ in range(numberOfNodes)]
-        for node in range(numberOfNodes):
-            if cardinalities[node] == 0:
-                graphNodes[node] = Node(children=adj[node],parents=[],latentParent=None,isLatent=True)
-            else:
-                latentParent = -1
-                for nodeParent in parents[node]:
-                    if cardinalities[nodeParent] == 0:
-                        latentParent = nodeParent
-                        break
-
-                if latentParent == -1:
-                    print(f"PARSE ERROR: ALL OBSERVABLE VARIABLES SHOULD HAVE A LATENT PARENT, BUT {node} DOES NOT.")
-
-                graphNodes[node] = Node(children=adj[node],parents=parents[node],latentParent=latentParent,isLatent=False)
-            pass
-
-        return Graph(numberOfNodes=numberOfNodes,currNodes=[], visited=[False] * (numberOfNodes), cardinalities=cardinalities, parents=parents,
-                    adj=adj, indexToLabel=indexToLabel, labelToIndex=labelToIndex, dagComponents=[], exogenous= exogenIndex,endogenous = endogenIndex, topologicalOrder= order, DAG= inpDAG,
-                    cComponentToUnob = {}, graphNodes=graphNodes, moralGraphNodes=[])
-
     def dfs(self, node: int):        
         self.visited[node] = True
         self.currNodes.append(node)
@@ -279,8 +164,8 @@ def parse_file(file_path: str):
         return numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents
 
 
-def parse(file_path=None):
-    auxTuple = parse_file(file_path)
+def parse(input_file_path=None):
+    auxTuple = parse_file(input_file_path)
     numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents = auxTuple
 
     inpDAG: nx.DiGraph = nx.DiGraph()
@@ -340,18 +225,3 @@ def parse(file_path=None):
                 cComponentToUnob = {},
                 graphNodes=graphNodes,
                 moralGraphNodes=[])
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Gets causal inference under Partial-Observability."
-    )
-    parser.add_argument('input_filename',
-                        help='The name of the input file in test_case/input directory'
-                        )
-    parser.add_argument('csv_filename',
-                        help='The name of the csv'
-                        )
-    args = parser.parse_args()
-
-    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"../../{DirectoriesPath.TEST_CASES_INPUTS.value}/{args.input_filename}.txt")
-    graph = parse(file_path)
