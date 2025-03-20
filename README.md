@@ -24,6 +24,21 @@ Running this command will output any style violations or errors found in `your_s
 
 <br>
 
+
+<a name="black"></a>
+### Black 
+**Black** is an autoformatter.
+
+Usage Example:
+
+```shell
+black your_script.py
+```
+
+Running this command will change automatically.
+
+<br>
+
 ### Imports
 
 #### Isort
