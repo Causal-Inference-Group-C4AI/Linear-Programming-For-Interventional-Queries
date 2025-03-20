@@ -28,9 +28,9 @@ Running this command will output any style violations or errors found in `your_s
 <a name="black"></a>
 ### Black 
 This project uses **[Black](https://black.readthedocs.io/en/stable/)** for automatic Python code formatting.  
-Black is an **opinionated code formatter** that ensures consistency by enforcing a uniform style.  
+Black is an code formatter that ensures consistency by enforcing a uniform style.  
 
-### **🔧 Installation**  
+### **Installation**  
 To install Black, run:  
 ```bash
 pip install black
