@@ -1,11 +1,7 @@
-import os
 import itertools
 from collections import namedtuple
 
-import pandas as pd
-
 from causal_usp_icti.graph.node import Node
-from causal_usp_icti.utils._enum import DirectoriesPath
 
 dictAndIndex = namedtuple("dictAndIndex", ["mechanisms", "index"])
 

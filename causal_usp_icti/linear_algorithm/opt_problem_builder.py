@@ -1,5 +1,4 @@
 from scipy.optimize import linprog
-import math
 import os
 import argparse
 

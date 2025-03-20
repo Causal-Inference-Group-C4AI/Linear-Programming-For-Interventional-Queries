@@ -1,7 +1,5 @@
 import networkx as nx
 
-from causal_usp_icti.utils._enum import DirectoriesPath
-
 
 def parse_state(state):
     if isinstance(state, str):
