@@ -6,7 +6,7 @@ import pandas as pd
 
 from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
 from causal_usp_icti.utils.probabilities_helper import ProbabilitiesHelper
-from causal_usp_icti.graph.graph import Graph, parse
+from causal_usp_icti.graph.graph import Graph, get_graph
 from causal_usp_icti.utils._enum import DirectoriesPath, Examples
 
 
@@ -86,7 +86,7 @@ def main(dag : Graph):
     optProblem(objFunction=c,Aeq=a, Beq=b, interval=bounds, v=True )
 
 if __name__ == "__main__":
-    dag = parse(Examples.TXT_ITAU_EXAMPLE.value)#use itau_simplified
+    dag = get_graph(Examples.TXT_ITAU_EXAMPLE.value)#use itau_simplified
     start = tm.time()
     main(dag= dag)
     end = tm.time()

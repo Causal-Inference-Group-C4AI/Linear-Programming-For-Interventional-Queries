@@ -3,7 +3,7 @@ import argparse
 
 import pandas as pd
 
-from causal_usp_icti.graph.graph import Graph, parse
+from causal_usp_icti.graph.graph import Graph, get_graph
 from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
 from causal_usp_icti.utils.probabilities_helper import ProbabilitiesHelper
 from causal_usp_icti.utils._enum import DirectoriesPath
@@ -92,7 +92,7 @@ if __name__ == "__main__":
                         )
     args = parser.parse_args()
     file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), f"../../{DirectoriesPath.TEST_CASES_INPUTS.value}/{args.input_filename}.txt")
-    graph = parse(file_path)
+    graph = get_graph(file_path)
     _,_,mechanism = MechanismGenerator.mechanisms_generator(latentNode =graph.labelToIndex["U1"], endogenousNodes = [graph.labelToIndex["Y"], graph.labelToIndex["X"]], cardinalities=graph.cardinalities , 
                                                         graphNodes = graph.graphNodes, v= False )
         

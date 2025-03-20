@@ -5,7 +5,7 @@ import argparse
 
 import pandas as pd
 
-from causal_usp_icti.graph.graph import Graph, parse
+from causal_usp_icti.graph.graph import Graph, get_graph
 from causal_usp_icti.linear_algorithm.linear_constraints import \
     generate_constraints
 from causal_usp_icti.linear_algorithm.obj_function_generator import \
@@ -16,7 +16,7 @@ from causal_usp_icti.utils._enum import DirectoriesPath
 
 class OptProblemBuilder:
     def builder_linear_problem(input_path, csv_path):
-        graph: Graph = parse(input_path)
+        graph: Graph = get_graph(input_path)
         df = pd.read_csv(csv_path)
 
         interventionVariable = input("Provide the label of the intervention:").strip()

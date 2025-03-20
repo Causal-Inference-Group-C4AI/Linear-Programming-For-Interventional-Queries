@@ -1,10 +1,7 @@
 import networkx as nx
 
-from causal_usp_icti.graph.graph import Graph
-from causal_usp_icti.graph.node import Node
+from causal_usp_icti.utils._enum import DirectoriesPath
 
-# TODO: INTEGRAR PRIMEIRO A EXECUÇÃO COM O PARSE_FILE
-# EM QUE NÃO PRECISA COLAR O INPUT, MAS LÊ DIRETO DO FILE
 
 def parse_state(state):
     if isinstance(state, str):
@@ -36,6 +33,37 @@ def parse_edges(state):
         # TODO: Parse the tuples into nx.Graph
         return ""
     raise Exception(f"Input format for {state} not recognized: {type(state)}")
+
+def parse_file(file_path: str):
+    with open(file_path, 'r') as file:
+
+        numberOfNodes = file.readline().strip()
+        numberOfEdges = file.readline().strip()
+
+        numberOfNodes = int(numberOfNodes)
+        numberOfEdges = int(numberOfEdges)
+
+        labelToIndex: dict[str, int] = {}; indexToLabel: dict[int, str] = {}
+        adj: list[list[int]] = [[] for _ in range(numberOfNodes)]
+        cardinalities: dict[int, int] = {}
+        parents: list[list[int]] = [[] for _ in range(numberOfNodes)]
+
+        for i in range(numberOfNodes):
+            label, cardinality = file.readline().strip().split()
+            
+            cardinality = int(cardinality)
+            labelToIndex[label] = i
+            indexToLabel[i] = label
+            cardinalities[i] = cardinality
+
+        for _ in range(numberOfEdges):
+            u, v = file.readline().strip().split()
+            uIndex = labelToIndex[u]
+            vIndex = labelToIndex[v]
+            adj[uIndex].append(vIndex)
+            parents[vIndex].append(uIndex)
+
+        return numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents
 
 
 def parse_interface(nodesString: str, edgesString: str):

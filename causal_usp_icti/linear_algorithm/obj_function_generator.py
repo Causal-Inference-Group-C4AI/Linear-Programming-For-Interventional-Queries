@@ -3,7 +3,7 @@ import os
 
 import pandas as pd
 
-from causal_usp_icti.graph.graph import Graph, parse
+from causal_usp_icti.graph.graph import Graph, get_graph
 from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
 from causal_usp_icti.utils.probabilities_helper import ProbabilitiesHelper
 from causal_usp_icti.utils._enum import DirectoriesPath
@@ -233,7 +233,7 @@ class ObjFunctionGenerator:
         """
         used for the development of the class. Uses the itau graph itau.txt.
         """
-        graph = parse(input_path)
+        graph = get_graph(input_path)
         if False:
             print("debug graph parsed by terminal:")
         
