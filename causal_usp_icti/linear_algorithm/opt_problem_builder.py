@@ -16,12 +16,7 @@ from causal_usp_icti.utils._enum import DirectoriesPath
 
 class OptProblemBuilder:
     def builder_linear_problem(input_path, csv_path):
-        graph: Graph = parse(input_path)        
-        
-        # TODO: remover esse comentários
-        # csvPath: str = input("Provide the path for the .csv file:").strip()
-        # csvPath = csvPath if len(csvPath) else "balke_pearl.csv"
-        # df = MechanismGenerator.fetchCsv(filepath=csvPath)
+        graph: Graph = parse(input_path)
         df = pd.read_csv(csv_path)
 
         interventionVariable = input("Provide the label of the intervention:").strip()

@@ -3,7 +3,7 @@ import os
 
 import pandas as pd
 
-from causal_usp_icti.graph.graph import Graph
+from causal_usp_icti.graph.graph import Graph, parse
 from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
 from causal_usp_icti.utils.probabilities_helper import ProbabilitiesHelper
 
@@ -243,9 +243,7 @@ class ObjFunctionGenerator:
                 print(f"latentParent: {graph.graphNodes[i].latentParent}")
                 print(f"parents: {graph.graphNodes[i].parents}")            
             print("\n\n\n\n")
-        
-        # df = MechanismGenerator.fetch_csv(filepath="balke_pearl.csv")
-        # df = MechanismGenerator.fetch_csv(filepath="itau.csv")
+
         df = pd.read_csv(csv_path)
 
         objFG = ObjFunctionGenerator(graph=graph, intervention=graph.labelToIndex["X"], interventionValue=0,target=graph.labelToIndex["Y"],

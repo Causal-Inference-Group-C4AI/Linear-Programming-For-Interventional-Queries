@@ -244,9 +244,6 @@ class ObjFunctionGenerator:
                 print(f"parents: {graph.graphNodes[i].parents}")            
             print("\n\n\n\n")
         
-        # df = MechanismGenerator.fetch_csv(filepath="balke_pearl.csv")
-        # TODO: AQUI EU JÁ RECEBO O CSV
-        # df = MechanismGenerator.fetch_csv(filepath="itau.csv")
         df = pd.read_csv(csv_path)
 
         objFG = ObjFunctionGenerator(graph=graph, intervention=graph.labelToIndex["X"], interventionValue=0,target=graph.labelToIndex["Y"],
