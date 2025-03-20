@@ -3,7 +3,9 @@ from typing import List, Tuple
 import networkx as nx
 
 
-def define_colors(graph : nx.Graph, latent: list[str], intervention: list[str], target: str) -> list:
+def define_colors(
+    graph: nx.Graph, latent: list[str], intervention: list[str], target: str
+) -> list:
     """
     Define the color of each node in the graph.
 
@@ -24,8 +26,9 @@ def define_colors(graph : nx.Graph, latent: list[str], intervention: list[str], 
         else:
             node_colors.append("lightblue")
     return node_colors
-    
-def draw_graph(graph : nx.Graph, node_colors : list = None):
+
+
+def draw_graph(graph: nx.Graph, node_colors: list = None):
     """
     Draw the graph using networkx.
 
@@ -35,23 +38,26 @@ def draw_graph(graph : nx.Graph, node_colors : list = None):
     """
     nx.draw_networkx(
         graph,
-        pos = nx.shell_layout(graph), # Position of nodes
-        with_labels=True,             # Show labels on nodes
-        node_color=node_colors,       # Color of nodes
-        edge_color="gray",            # Color of edges
-        node_size=2000,               # Size of nodes
-        font_size=12,                 # Font size for labels
-        arrowsize=20,                 # Arrow size for edges
+        pos=nx.shell_layout(graph),  # Position of nodes
+        with_labels=True,  # Show labels on nodes
+        node_color=node_colors,  # Color of nodes
+        edge_color="gray",  # Color of edges
+        node_size=2000,  # Size of nodes
+        font_size=12,  # Font size for labels
+        arrowsize=20,  # Arrow size for edges
     )
 
-def str_to_joaos(versao_str: str, latent: list[str], custom_cardinalities: dict = None) -> str:
+
+def str_to_joaos(
+    versao_str: str, latent: list[str], custom_cardinalities: dict = None
+) -> str:
     """
     Converts a string of edges like:
       "U1 -> X, U1 -> Y, U2 -> Z, X -> Y, Z -> X"
     into the a string that follows the pattern:
       5 # Number of nodes \n
       5 # Number of egdes \n
-      U1 0 # Node U1 has cardinality 0 \n 
+      U1 0 # Node U1 has cardinality 0 \n
       U2 0 # Node U2 has cardinality 0 \n
       X 2 # Node X has cardinality 2 \n
       Y 2 # Node Y has cardinality 2 \n
@@ -94,7 +100,6 @@ def str_to_joaos(versao_str: str, latent: list[str], custom_cardinalities: dict 
     other_nodes = [n for n in node_order if not n in latent]
     final_node_order = u_nodes + other_nodes
 
-
     lines = []
 
     lines.append(str(len(final_node_order)))
@@ -103,10 +108,11 @@ def str_to_joaos(versao_str: str, latent: list[str], custom_cardinalities: dict 
     for node in final_node_order:
         lines.append(f"{node} {node_card[node]}")
 
-    for (left, right) in edges:
+    for left, right in edges:
         lines.append(f"{left} {right}")
 
     return "\n".join(lines)
+
 
 def get_tuple_edges(edges_str: str) -> List[Tuple[str, str]]:
     """
@@ -114,8 +120,8 @@ def get_tuple_edges(edges_str: str) -> List[Tuple[str, str]]:
 
     Args:
         edges_str (str): The edges string.
-    
-    Returns:    
+
+    Returns:
         List[Tuple[str, str]]: A list of tuples with the nodes.
     """
     edges_part = edges_str.split(",")
@@ -131,7 +137,14 @@ def get_tuple_edges(edges_str: str) -> List[Tuple[str, str]]:
 
     return edges
 
-def generate_example(edges_str : str,  latent: list[str], intervention: list[str], target: str, custom_cardinalities: dict = None):
+
+def generate_example(
+    edges_str: str,
+    latent: list[str],
+    intervention: list[str],
+    target: str,
+    custom_cardinalities: dict = None,
+):
     """
     Generates an example graph based on the edges string.
 
@@ -149,13 +162,20 @@ def generate_example(edges_str : str,  latent: list[str], intervention: list[str
     node_colors = define_colors(graph, latent, intervention, target)
     draw_graph(graph, node_colors)
 
-def get_joaos_input(edges_str: str, latent: list[str], file_path: str = "", custom_cardinalities: dict = None):
+
+def get_joaos_input(
+    edges_str: str,
+    latent: list[str],
+    file_path: str = "",
+    custom_cardinalities: dict = None,
+):
     joaos_str = str_to_joaos(edges_str, latent, custom_cardinalities)
-    if (not file_path == ""):
+    if not file_path == "":
         f = open(file_path, "w")
         f.write(joaos_str)
     else:
         print(joaos_str)
+
 
 def tuple_generate_example(edges, custom_cardinalities: dict = None):
     """

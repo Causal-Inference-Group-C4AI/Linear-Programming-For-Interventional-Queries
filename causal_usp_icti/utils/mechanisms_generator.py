@@ -7,23 +7,29 @@ import pandas as pd
 from causal_usp_icti.graph.node import Node
 from causal_usp_icti.utils._enum import DirectoriesPath
 
-dictAndIndex = namedtuple('dictAndIndex', ['mechanisms', 'index'])
+dictAndIndex = namedtuple("dictAndIndex", ["mechanisms", "index"])
+
 
 class MechanismGenerator:
     def helper_generate_spaces(nodes: list[int], cardinalities: dict[int, int]):
-            spaces: list[list[int]] = []
-        
-            for node in nodes:
-                spaces.append(range(0,cardinalities[node]))
-        
-            return spaces
+        spaces: list[list[int]] = []
+
+        for node in nodes:
+            spaces.append(range(0, cardinalities[node]))
+
+        return spaces
 
     def generate_cross_products(listSpaces: list[list[int]]):
         crossProductsTuples = itertools.product(*listSpaces)
         return [list(combination) for combination in crossProductsTuples]
 
-
-    def mechanisms_generator(latentNode: int, endogenousNodes: list[int], cardinalities: dict[int, int], graphNodes: list[Node], v=True):
+    def mechanisms_generator(
+        latentNode: int,
+        endogenousNodes: list[int],
+        cardinalities: dict[int, int],
+        graphNodes: list[Node],
+        v=True,
+    ):
         """
         Generates an enumeration (list) of all mechanism a latent value can assume in its c-component. The c-component has to have
         exactly one latent variable.
@@ -56,15 +62,19 @@ class MechanismGenerator:
                     amount *= cardinalities[parent]
 
             headerArray.append(header + f" (x {amount})")
-            functionDomain: list[list[int]] = [list(auxTuple) for auxTuple in itertools.product(*auxSpaces)]
+            functionDomain: list[list[int]] = [
+                list(auxTuple) for auxTuple in itertools.product(*auxSpaces)
+            ]
             if v:
                 print(functionDomain)
 
             imageValues: list[int] = range(cardinalities[var])
 
-            varResult = [[domainCase + [c] for c in imageValues] for domainCase in functionDomain]
+            varResult = [
+                [domainCase + [c] for c in imageValues] for domainCase in functionDomain
+            ]
             if v:
-                print(f"For variable {var}:")          
+                print(f"For variable {var}:")
                 print(f"Function domain: {functionDomain}")
                 print(f"VarResult: {varResult}")
 
@@ -74,24 +84,28 @@ class MechanismGenerator:
                     key = key + f"{orderedParents[index]}={el},"
                 dictKeys.append(key[:-1])
 
-            allCasesList  = allCasesList + varResult
+            allCasesList = allCasesList + varResult
 
         if v:
             print(headerArray)
-            print(f"List all possible mechanism, placing in the same array those that determine the same function:\n{allCasesList}")
-            print(f"List the keys of the dictionary (all combinations of the domains of the functions): {dictKeys}")        
+            print(
+                f"List all possible mechanism, placing in the same array those that determine the same function:\n{allCasesList}"
+            )
+            print(
+                f"List the keys of the dictionary (all combinations of the domains of the functions): {dictKeys}"
+            )
 
         allPossibleMechanisms = list(itertools.product(*allCasesList))
         mechanismDicts: list[dict[str, int]] = []
         for index, mechanism in enumerate(allPossibleMechanisms):
             if v:
                 print(f"{index}) {mechanism}")
-            currDict: dict[str, int] = {} 
+            currDict: dict[str, int] = {}
             for domainIndex, nodeFunction in enumerate(mechanism):
                 if v:
                     print(f"The node function = {nodeFunction}")
                 currDict[dictKeys[domainIndex]] = nodeFunction[-1]
-            
+
             mechanismDicts.append(currDict)
 
         if v:
@@ -117,16 +131,27 @@ class MechanismGenerator:
 
         return allPossibleMechanisms, dictKeys, mechanismDicts
 
-
     # Not used, but useful when there is more than one latent in the optimization system
-    def mechanism_list_generator(cardinalities: dict[int, int], listU: list[int], listSpaces: set[int], graphNodes: list[Node]):        
+    def mechanism_list_generator(
+        cardinalities: dict[int, int],
+        listU: list[int],
+        listSpaces: set[int],
+        graphNodes: list[Node],
+    ):
         mechanismDictsList: list[list[dictAndIndex]] = []
         globalIndex: int = 0
         latentCardinalities: dict[int, int] = {}
         for latentVariable in listU:
-            endogenousInS: list[int] = list(set(graphNodes[latentVariable].children) & listSpaces)
-            _, _, mechanismDicts = MechanismGenerator.mechanisms_generator(latentNode=latentVariable, endogenousNodes=endogenousInS,
-                                            cardinalities=cardinalities,graphNodes=graphNodes,v=False)
+            endogenousInS: list[int] = list(
+                set(graphNodes[latentVariable].children) & listSpaces
+            )
+            _, _, mechanismDicts = MechanismGenerator.mechanisms_generator(
+                latentNode=latentVariable,
+                endogenousNodes=endogenousInS,
+                cardinalities=cardinalities,
+                graphNodes=graphNodes,
+                v=False,
+            )
 
             mechanismIndexDict: list[dictAndIndex] = []
             initVal: int = globalIndex

@@ -1,8 +1,8 @@
 class Node:
-    children    : list[int]
-    parents     : list[int]
+    children: list[int]
+    parents: list[int]
     latentParent: int
-    isLatent    : bool
+    isLatent: bool
 
     def __init__(self, children, parents, latentParent, isLatent):
         self.children = children

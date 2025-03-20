@@ -1,6 +1,3 @@
-import sys
-import argparse
-import os
 import networkx as nx
 
 from causal_usp_icti.graph.moral_node import MoralNode
@@ -9,12 +6,25 @@ from causal_usp_icti.utils.parser import parse_file
 
 
 class Graph:
-    def __init__(self, numberOfNodes: int, currNodes: list[int], visited: list[bool], cardinalities: dict[int, int],
-                 parents: list[list[int]], adj: list[list[int]], labelToIndex: dict[str, int], indexToLabel: dict[int, str],
-                 dagComponents: list[list[int]], exogenous : list[int], endogenous : list[int], topologicalOrder: list[int],
-                 DAG: nx.digraph, cComponentToUnob: dict[int, int], graphNodes: list[Node],
-                 moralGraphNodes: list[MoralNode]):
-
+    def __init__(
+        self,
+        numberOfNodes: int,
+        currNodes: list[int],
+        visited: list[bool],
+        cardinalities: dict[int, int],
+        parents: list[list[int]],
+        adj: list[list[int]],
+        labelToIndex: dict[str, int],
+        indexToLabel: dict[int, str],
+        dagComponents: list[list[int]],
+        exogenous: list[int],
+        endogenous: list[int],
+        topologicalOrder: list[int],
+        DAG: nx.digraph,
+        cComponentToUnob: dict[int, int],
+        graphNodes: list[Node],
+        moralGraphNodes: list[MoralNode],
+    ):
         self.numberOfNodes = numberOfNodes
         self.currNodes = currNodes
         self.visited = visited
@@ -32,7 +42,7 @@ class Graph:
         self.graphNodes = graphNodes
         self.moralGraphNodes = moralGraphNodes
 
-    def dfs(self, node: int):        
+    def dfs(self, node: int):
         self.visited[node] = True
         self.currNodes.append(node)
         is_observable = self.cardinalities[node] > 1
@@ -40,76 +50,85 @@ class Graph:
         if not is_observable:
             for adj_node in self.adj[node]:
                 if not self.visited[adj_node]:
-                   self.dfs(adj_node)
+                    self.dfs(adj_node)
         else:
             for parent_node in self.parents[node]:
-                if not self.visited[parent_node] and self.cardinalities[parent_node] < 1:
+                if (
+                    not self.visited[parent_node]
+                    and self.cardinalities[parent_node] < 1
+                ):
                     self.dfs(parent_node)
-    
+
     def find_cComponents(self):
         for i in range(self.numberOfNodes):
-            if not self.visited[i] and self.cardinalities[i] < 1:            
+            if not self.visited[i] and self.cardinalities[i] < 1:
                 self.currNodes.clear()
                 self.dfs(i)
                 self.dagComponents.append(self.currNodes[:])
                 self.cComponentToUnob[len(self.dagComponents) - 1] = i
-    
+
     def base_dfs(self, node: int):
         self.visited[node] = True
-
         for adj_node in self.graphNodes[node].children:
-            if not self.visited[adj_node]:                
+            if not self.visited[adj_node]:
                 self.base_dfs(adj_node)
 
-    def is_descendant(self, ancestor, descendant):        
+    def is_descendant(self, ancestor, descendant):
         for i in range(len(self.visited)):
-            self.visited[i] = False        
-                
-        self.base_dfs(node=ancestor)        
-
+            self.visited[i] = False
+        self.base_dfs(node=ancestor)
         return self.visited[descendant]
-    
-    def build_moral(self, consideredNodes: list[int], conditionedNodes: list[int], flag=False, intervention=-1):
+
+    def build_moral(
+        self,
+        consideredNodes: list[int],
+        conditionedNodes: list[int],
+        flag=False,
+        intervention=-1,
+    ):
         """
         Builds the moral graph, considering only part of the nodes.
         flag: if true, the outgoing edges of the intervention should not be considered.
         """
-        self.moralGraphNodes = [MoralNode(adjacent=[]) for _ in range(self.numberOfNodes)]
+        self.moralGraphNodes = [
+            MoralNode(adjacent=[]) for _ in range(self.numberOfNodes)
+        ]
         for node in range(self.numberOfNodes):
-            if node not in consideredNodes: 
+            if node not in consideredNodes:
                 continue
-            
-            if node in conditionedNodes:                
+
+            if node in conditionedNodes:
                 for parent1 in self.graphNodes[node].parents:
-                    if flag and parent1 == intervention: continue
+                    if flag and parent1 == intervention:
+                        continue
                     for parent2 in self.graphNodes[node].parents:
-                        if flag and parent2 == intervention: continue
-                        
-                        if (parent1 in conditionedNodes and parent2 in consideredNodes):
+                        if flag and parent2 == intervention:
+                            continue
+
+                        if parent1 in conditionedNodes and parent2 in consideredNodes:
                             if parent2 not in self.moralGraphNodes[parent1].adjacent:
                                 self.moralGraphNodes[parent1].adjacent.append(parent2)
                             if parent1 not in self.moralGraphNodes[parent2].adjacent:
-                                self.moralGraphNodes[parent2].adjacent.append(parent1)                
+                                self.moralGraphNodes[parent2].adjacent.append(parent1)
             else:
-                if (flag and node == intervention): continue
-                
-                for ch in self.graphNodes[node].children:                    
+                if flag and node == intervention:
+                    continue
+
+                for ch in self.graphNodes[node].children:
                     if ch in consideredNodes and ch not in conditionedNodes:
                         if node not in self.moralGraphNodes[ch].adjacent:
                             self.moralGraphNodes[ch].adjacent.append(node)
                         if ch not in self.moralGraphNodes[node].adjacent:
                             self.moralGraphNodes[node].adjacent.append(ch)
-                
+
     def find_ancestors(self, node: int):
         self.currNodes.clear()
-        self.visited =  [False] * self.numberOfNodes
-
+        self.visited = [False] * self.numberOfNodes
         self.dfs_ancestor(node)
         ancestors: list[int] = []
-        for i in range(0,self.numberOfNodes):
+        for i in range(0, self.numberOfNodes):
             if self.visited[i]:
                 ancestors.append(i)
-
         return ancestors
 
     def dfs_ancestor(self, node):
@@ -118,11 +137,11 @@ class Graph:
         for parent in self.graphNodes[node].parents:
             if not self.visited[parent]:
                 self.dfs_ancestor(parent)
-    
+
     def independency_moral(self, node1: int, node2: int):
         self.visited = [False] * self.numberOfNodes
         self.dfs_moral(node1)
-        
+
         return not self.visited[node2]
 
     def dfs_moral(self, node):
@@ -145,52 +164,64 @@ def get_graph(input_file_path=None):
         if bool(edge):
             for ch in edge:
                 inpDAG.add_edge(parent, ch)
-    
     order = list(nx.topological_sort(inpDAG))
-    
-    for i in range(numberOfNodes) :
-    
-            name_node = indexToLabel[i] 
 
-            nx.relabel_nodes(inpDAG, {i : name_node}, copy=False)
+    for i in range(numberOfNodes):
+        name_node = indexToLabel[i]
+        nx.relabel_nodes(inpDAG, {i: name_node}, copy=False)
 
-    endogenIndex : list[int] = []; exogenIndex : list[int] = []
+    endogenIndex: list[int] = []
+    exogenIndex: list[int] = []
     for i in range(numberOfNodes):
         if not (bool(parents[i])):
             exogenIndex.append(i)
         else:
-            endogenIndex.append(i)                
+            endogenIndex.append(i)
 
-    graphNodes: list[Node] = [Node(latentParent=-1, parents=[], children=[], isLatent=False) for _ in range(numberOfNodes)]
+    graphNodes: list[Node] = [
+        Node(latentParent=-1, parents=[], children=[], isLatent=False)
+        for _ in range(numberOfNodes)
+    ]
     for node in range(numberOfNodes):
         if cardinalities[node] == 0:
-            graphNodes[node] = Node(children=adj[node],parents=[],latentParent=None,isLatent=True)
+            graphNodes[node] = Node(
+                children=adj[node], parents=[], latentParent=None, isLatent=True
+            )
         else:
             latentParent = -1
             for nodeParent in parents[node]:
                 if cardinalities[nodeParent] == 0:
                     latentParent = nodeParent
                     break
-        
+
             if latentParent == -1:
-                print(f"PARSE ERROR: ALL OBSERVABLE VARIABLES SHOULD HAVE A LATENT PARENT, BUT {node} DOES NOT.")
-            
-            graphNodes[node] = Node(children=adj[node],parents=parents[node],latentParent=latentParent,isLatent=False)
+                print(
+                    f"PARSE ERROR: ALL OBSERVABLE VARIABLES SHOULD HAVE A LATENT PARENT, BUT {node} DOES NOT."
+                )
+
+            graphNodes[node] = Node(
+                children=adj[node],
+                parents=parents[node],
+                latentParent=latentParent,
+                isLatent=False,
+            )
         pass
 
-    return Graph(numberOfNodes=numberOfNodes,
-                currNodes=[], 
-                visited=[False] * (numberOfNodes),
-                cardinalities=cardinalities,
-                parents=parents,
-                adj=adj,
-                indexToLabel=indexToLabel,
-                labelToIndex=labelToIndex,
-                dagComponents=[],
-                exogenous=exogenIndex,
-                endogenous = endogenIndex,
-                topologicalOrder= order,
-                DAG= inpDAG,
-                cComponentToUnob = {},
-                graphNodes=graphNodes,
-                moralGraphNodes=[])
+    return Graph(
+        numberOfNodes=numberOfNodes,
+        currNodes=[],
+        visited=[False] * (numberOfNodes),
+        cardinalities=cardinalities,
+        parents=parents,
+        adj=adj,
+        indexToLabel=indexToLabel,
+        labelToIndex=labelToIndex,
+        dagComponents=[],
+        exogenous=exogenIndex,
+        endogenous=endogenIndex,
+        topologicalOrder=order,
+        DAG=inpDAG,
+        cComponentToUnob={},
+        graphNodes=graphNodes,
+        moralGraphNodes=[],
+    )
