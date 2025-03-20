@@ -55,9 +55,8 @@ class Graph:
                 if (
                     not self.visited[parent_node]
                     and self.cardinalities[parent_node] < 1
-                )   :
-                             self.dfs(parent_node)
-                    
+                ):
+                    self.dfs(parent_node)
 
     def find_cComponents(self):
         for i in range(self.numberOfNodes):
@@ -107,11 +106,9 @@ class Graph:
 
                         if parent1 in conditionedNodes and parent2 in consideredNodes:
                             if parent2 not in self.moralGraphNodes[parent1].adjacent:
-                                self.moralGraphNodes[parent1].adjacent.append(
-                                    parent2)
+                                self.moralGraphNodes[parent1].adjacent.append(parent2)
                             if parent1 not in self.moralGraphNodes[parent2].adjacent:
-                                self.moralGraphNodes[parent2].adjacent.append(
-                                    parent1)
+                                self.moralGraphNodes[parent2].adjacent.append(parent1)
             else:
                 if flag and node == intervention:
                     continue
