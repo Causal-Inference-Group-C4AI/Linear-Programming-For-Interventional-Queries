@@ -58,12 +58,12 @@ class ObjFunctionGenerator:
         empiricalProbabilitiesVariables = (
             []
         )  # If V in this array then it implies P(v) in the objective function
-        mechanismVariables = (
-            []
-        )  # If V in this array then it implies a decision function: 1(Pa(v) => v= some value)
-        conditionalProbabilities: dict[int, list[int]] = (
-            {}
-        )  # If V|A,B,C in this array then it implies P(V|A,B,C) in the objective function
+        # If V in this array then it implies a decision function: 1(Pa(v) => v=
+        # some value)
+        mechanismVariables = ([])
+        # If V|A,B,C in this array then it implies P(V|A,B,C) in the objective
+        # function
+        conditionalProbabilities: dict[int, list[int]] = ({})
         debugOrder: list[int] = []
 
         while len(current_targets) > 0:
@@ -121,8 +121,8 @@ class ObjFunctionGenerator:
                             conditionedNodes.append(conditionableAncestors[i])
 
                     self.graph.build_moral(
-                        consideredNodes=ancestors, conditionedNodes=conditionedNodes
-                    )
+                        consideredNodes=ancestors,
+                        conditionedNodes=conditionedNodes)
                     condition1 = self.graph.independency_moral(
                         node2=interventionLatent, node1=current_target
                     )
@@ -149,7 +149,8 @@ class ObjFunctionGenerator:
                             - {intervention, current_target}
                         )
 
-                # Choose one of the valid subsets - Last instance of "separator", for now.
+                # Choose one of the valid subsets - Last instance of
+                # "separator", for now.
                 conditionalProbabilities[current_target] = separator
 
                 # Question: is any already solved variable selected for the second time? Does the program need to address this issue
@@ -168,9 +169,10 @@ class ObjFunctionGenerator:
         interventionLatentParent = self.graph.graphNodes[self.intervention].latentParent
         cComponentEndogenous = self.graph.graphNodes[interventionLatentParent].children
 
-        endogenousNodes = (set(cComponentEndogenous) & set(self.debugOrder)) | {
-            self.intervention
-        }
+        endogenousNodes = (
+            set(cComponentEndogenous) & set(
+                self.debugOrder)) | {
+            self.intervention}
 
         _, _, mechanisms = MechanismGenerator.mechanisms_generator(
             latentNode=interventionLatentParent,
@@ -181,7 +183,8 @@ class ObjFunctionGenerator:
         )
         return mechanisms
 
-    def build_objective_function(self, mechanisms: list[list[int]]) -> list[float]:
+    def build_objective_function(self,
+                                 mechanisms: list[list[int]]) -> list[float]:
         """
         Intermediate step: remove useless endogenous variables in the mechanisms creation?
         Must be called after generate restrictions. Returns the objective function with the following encoding
@@ -211,8 +214,7 @@ class ObjFunctionGenerator:
         summandNodes.append(self.target)
         spaces.append([self.targetValue])
         inputCases: list[list[int]] = MechanismGenerator.generate_cross_products(
-            listSpaces=spaces
-        )
+            listSpaces=spaces)
         """
         TODO: Check the order of "inputCases": it should be the same as the order of the spaces, which is the same as in debugOrder.
         TODO: the case in which the summandNodes is empty (e.g Balke Pearl) has a very ugly fix
@@ -266,8 +268,10 @@ class ObjFunctionGenerator:
                     ):  # Case 2: terminate with coeff 0 if the decision function is 0. Do nothing otherwise
                         print("Case 2")
                         mechanismKey: str = ""
-                        for nodeIndex, node in enumerate(self.graph.graphNodes):
-                            if not node.isLatent and (variable in node.children):
+                        for nodeIndex, node in enumerate(
+                                self.graph.graphNodes):
+                            if not node.isLatent and (
+                                    variable in node.children):
                                 mechanismKey += (
                                     f"{nodeIndex}={variablesValues[nodeIndex]},"
                                 )
@@ -291,11 +295,11 @@ class ObjFunctionGenerator:
                             ProbabilitiesHelper.find_conditional_probability(
                                 dataFrame=self.dataFrame,
                                 indexToLabel=self.graph.indexToLabel,
-                                targetRealization={variable: variablesValues[variable]},
+                                targetRealization={
+                                    variable: variablesValues[variable]},
                                 conditionRealization=conditionRealization,
                                 v=False,
-                            )
-                        )
+                            ))
                         partialCoefficient *= conditionalProbability
 
                     print(f"current partial coefficient: {partialCoefficient}")
@@ -347,7 +351,9 @@ class ObjFunctionGenerator:
                 parents: str = ""
                 for parent in objFG.graph.graphNodes[node].parents:
                     parents += f"{objFG.graph.indexToLabel[parent]}, "
-                print(f"P({objFG.graph.indexToLabel[node]}|{parents[:-2]})", end="")
+                print(
+                    f"P({objFG.graph.indexToLabel[node]}|{parents[:-2]})",
+                    end="")
             else:
                 wset: str = ""
                 for condVar in objFG.conditionalProbabilities[node]:
@@ -375,13 +381,14 @@ if __name__ == "__main__":
         description="Gets causal inference under Partial-Observability."
     )
     parser.add_argument(
-        "input_filename", help="The name of the input file in test_case/input directory"
-    )
+        "input_filename",
+        help="The name of the input file in test_case/input directory")
     parser.add_argument("csv_filename", help="The name of the csv")
     args = parser.parse_args()
 
     input_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
+        os.path.dirname(
+            os.path.abspath(__file__)),
         f"../../{DirectoriesPath.TEST_CASES_INPUTS.value}/{args.input_filename}.txt",
     )
     csv_path = os.path.join(

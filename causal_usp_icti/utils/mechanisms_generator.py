@@ -11,7 +11,8 @@ dictAndIndex = namedtuple("dictAndIndex", ["mechanisms", "index"])
 
 
 class MechanismGenerator:
-    def helper_generate_spaces(nodes: list[int], cardinalities: dict[int, int]):
+    def helper_generate_spaces(
+            nodes: list[int], cardinalities: dict[int, int]):
         spaces: list[list[int]] = []
 
         for node in nodes:
@@ -70,9 +71,8 @@ class MechanismGenerator:
 
             imageValues: list[int] = range(cardinalities[var])
 
-            varResult = [
-                [domainCase + [c] for c in imageValues] for domainCase in functionDomain
-            ]
+            varResult = [[domainCase + [c] for c in imageValues]
+                         for domainCase in functionDomain]
             if v:
                 print(f"For variable {var}:")
                 print(f"Function domain: {functionDomain}")
@@ -117,21 +117,22 @@ class MechanismGenerator:
 
         """
         mechanismDicts: list[dict[str, int]]
-        --- Has all the mechanisms for ONE latent variable. Each element of the list is a set of mechanisms, which specify 
+        --- Has all the mechanisms for ONE latent variable. Each element of the list is a set of mechanisms, which specify
             the value of any c-component endogenous node given the values of its endogenous parents.
-        
+
         --- The key to check how one node behaves given its parents is a string with the value of the parents:
             "Parent1=Val1,Parent2=Val2,...,ParentN=ValN"
 
         --- There is an specific order for the parents: it is the same as in graph.graphNodes.
-        
+
         TODO: change the dictionary so that it also depends explicitly on the node we want to determine the value, otherwise the
         key for two nodes with the same parents is the same.
         """
 
         return allPossibleMechanisms, dictKeys, mechanismDicts
 
-    # Not used, but useful when there is more than one latent in the optimization system
+    # Not used, but useful when there is more than one latent in the
+    # optimization system
     def mechanism_list_generator(
         cardinalities: dict[int, int],
         listU: list[int],
@@ -156,7 +157,8 @@ class MechanismGenerator:
             mechanismIndexDict: list[dictAndIndex] = []
             initVal: int = globalIndex
             for mechanismDict in mechanismDicts:
-                mechanismIndexDict.append(dictAndIndex(mechanismDict, globalIndex))
+                mechanismIndexDict.append(
+                    dictAndIndex(mechanismDict, globalIndex))
                 globalIndex += 1
 
             latentCardinalities[latentVariable] = globalIndex - initVal

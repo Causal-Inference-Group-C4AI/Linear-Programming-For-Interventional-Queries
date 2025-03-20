@@ -9,13 +9,17 @@ from causal_usp_icti.utils.probabilities_helper import ProbabilitiesHelper
 from causal_usp_icti.utils._enum import DirectoriesPath
 
 
-def create_dict_index(parents: list[int], rlt: list[int], indexerList: list[int]):
+def create_dict_index(
+        parents: list[int],
+        rlt: list[int],
+        indexerList: list[int]):
     index: str = ""
     for parNode in parents:
         if parents.index(parNode) == len(parents) - 1:
             index += str(parNode) + "=" + str(rlt[indexerList.index(parNode)])
         else:
-            index += str(parNode) + "=" + str(rlt[indexerList.index(parNode)]) + ","
+            index += str(parNode) + "=" + \
+                str(rlt[indexerList.index(parNode)]) + ","
     return index
 
 
@@ -36,7 +40,8 @@ def generate_constraints(
     dictCond: dict[int, int] = {}
     decisionMatrix: list[list[int]] = [[1 for _ in range(len(mechanism))]]
     for node in topoOrder:
-        if (unob in dag.graphNodes[node].parents) and (node in consideredCcomp):
+        if (unob in dag.graphNodes[node].parents) and (
+                node in consideredCcomp):
             cCompOrder.append(node)
     cCompOrder.reverse()
     usedVars = cCompOrder.copy()
@@ -56,8 +61,10 @@ def generate_constraints(
                     usedVars.append(cond)
         productTerms.append({node: condVars.copy()})
         condVars.clear()
-    spaces: list[list[int]] = [range(dag.cardinalities[var]) for var in usedVars]
-    cartesianProduct = MechanismGenerator.generate_cross_products(listSpaces=spaces)
+    spaces: list[list[int]] = [
+        range(dag.cardinalities[var]) for var in usedVars]
+    cartesianProduct = MechanismGenerator.generate_cross_products(
+        listSpaces=spaces)
     for rlt in cartesianProduct:
         prob = 1.0
         for term in productTerms:
@@ -102,12 +109,13 @@ if __name__ == "__main__":
         description="Gets causal inference under Partial-Observability."
     )
     parser.add_argument(
-        "input_filename", help="The name of the input file in test_case/input directory"
-    )
+        "input_filename",
+        help="The name of the input file in test_case/input directory")
     parser.add_argument("csv_filename", help="The name of the csv")
     args = parser.parse_args()
     file_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
+        os.path.dirname(
+            os.path.abspath(__file__)),
         f"../../{DirectoriesPath.TEST_CASES_INPUTS.value}/{args.input_filename}.txt",
     )
     graph = get_graph(file_path)

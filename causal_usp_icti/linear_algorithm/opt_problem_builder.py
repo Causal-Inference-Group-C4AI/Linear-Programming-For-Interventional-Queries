@@ -8,7 +8,6 @@ import pandas as pd
 from causal_usp_icti.graph.graph import Graph, get_graph
 from causal_usp_icti.linear_algorithm.linear_constraints import generate_constraints
 from causal_usp_icti.linear_algorithm.obj_function_generator import ObjFunctionGenerator
-from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
 from causal_usp_icti.utils._enum import DirectoriesPath
 
 
@@ -17,13 +16,16 @@ class OptProblemBuilder:
         graph: Graph = get_graph(input_path)
         df = pd.read_csv(csv_path)
 
-        interventionVariable = input("Provide the label of the intervention:").strip()
+        interventionVariable = input(
+            "Provide the label of the intervention:").strip()
         interventionVariable = (
             interventionVariable if len(interventionVariable) else "X"
         )
 
-        interventionValue = input("Provide the value of the intervention:").strip()
-        interventionValue = int(interventionValue) if len(interventionValue) else 0
+        interventionValue = input(
+            "Provide the value of the intervention:").strip()
+        interventionValue = int(interventionValue) if len(
+            interventionValue) else 0
 
         targetVariable = input("Provide the label of the target:").strip()
         targetVariable = targetVariable if len(targetVariable) else "Y"
@@ -52,8 +54,9 @@ class OptProblemBuilder:
         ].latentParent
         cComponentEndogenous = objFG.graph.graphNodes[interventionLatentParent].children
         consideredEndogenousNodes = list(
-            (set(cComponentEndogenous) & set(objFG.debugOrder)) | {objFG.intervention}
-        )
+            (set(cComponentEndogenous) & set(
+                objFG.debugOrder)) | {
+                objFG.intervention})
 
         probs, decisionMatrix = generate_constraints(
             data=df,
@@ -107,13 +110,14 @@ if __name__ == "__main__":
         description="Gets causal inference under Partial-Observability."
     )
     parser.add_argument(
-        "input_filename", help="The name of the input file in test_case/input directory"
-    )
+        "input_filename",
+        help="The name of the input file in test_case/input directory")
     parser.add_argument("csv_filename", help="The name of the csv")
     args = parser.parse_args()
 
     input_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
+        os.path.dirname(
+            os.path.abspath(__file__)),
         f"../../{DirectoriesPath.TEST_CASES_INPUTS.value}/{args.input_filename}.txt",
     )
     csv_path = os.path.join(
@@ -123,7 +127,7 @@ if __name__ == "__main__":
     OptProblemBuilder.builder_linear_problem(input_path, csv_path)
     # graph: Graph = Graph.parse()
     # _,_,mechanism = MechanismGenerator.mechanisms_generator(latentNode = graph.labelToIndex["U1"], endogenousNodes = [graph.labelToIndex["Y"], graph.labelToIndex["X"]], cardinalities=graph.cardinalities ,
-    #                                                     graphNodes = graph.graphNodes, v= False )
+    # graphNodes = graph.graphNodes, v= False )
 
     # df: pd.DataFrame = pd.read_csv("/home/joaog/Cpart/Canonical-Partition/causal_usp_icti/linear_algorithm/balke_pearl.csv")
     # probs, decisionMatrix = generateConstraints(data=df ,dag= graph, unob=graph.labelToIndex["U1"],consideredCcomp=[graph.labelToIndex["X"], graph.labelToIndex["Y"]],mechanism=mechanism)

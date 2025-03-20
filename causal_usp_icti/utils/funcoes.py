@@ -97,7 +97,7 @@ def str_to_joaos(
             node_card[node] = 0 if node in latent else 2
 
     u_nodes = [n for n in node_order if n in latent]
-    other_nodes = [n for n in node_order if not n in latent]
+    other_nodes = [n for n in node_order if n not in latent]
     final_node_order = u_nodes + other_nodes
 
     lines = []

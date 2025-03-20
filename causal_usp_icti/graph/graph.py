@@ -106,9 +106,11 @@ class Graph:
 
                         if parent1 in conditionedNodes and parent2 in consideredNodes:
                             if parent2 not in self.moralGraphNodes[parent1].adjacent:
-                                self.moralGraphNodes[parent1].adjacent.append(parent2)
+                                self.moralGraphNodes[parent1].adjacent.append(
+                                    parent2)
                             if parent1 not in self.moralGraphNodes[parent2].adjacent:
-                                self.moralGraphNodes[parent2].adjacent.append(parent1)
+                                self.moralGraphNodes[parent2].adjacent.append(
+                                    parent1)
             else:
                 if flag and node == intervention:
                     continue
@@ -184,8 +186,10 @@ def get_graph(input_file_path=None):
     for node in range(numberOfNodes):
         if cardinalities[node] == 0:
             graphNodes[node] = Node(
-                children=adj[node], parents=[], latentParent=None, isLatent=True
-            )
+                children=adj[node],
+                parents=[],
+                latentParent=None,
+                isLatent=True)
         else:
             latentParent = -1
             for nodeParent in parents[node]:

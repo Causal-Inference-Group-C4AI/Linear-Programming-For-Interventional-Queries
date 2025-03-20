@@ -33,8 +33,7 @@ class ProbabilitiesHelper:
             return 0
 
         targetAndConditionProbability = ProbabilitiesHelper.find_probability(
-            dataFrame, indexToLabel, targetRealization | conditionRealization, False
-        )
+            dataFrame, indexToLabel, targetRealization | conditionRealization, False)
         return targetAndConditionProbability / conditionProbability
 
     def find_probability(
@@ -42,9 +41,8 @@ class ProbabilitiesHelper:
     ):
         conditions = pd.Series([True] * len(dataFrame), index=dataFrame.index)
         for variable in variableRealizations:
-            conditions &= (
-                dataFrame[indexToLabel[variable]] == variableRealizations[variable]
-            )
+            conditions &= (dataFrame[indexToLabel[variable]]
+                           == variableRealizations[variable])
 
         compatibleCasesCount = dataFrame[conditions].shape[0]
         if v:
