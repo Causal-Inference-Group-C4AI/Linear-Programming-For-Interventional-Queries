@@ -118,7 +118,7 @@ class MechanismGenerator:
         return allPossibleMechanisms, dictKeys, mechanismDicts
 
 
-    # TODO: REMOVER?? SÓ DEFINIDA E NÃO USADA
+    # Not used, but useful when there is more than one latent in the optimization system
     def mechanism_list_generator(cardinalities: dict[int, int], listU: list[int], listSpaces: set[int], graphNodes: list[Node]):        
         mechanismDictsList: list[list[dictAndIndex]] = []
         globalIndex: int = 0
