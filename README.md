@@ -5,6 +5,25 @@ Determina cada confounded component (c-component) e monta um DAG equivalente. Ne
 
 ## Boas Práticas de Eng. de Software
 
+<a name="flake8"></a>
+### Flake8 
+**Flake8** is a powerful tool for enforcing style guidelines. It scans your code to identify deviations from PEP 8, such as improper indentation, excessive line lengths, and unused imports. By integrating Flake8 into your development workflow, you can maintain clean and consistent code, making it easier to read and maintain.
+
+Key Features:
+- **Syntax Checking:** Detects syntax errors that could cause your code to fail.
+- **Style Enforcement:** Ensures adherence to PEP 8 guidelines, promoting uniform coding practices.
+- **Plugin Support:** Extensible with plugins to add more checks or customize existing ones.
+
+Usage Example:
+
+```shell
+flake8 your_script.py
+```
+
+Running this command will output any style violations or errors found in `your_script.py`, allowing you to address them promptly.
+
+<br>
+
 ### Imports
 
 #### Isort
