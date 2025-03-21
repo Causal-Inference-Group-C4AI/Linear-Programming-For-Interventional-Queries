@@ -1,7 +1,7 @@
 from scipy.optimize import linprog
 
 
-def trimDecimal(precision: int, value: float):
+def trim_decimal(precision: int, value: float):
     return round(pow(10, precision) * value) / pow(10, precision)
 
 
@@ -27,7 +27,7 @@ def opt_problem(objFunction: list[float],
                             bounds=interval)
 
     if lowerBoundSol.success:
-        lowerBound = trimDecimal(3, lowerBoundSol.fun)
+        lowerBound = trim_decimal(3, lowerBoundSol.fun)
         if v:
             print(f"Optimal distribution = {lowerBoundSol.x}")
             print(f"Obj. function = {lowerBound}")
@@ -37,7 +37,7 @@ def opt_problem(objFunction: list[float],
     # Find maximum (uses the negated objective function and changes the sign
     # of the result)
     if upperBoundSol.success:
-        upperBound = trimDecimal(3, -upperBoundSol.fun)
+        upperBound = trim_decimal(3, -upperBoundSol.fun)
         if v:
             print(f"Optimal distribution = {upperBoundSol.x}")
             print(f"Obj. function = {upperBound}")
@@ -92,7 +92,7 @@ def main():
     # ---------- results comparison -------- #
     print(f"\nWith the first method, we obtain the interval: [{lb0},{ub0}]")
     print(
-        f"With the second method, we obtain the interval: [{trimDecimal(3,lb1 - ub2)},{trimDecimal(3,ub1 - lb2)}]")
+        f"With the second method, we obtain the interval: [{trim_decimal(3,lb1 - ub2)},{trim_decimal(3,ub1 - lb2)}]")
 
 
 if __name__ == "__main__":

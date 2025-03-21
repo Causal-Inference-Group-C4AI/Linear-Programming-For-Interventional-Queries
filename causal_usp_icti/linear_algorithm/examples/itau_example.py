@@ -10,11 +10,11 @@ from causal_usp_icti.graph.graph import Graph, get_graph
 from causal_usp_icti.utils._enum import Examples
 
 
-def trimDecimal(precision: int, value: float):
+def trim_decimal(precision: int, value: float):
     return round(pow(10, precision) * value) / pow(10, precision)
 
 
-def optProblem(objFunction: list[float],
+def opt_problem(objFunction: list[float],
                Aeq: list[list[float]],
                Beq: list[float],
                interval,
@@ -36,7 +36,7 @@ def optProblem(objFunction: list[float],
                             bounds=interval)
 
     if lowerBoundSol.success:
-        lowerBound = trimDecimal(3, lowerBoundSol.fun)
+        lowerBound = trim_decimal(3, lowerBoundSol.fun)
         if v:
             print(f"Optimal distribution = {lowerBoundSol.x}")
             print(f"Obj. function = {lowerBound}")
@@ -46,7 +46,7 @@ def optProblem(objFunction: list[float],
     # Find maximum (uses the negated objective function and changes the sign
     # of the result)
     if upperBoundSol.success:
-        upperBound = trimDecimal(3, -upperBoundSol.fun)
+        upperBound = trim_decimal(3, -upperBoundSol.fun)
         if v:
             print(f"Optimal distribution = {upperBoundSol.x}")
             print(f"Obj. function = {upperBound}")
@@ -121,7 +121,7 @@ def main(dag: Graph):
                 a.append(aux)
     for i in range(len(a)):
         print(f"{a[i]} = {b[i]}")
-    optProblem(objFunction=c, Aeq=a, Beq=b, interval=bounds, v=True)
+    opt_problem(objFunction=c, Aeq=a, Beq=b, interval=bounds, v=True)
 
 
 if __name__ == "__main__":
