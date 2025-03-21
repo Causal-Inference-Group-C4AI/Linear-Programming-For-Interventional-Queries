@@ -119,6 +119,8 @@ if __name__ == "__main__":
         f"../../{DirectoriesPath.TEST_CASES_INPUTS.value}/{args.input_filename}.txt",
     )
     graph = get_graph(file_path)
+
+    # TODO: How to set latentNode and endogenousNodes automatically?
     _, _, mechanism = MechanismGenerator.mechanisms_generator(
         latentNode=graph.labelToIndex["U1"],
         endogenousNodes=[graph.labelToIndex["Y"], graph.labelToIndex["X"]],

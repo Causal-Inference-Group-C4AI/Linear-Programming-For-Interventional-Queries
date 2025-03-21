@@ -11,26 +11,40 @@ from causal_usp_icti.utils._enum import DirectoriesPath
 
 
 class OptProblemBuilder:
-    def builder_linear_problem(input_path, csv_path):
-        graph: Graph = get_graph(input_path)
+    def __init__(self):
+        pass
+
+    def get_query(self, str_graph: str, unobservables: list[str], intervention: str, intervention_value: int, target: str, target_value: int, csv_path):
+        graph = get_graph(str_graph=str_graph, unobservables=unobservables)
+        self.builder_linear_problem(graph, csv_path, intervention, intervention_value, target, target_value)
+
+        
+    def builder_linear_problem(self, graph: Graph, csv_path, intervention: str, intervention_value: int, target: str, target_value: int):
+    # def builder_linear_problem(input_path, csv_path):
+        # graph: Graph = get_graph(input_path)
         df = pd.read_csv(csv_path)
 
-        interventionVariable = input(
-            "Provide the label of the intervention:").strip()
-        interventionVariable = (
-            interventionVariable if len(interventionVariable) else "X"
-        )
+        # interventionVariable = input(
+        #     "Provide the label of the intervention:").strip()
+        # interventionVariable = (
+        #     interventionVariable if len(interventionVariable) else "X"
+        # )
+        interventionVariable = intervention
 
-        interventionValue = input(
-            "Provide the value of the intervention:").strip()
-        interventionValue = int(interventionValue) if len(
-            interventionValue) else 0
 
-        targetVariable = input("Provide the label of the target:").strip()
-        targetVariable = targetVariable if len(targetVariable) else "Y"
+        # interventionValue = input(
+        #     "Provide the value of the intervention:").strip()
+        # interventionValue = int(interventionValue) if len(
+        #     interventionValue) else 0
+        interventionValue = intervention_value
 
-        targetValue = input("Provide the value of the target:").strip()
-        targetValue = int(targetValue) if len(targetValue) else 1
+        # targetVariable = input("Provide the label of the target:").strip()
+        # targetVariable = targetVariable if len(targetVariable) else "Y"
+        targetVariable = target
+
+        # targetValue = input("Provide the value of the target:").strip()
+        # targetValue = int(targetValue) if len(targetValue) else 1
+        targetValue = target_value
 
         objFG = ObjFunctionGenerator(
             graph=graph,

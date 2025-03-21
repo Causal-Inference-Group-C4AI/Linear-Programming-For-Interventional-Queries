@@ -1,7 +1,7 @@
 import networkx as nx
 from causal_usp_icti.graph.moral_node import MoralNode
 from causal_usp_icti.graph.node import Node
-from causal_usp_icti.utils.parser import parse_file
+from causal_usp_icti.utils.parser import parse_file, parse_default_input
 
 
 class Graph:
@@ -153,8 +153,12 @@ class Graph:
                 self.dfs_moral(node=adj)
 
 
-def get_graph(input_file_path=None):
-    auxTuple = parse_file(input_file_path)
+def get_graph(str_graph: str=None, unobservables: list[str]=None, input_file_path=None):
+    if input_file_path is None:
+        auxTuple = parse_default_input(versao_str=str_graph, latent=unobservables)
+    else:
+        auxTuple = parse_file(input_file_path)
+
     numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents = auxTuple
 
     inpDAG: nx.DiGraph = nx.DiGraph()

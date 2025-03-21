@@ -10,3 +10,5 @@ class DirectoriesPath(Enum):
 class Examples(Enum):
     CSV_ITAU_EXAMPLE = "causal_usp_icti/data/itau.csv"
     TXT_ITAU_EXAMPLE = "causal_usp_icti/test_cases/inputs/itau.txt"
+    CSV_BALKE_PEARL_EXAMPLE = "causal_usp_icti/data/balke_pearl.csv"
+    TXT_BALKE_PEARL_EXAMPLE = "causal_usp_icti/test_cases/inputs/balke_pearl.txt"
