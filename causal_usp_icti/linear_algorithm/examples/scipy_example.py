@@ -5,7 +5,7 @@ def trimDecimal(precision: int, value: float):
     return round(pow(10, precision) * value) / pow(10, precision)
 
 
-def optProblem(objFunction: list[float],
+def opt_problem(objFunction: list[float],
                Aeq: list[list[float]],
                Beq: list[float],
                interval,
@@ -77,16 +77,16 @@ def main():
 
     # ---------- compute using the final objective function -------- #
     print("\nUsing the complete objective function, the results are:")
-    lb0, ub0 = optProblem(c, a_eq, b_eq, bounds, False)
+    lb0, ub0 = opt_problem(c, a_eq, b_eq, bounds, False)
     print(f"Lower bound: {lb0} - Upper bound: {ub0}")
 
     # ---------- compute using the partial objective functions -------- #
     print("\nUsing the complete objective function, the result for the positive query is:")
-    lb1, ub1 = optProblem(c1, a_eq, b_eq, bounds, False)
+    lb1, ub1 = opt_problem(c1, a_eq, b_eq, bounds, False)
     print(f"Lower bound: {lb1} - Upper bound: {ub1}")
 
     print("Using the complete objective function, the result for the negative query is:")
-    lb2, ub2 = optProblem(c2, a_eq, b_eq, bounds, False)
+    lb2, ub2 = opt_problem(c2, a_eq, b_eq, bounds, False)
     print(f"Lower bound: {lb2} - Upper bound: {ub2}")
 
     # ---------- results comparison -------- #
