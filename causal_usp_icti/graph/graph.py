@@ -1,7 +1,6 @@
 import networkx as nx
 from causal_usp_icti.graph.moral_node import MoralNode
 from causal_usp_icti.graph.node import Node
-from causal_usp_icti.utils.parser import parse_file, parse_default_input
 
 
 class Graph:
@@ -106,11 +105,9 @@ class Graph:
 
                         if parent1 in conditionedNodes and parent2 in consideredNodes:
                             if parent2 not in self.moralGraphNodes[parent1].adjacent:
-                                self.moralGraphNodes[parent1].adjacent.append(
-                                    parent2)
+                                self.moralGraphNodes[parent1].adjacent.append(parent2)
                             if parent1 not in self.moralGraphNodes[parent2].adjacent:
-                                self.moralGraphNodes[parent2].adjacent.append(
-                                    parent1)
+                                self.moralGraphNodes[parent2].adjacent.append(parent1)
             else:
                 if flag and node == intervention:
                     continue
@@ -151,84 +148,3 @@ class Graph:
         for adj in self.moralGraphNodes[node].adjacent:
             if not self.visited[adj]:
                 self.dfs_moral(node=adj)
-
-
-def get_graph(str_graph: str=None, unobservables: list[str]=None, input_file_path=None):
-    if input_file_path is None:
-        auxTuple = parse_default_input(versao_str=str_graph, latent=unobservables)
-    else:
-        auxTuple = parse_file(input_file_path)
-
-    numberOfNodes, labelToIndex, indexToLabel, adj, cardinalities, parents = auxTuple
-
-    inpDAG: nx.DiGraph = nx.DiGraph()
-    for i in range(numberOfNodes):
-        inpDAG.add_node(i)
-
-    for parent, edge in enumerate(adj):
-        if bool(edge):
-            for ch in edge:
-                inpDAG.add_edge(parent, ch)
-    order = list(nx.topological_sort(inpDAG))
-
-    for i in range(numberOfNodes):
-        name_node = indexToLabel[i]
-        nx.relabel_nodes(inpDAG, {i: name_node}, copy=False)
-
-    endogenIndex: list[int] = []
-    exogenIndex: list[int] = []
-    for i in range(numberOfNodes):
-        if not (bool(parents[i])):
-            exogenIndex.append(i)
-        else:
-            endogenIndex.append(i)
-
-    graphNodes: list[Node] = [
-        Node(latentParent=-1, parents=[], children=[], isLatent=False)
-        for _ in range(numberOfNodes)
-    ]
-    for node in range(numberOfNodes):
-        if cardinalities[node] == 0:
-            graphNodes[node] = Node(
-                children=adj[node],
-                parents=[],
-                latentParent=None,
-                isLatent=True)
-        else:
-            latentParent = -1
-            for nodeParent in parents[node]:
-                if cardinalities[nodeParent] == 0:
-                    latentParent = nodeParent
-                    break
-
-            if latentParent == -1:
-                print(
-                    f"PARSE ERROR: ALL OBSERVABLE VARIABLES SHOULD HAVE A LATENT PARENT, BUT {node} DOES NOT."
-                )
-
-            graphNodes[node] = Node(
-                children=adj[node],
-                parents=parents[node],
-                latentParent=latentParent,
-                isLatent=False,
-            )
-        pass
-
-    return Graph(
-        numberOfNodes=numberOfNodes,
-        currNodes=[],
-        visited=[False] * (numberOfNodes),
-        cardinalities=cardinalities,
-        parents=parents,
-        adj=adj,
-        indexToLabel=indexToLabel,
-        labelToIndex=labelToIndex,
-        dagComponents=[],
-        exogenous=exogenIndex,
-        endogenous=endogenIndex,
-        topologicalOrder=order,
-        DAG=inpDAG,
-        cComponentToUnob={},
-        graphNodes=graphNodes,
-        moralGraphNodes=[],
-    )

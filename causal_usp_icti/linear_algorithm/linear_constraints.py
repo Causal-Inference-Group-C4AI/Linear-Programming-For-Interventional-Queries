@@ -3,23 +3,19 @@ import argparse
 
 import pandas as pd
 
-from causal_usp_icti.graph.graph import Graph, get_graph
+from causal_usp_icti.graph.graph import Graph
 from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
 from causal_usp_icti.utils.probabilities_helper import ProbabilitiesHelper
 from causal_usp_icti.utils._enum import DirectoriesPath
 
 
-def create_dict_index(
-        parents: list[int],
-        rlt: list[int],
-        indexerList: list[int]):
+def create_dict_index(parents: list[int], rlt: list[int], indexerList: list[int]):
     index: str = ""
     for parNode in parents:
         if parents.index(parNode) == len(parents) - 1:
             index += str(parNode) + "=" + str(rlt[indexerList.index(parNode)])
         else:
-            index += str(parNode) + "=" + \
-                str(rlt[indexerList.index(parNode)]) + ","
+            index += str(parNode) + "=" + str(rlt[indexerList.index(parNode)]) + ","
     return index
 
 
@@ -40,8 +36,7 @@ def generate_constraints(
     dictCond: dict[int, int] = {}
     decisionMatrix: list[list[int]] = [[1 for _ in range(len(mechanism))]]
     for node in topoOrder:
-        if (unob in dag.graphNodes[node].parents) and (
-                node in consideredCcomp):
+        if (unob in dag.graphNodes[node].parents) and (node in consideredCcomp):
             cCompOrder.append(node)
     cCompOrder.reverse()
     usedVars = cCompOrder.copy()
@@ -61,10 +56,8 @@ def generate_constraints(
                     usedVars.append(cond)
         productTerms.append({node: condVars.copy()})
         condVars.clear()
-    spaces: list[list[int]] = [
-        range(dag.cardinalities[var]) for var in usedVars]
-    cartesianProduct = MechanismGenerator.generate_cross_products(
-        listSpaces=spaces)
+    spaces: list[list[int]] = [range(dag.cardinalities[var]) for var in usedVars]
+    cartesianProduct = MechanismGenerator.generate_cross_products(listSpaces=spaces)
     for rlt in cartesianProduct:
         prob = 1.0
         for term in productTerms:
@@ -104,44 +97,44 @@ def generate_constraints(
     return probs, decisionMatrix
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Gets causal inference under Partial-Observability."
-    )
-    parser.add_argument(
-        "input_filename",
-        help="The name of the input file in test_case/input directory")
-    parser.add_argument("csv_filename", help="The name of the csv")
-    args = parser.parse_args()
-    file_path = os.path.join(
-        os.path.dirname(
-            os.path.abspath(__file__)),
-        f"../../{DirectoriesPath.TEST_CASES_INPUTS.value}/{args.input_filename}.txt",
-    )
-    graph = get_graph(file_path)
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(
+#         description="Gets causal inference under Partial-Observability."
+#     )
+#     parser.add_argument(
+#         "input_filename",
+#         help="The name of the input file in test_case/input directory")
+#     parser.add_argument("csv_filename", help="The name of the csv")
+#     args = parser.parse_args()
+#     file_path = os.path.join(
+#         os.path.dirname(
+#             os.path.abspath(__file__)),
+#         f"../../{DirectoriesPath.TEST_CASES_INPUTS.value}/{args.input_filename}.txt",
+#     )
+#     graph = get_graph(file_path)
 
-    # TODO: How to set latentNode and endogenousNodes automatically?
-    _, _, mechanism = MechanismGenerator.mechanisms_generator(
-        latentNode=graph.labelToIndex["U1"],
-        endogenousNodes=[graph.labelToIndex["Y"], graph.labelToIndex["X"]],
-        cardinalities=graph.cardinalities,
-        graphNodes=graph.graphNodes,
-        v=False,
-    )
+#     # TODO: How to set latentNode and endogenousNodes automatically?
+#     _, _, mechanism = MechanismGenerator.mechanisms_generator(
+#         latentNode=graph.labelToIndex["U1"],
+#         endogenousNodes=[graph.labelToIndex["Y"], graph.labelToIndex["X"]],
+#         cardinalities=graph.cardinalities,
+#         graphNodes=graph.graphNodes,
+#         v=False,
+#     )
 
-    csv_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        f"../../{DirectoriesPath.CSV_PATH.value}/{args.csv_filename}.csv",
-    )
-    df: pd.DataFrame = pd.read_csv(csv_path)
+#     csv_path = os.path.join(
+#         os.path.dirname(os.path.abspath(__file__)),
+#         f"../../{DirectoriesPath.CSV_PATH.value}/{args.csv_filename}.csv",
+#     )
+#     df: pd.DataFrame = pd.read_csv(csv_path)
 
-    probs, decisionMatrix = generate_constraints(
-        data=df,
-        dag=graph,
-        unob=graph.labelToIndex["U1"],
-        consideredCcomp=[graph.labelToIndex["X"], graph.labelToIndex["Y"]],
-        mechanism=mechanism,
-    )
-    print(probs)
-    print("-------------------")
-    print(decisionMatrix)
+#     probs, decisionMatrix = generate_constraints(
+#         data=df,
+#         dag=graph,
+#         unob=graph.labelToIndex["U1"],
+#         consideredCcomp=[graph.labelToIndex["X"], graph.labelToIndex["Y"]],
+#         mechanism=mechanism,
+#     )
+#     print(probs)
+#     print("-------------------")
+#     print(decisionMatrix)

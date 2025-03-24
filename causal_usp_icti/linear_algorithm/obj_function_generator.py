@@ -3,7 +3,7 @@ import os
 
 import pandas as pd
 
-from causal_usp_icti.graph.graph import Graph, get_graph
+from causal_usp_icti.graph.graph import Graph
 from causal_usp_icti.utils.mechanisms_generator import MechanismGenerator
 from causal_usp_icti.utils.probabilities_helper import ProbabilitiesHelper
 from causal_usp_icti.utils._enum import DirectoriesPath
@@ -20,8 +20,8 @@ class ObjFunctionGenerator:
         graph: Graph,
         intervention: int,
         target: int | str,
-        interventionValue: int,
-        targetValue: int,
+        intervention_value: int,
+        target_value: int,
         dataFrame,
         empiricalProbabilitiesVariables: list[int],
         mechanismVariables: list[int],
@@ -31,15 +31,15 @@ class ObjFunctionGenerator:
         """
         graph: an instance of the personalized class graph
         intervention: X in P(Y|do(X))
-        interventionValue: the value assumed by the X variable
+        intervention_value: the value assumed by the X variable
         target: Y in P(Y|do(X))
         """
 
         self.graph = graph
         self.intervention = intervention
-        self.interventionValue = interventionValue
+        self.intervention_value = intervention_value
         self.target = target
-        self.targetValue = targetValue
+        self.target_value = target_value
         self.dataFrame = dataFrame
 
         self.empiricalProbabilitiesVariables = empiricalProbabilitiesVariables
@@ -60,10 +60,10 @@ class ObjFunctionGenerator:
         )  # If V in this array then it implies P(v) in the objective function
         # If V in this array then it implies a decision function: 1(Pa(v) => v=
         # some value)
-        mechanismVariables = ([])
+        mechanismVariables = []
         # If V|A,B,C in this array then it implies P(V|A,B,C) in the objective
         # function
-        conditionalProbabilities: dict[int, list[int]] = ({})
+        conditionalProbabilities: dict[int, list[int]] = {}
         debugOrder: list[int] = []
 
         while len(current_targets) > 0:
@@ -121,8 +121,8 @@ class ObjFunctionGenerator:
                             conditionedNodes.append(conditionableAncestors[i])
 
                     self.graph.build_moral(
-                        consideredNodes=ancestors,
-                        conditionedNodes=conditionedNodes)
+                        consideredNodes=ancestors, conditionedNodes=conditionedNodes
+                    )
                     condition1 = self.graph.independency_moral(
                         node2=interventionLatent, node1=current_target
                     )
@@ -169,10 +169,9 @@ class ObjFunctionGenerator:
         interventionLatentParent = self.graph.graphNodes[self.intervention].latentParent
         cComponentEndogenous = self.graph.graphNodes[interventionLatentParent].children
 
-        endogenousNodes = (
-            set(cComponentEndogenous) & set(
-                self.debugOrder)) | {
-            self.intervention}
+        endogenousNodes = (set(cComponentEndogenous) & set(self.debugOrder)) | {
+            self.intervention
+        }
 
         _, _, mechanisms = MechanismGenerator.mechanisms_generator(
             latentNode=interventionLatentParent,
@@ -183,8 +182,7 @@ class ObjFunctionGenerator:
         )
         return mechanisms
 
-    def build_objective_function(self,
-                                 mechanisms: list[list[int]]) -> list[float]:
+    def build_objective_function(self, mechanisms: list[list[int]]) -> list[float]:
         """
         Intermediate step: remove useless endogenous variables in the mechanisms creation?
         Must be called after generate restrictions. Returns the objective function with the following encoding
@@ -212,9 +210,10 @@ class ObjFunctionGenerator:
             nodes=summandNodes, cardinalities=self.graph.cardinalities
         )
         summandNodes.append(self.target)
-        spaces.append([self.targetValue])
+        spaces.append([self.target_value])
         inputCases: list[list[int]] = MechanismGenerator.generate_cross_products(
-            listSpaces=spaces)
+            listSpaces=spaces
+        )
         """
         TODO: Check the order of "inputCases": it should be the same as the order of the spaces, which is the same as in debugOrder.
         TODO: the case in which the summandNodes is empty (e.g Balke Pearl) has a very ugly fix
@@ -236,8 +235,8 @@ class ObjFunctionGenerator:
             for inputCase in inputCases:
                 print("---- START INPUT CASE ----")
                 variablesValues: dict[int, int] = {
-                    self.intervention: self.interventionValue,
-                    self.target: self.targetValue,
+                    self.intervention: self.intervention_value,
+                    self.target: self.target_value,
                 }
                 partialCoefficient = 1
 
@@ -268,10 +267,8 @@ class ObjFunctionGenerator:
                     ):  # Case 2: terminate with coeff 0 if the decision function is 0. Do nothing otherwise
                         print("Case 2")
                         mechanismKey: str = ""
-                        for nodeIndex, node in enumerate(
-                                self.graph.graphNodes):
-                            if not node.isLatent and (
-                                    variable in node.children):
+                        for nodeIndex, node in enumerate(self.graph.graphNodes):
+                            if not node.isLatent and (variable in node.children):
                                 mechanismKey += (
                                     f"{nodeIndex}={variablesValues[nodeIndex]},"
                                 )
@@ -295,11 +292,11 @@ class ObjFunctionGenerator:
                             ProbabilitiesHelper.find_conditional_probability(
                                 dataFrame=self.dataFrame,
                                 indexToLabel=self.graph.indexToLabel,
-                                targetRealization={
-                                    variable: variablesValues[variable]},
+                                targetRealization={variable: variablesValues[variable]},
                                 conditionRealization=conditionRealization,
                                 v=False,
-                            ))
+                            )
+                        )
                         partialCoefficient *= conditionalProbability
 
                     print(f"current partial coefficient: {partialCoefficient}")
@@ -313,11 +310,10 @@ class ObjFunctionGenerator:
 
         return objFunctionCoefficients
 
-    def test(input_path, csv_path):
+    def test(graph: Graph, csv_path):
         """
         used for the development of the class. Uses the itau graph itau.txt.
         """
-        graph = get_graph(input_path)
         if False:
             print("debug graph parsed by terminal:")
 
@@ -333,9 +329,9 @@ class ObjFunctionGenerator:
         objFG = ObjFunctionGenerator(
             graph=graph,
             intervention=graph.labelToIndex["X"],
-            interventionValue=0,
+            intervention_value=0,
             target=graph.labelToIndex["Y"],
-            targetValue=1,
+            target_value=1,
             empiricalProbabilitiesVariables=[],
             mechanismVariables=[],
             conditionalProbabilitiesVariables={},
@@ -351,9 +347,7 @@ class ObjFunctionGenerator:
                 parents: str = ""
                 for parent in objFG.graph.graphNodes[node].parents:
                     parents += f"{objFG.graph.indexToLabel[parent]}, "
-                print(
-                    f"P({objFG.graph.indexToLabel[node]}|{parents[:-2]})",
-                    end="")
+                print(f"P({objFG.graph.indexToLabel[node]}|{parents[:-2]})", end="")
             else:
                 wset: str = ""
                 for condVar in objFG.conditionalProbabilities[node]:
@@ -376,23 +370,23 @@ class ObjFunctionGenerator:
             print(f"c_{i} = {coeff}")
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Gets causal inference under Partial-Observability."
-    )
-    parser.add_argument(
-        "input_filename",
-        help="The name of the input file in test_case/input directory")
-    parser.add_argument("csv_filename", help="The name of the csv")
-    args = parser.parse_args()
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser(
+#         description="Gets causal inference under Partial-Observability."
+#     )
+#     parser.add_argument(
+#         "input_filename",
+#         help="The name of the input file in test_case/input directory")
+#     parser.add_argument("csv_filename", help="The name of the csv")
+#     args = parser.parse_args()
 
-    input_path = os.path.join(
-        os.path.dirname(
-            os.path.abspath(__file__)),
-        f"../../{DirectoriesPath.TEST_CASES_INPUTS.value}/{args.input_filename}.txt",
-    )
-    csv_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        f"../../{DirectoriesPath.CSV_PATH.value}/{args.csv_filename}.csv",
-    )
-    ObjFunctionGenerator.test(input_path, csv_path)
+#     input_path = os.path.join(
+#         os.path.dirname(
+#             os.path.abspath(__file__)),
+#         f"../../{DirectoriesPath.TEST_CASES_INPUTS.value}/{args.input_filename}.txt",
+#     )
+#     csv_path = os.path.join(
+#         os.path.dirname(os.path.abspath(__file__)),
+#         f"../../{DirectoriesPath.CSV_PATH.value}/{args.csv_filename}.csv",
+#     )
+#     ObjFunctionGenerator.test(input_path, csv_path)

@@ -1,26 +1,51 @@
+import pandas as pd
+
 from causal_usp_icti.utils.parser import parse_default_input, parse_file
 from causal_usp_icti.utils._enum import Examples
-from causal_usp_icti.linear_algorithm.opt_problem_builder import OptProblemBuilder
+from causal_usp_icti.causal_model import CausalModel
+
 
 def main():
-    graph_input = "Z -> X, X -> Y, U1 -> X, U1 -> Y, U2 -> Z"
-    unobservables = ["U1", "U2"]
-    target = "Y"
-    intervention = "X"
-    input_path = Examples.TXT_BALKE_PEARL_EXAMPLE.value
-    csv_path = Examples.CSV_BALKE_PEARL_EXAMPLE.value
+    balke_input = "Z -> X, X -> Y, U1 -> X, U1 -> Y, U2 -> Z"
+    balke_unobs = ["U1", "U2"]
+    balke_target = "Y"
+    balke_intervention = "X"
+    balke_csv_path = Examples.CSV_BALKE_PEARL_EXAMPLE.value
+    balke_df = pd.read_csv(balke_csv_path)
 
-    print('---STR---')
-    print(parse_default_input(graph_input, unobservables))
-    print()
-    print('---FILE---')
-    print(parse_file(input_path))
+    print("------")
+    balke_model = CausalModel(
+        data=balke_df,
+        edges=balke_input,
+        unobservables=balke_unobs,
+        interventions=balke_intervention,
+        interventions_value=1,
+        target=balke_target,
+        target_value=1,
+    )
+    balke_model.inference_query()
 
-    print('------')
-    print('------')
-    problem_builder= OptProblemBuilder()
-    # TODO: BUILDER LINEAR PROBLEM: RECEIVE PATH OR THE STRINGS 
-    problem_builder.get_query(str_graph=graph_input, unobservables=unobservables, intervention=intervention, intervention_value=1, target=target, target_value=1, csv_path=csv_path)
+    itau_input = (
+        "X -> Y, X -> D, D -> Y, E -> D, U1 -> Y, U1 -> X, U2 -> D, U3 -> E, U1 -> F"
+    )
+    itau_unobs = ["U1", "U2", "U3"]
+    itau_target = "Y"
+    itau_intervention = "X"
+    itau_csv_path = Examples.CSV_ITAU_EXAMPLE.value
+    itau_df = pd.read_csv(itau_csv_path)
 
-if __name__ == '__main__':
+    print("------")
+    itau_model = CausalModel(
+        data=itau_df,
+        edges=itau_input,
+        unobservables=itau_unobs,
+        interventions=itau_intervention,
+        interventions_value=1,
+        target=itau_target,
+        target_value=1,
+    )
+    itau_model.inference_query()
+
+
+if __name__ == "__main__":
     main()
