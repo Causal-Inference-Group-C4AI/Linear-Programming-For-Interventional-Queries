@@ -368,25 +368,3 @@ class ObjFunctionGenerator:
         print("--- DEBUG OBJ FUNCTION ---")
         for i, coeff in enumerate(objCoefficients):
             print(f"c_{i} = {coeff}")
-
-
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser(
-#         description="Gets causal inference under Partial-Observability."
-#     )
-#     parser.add_argument(
-#         "input_filename",
-#         help="The name of the input file in test_case/input directory")
-#     parser.add_argument("csv_filename", help="The name of the csv")
-#     args = parser.parse_args()
-
-#     input_path = os.path.join(
-#         os.path.dirname(
-#             os.path.abspath(__file__)),
-#         f"../../{DirectoriesPath.TEST_CASES_INPUTS.value}/{args.input_filename}.txt",
-#     )
-#     csv_path = os.path.join(
-#         os.path.dirname(os.path.abspath(__file__)),
-#         f"../../{DirectoriesPath.CSV_PATH.value}/{args.csv_filename}.csv",
-#     )
-#     ObjFunctionGenerator.test(input_path, csv_path)
