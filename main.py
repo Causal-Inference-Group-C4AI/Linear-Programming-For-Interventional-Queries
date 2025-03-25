@@ -1,6 +1,5 @@
 import pandas as pd
 
-from causal_usp_icti.utils.parser import parse_default_input, parse_file
 from causal_usp_icti.utils._enum import Examples
 from causal_usp_icti.causal_model import CausalModel
 
