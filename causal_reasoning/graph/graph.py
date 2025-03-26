@@ -103,7 +103,7 @@ class Graph:
                         if flag and parent2 == intervention:
                             continue
 
-                        if parent1 in conditionedNodes and parent2 in consideredNodes:
+                        if parent1 in consideredNodes and parent2 in consideredNodes:
                             if parent2 not in self.moralGraphNodes[parent1].adjacent:
                                 self.moralGraphNodes[parent1].adjacent.append(parent2)
                             if parent1 not in self.moralGraphNodes[parent2].adjacent:
