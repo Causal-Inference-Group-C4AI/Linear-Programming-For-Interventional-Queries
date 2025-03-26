@@ -40,5 +40,8 @@ U2 D
 ```
 Note that latent nodes must have 0 as their cardinality. Also note that every exogenous node must be latent and all endogenous node must have a latent parent, even if it's not a confounder.
 ### Data Input
-Data should be provided whithin a .csv file with the collumns labelled with the same name as the graph nodes
+Data should be provided whithin a .csv file with the collumns labelled with the same name as the graph nodes.
 ## Method
+### Constraints
+We use the linear factorization as provided by [Zaffalon et. al.](https://arxiv.org/abs/2109.13471). Which can be expressed as:
+$` p(\textbf{V}) = \sum_{u \mapsto \textbf{V}} P(U = u) `$. The left side is a product of conditional probablities, whitch is known from the data, and the right side is the sum of the probabilities of the latent variable $U$, whitch are our optimization variables, to assume a value compatible with the distribuition of the nodes in **V**. 
