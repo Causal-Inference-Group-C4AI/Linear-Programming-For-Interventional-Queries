@@ -145,7 +145,7 @@ class ObjFunctionGenerator:
                             separator.append(element)
 
                 current_targets = list(
-                    (set(current_targets) | set(conditionedNodes))
+                    (set(current_targets) | set(separator))
                     - {intervention, current_target}
                 )
 
