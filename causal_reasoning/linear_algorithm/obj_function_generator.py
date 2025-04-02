@@ -144,18 +144,14 @@ class ObjFunctionGenerator:
                             print(f"- {element}")
                             separator.append(element)
 
-                        current_targets = list(
-                            (set(current_targets) | set(conditionedNodes))
-                            - {intervention, current_target}
-                        )
+                current_targets = list(
+                    (set(current_targets) | set(conditionedNodes))
+                    - {intervention, current_target}
+                )
 
-                # Choose one of the valid subsets - Last instance of
-                # "separator", for now.
+                # Choose one of the valid subsets - Last instance of "separator", for now.
                 conditionalProbabilities[current_target] = separator
-
-                # Question: is any already solved variable selected for the second time? Does the program need to address this issue
-                # by forcing the set to not contain any of such variables?
-
+                
         self.empiricalProbabilitiesVariables = empiricalProbabilitiesVariables
         self.mechanismVariables = mechanismVariables
         self.conditionalProbabilities = conditionalProbabilities
