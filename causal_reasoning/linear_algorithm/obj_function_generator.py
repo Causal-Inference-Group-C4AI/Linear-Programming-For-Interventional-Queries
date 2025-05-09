@@ -295,14 +295,36 @@ class ObjFunctionGenerator:
                         )
                         partialCoefficient *= conditionalProbability
 
-                    print(f"current partial coefficient: {partialCoefficient}")
+                    # print(f"current partial coefficient: {partialCoefficient}")
                     if partialCoefficient == 0:
                         break
 
                 mechanismCoefficient += partialCoefficient
-                print(f"current coef = {mechanismCoefficient}")
+                # print(f"current coef = {mechanismCoefficient}")
 
             objFunctionCoefficients.append(mechanismCoefficient)
+
+        print(f"\n\n-------- Debug restrictions --------")
+        for node in self.debugOrder:
+            if node in self.empiricalProbabilitiesVariables:
+                print(f"P({self.graph.indexToLabel[node]})", end="")
+            elif node in self.mechanismVariables:
+                parents: str = ""
+                for parent in self.graph.graphNodes[node].parents:
+                    parents += f"{self.graph.indexToLabel[parent]}, "
+                print(f"P({self.graph.indexToLabel[node]}|{parents[:-2]})", end="")
+            else:
+                wset: str = ""
+                for condVar in self.conditionalProbabilities[node]:
+                    if condVar != self.intervention:
+                        wset += f"{self.graph.indexToLabel[condVar]}, "
+                print(
+                    f"P({self.graph.indexToLabel[node]}|{self.graph.indexToLabel[self.intervention]}, {wset[:-2]})",
+                    end="",
+                )
+
+            if node != self.debugOrder[-1]:
+                print(" * ", end="")
 
         return objFunctionCoefficients
 

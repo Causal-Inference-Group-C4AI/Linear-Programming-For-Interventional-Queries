@@ -2,6 +2,7 @@ import networkx as nx
 from typing import Optional
 from pandas import DataFrame
 
+from causal_reasoning.utils._enum import Examples
 from causal_reasoning.utils.funcoes import get_tuple_edges
 from causal_reasoning.graph.graph import Graph
 from causal_reasoning.graph.node import Node
@@ -41,7 +42,11 @@ class CausalModel:
         # Quando for fazer a query, usar os valores dados,
         # Caso não tenha dado, dar erro e falar que não foram
         # dadas as intervenções e o target
+        
+        # TODO: REVERT THIS CHANGE AND CHECK FOR MISTAKES IN THE CONSTRUCTION OF THE GRAPH.
+        # self.graph = get_graph(file=Examples.TXT_RCA_EXAMPLE.value)
         self.graph = get_graph(str_graph=edges, unobservables=self.unobservables)
+        
 
     def visualize_graph(self):
         """

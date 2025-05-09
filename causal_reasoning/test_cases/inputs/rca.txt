@@ -1,0 +1,37 @@
+17 
+18
+Unob_helper_1 0
+Unob_helper_2 0 
+Unob_helper_3 0
+Unob_helper_4 0
+Unob_helper_5 0
+Unob_helper_6 0
+Unob_helper_7 0
+HeavyTraffic 0
+DB_Change 2
+DB_Latency 2
+MS-B_Latency 2
+MS-B_Error 2
+MS-A_Latency 2
+MS-A_Threads 2
+MS-A_Error 2
+MS-A_Crash 2
+Outage 2
+DB_Change DB_Latency
+DB_Latency MS-B_Latency 
+MS-B_Latency MS-B_Error 
+MS-B_Latency MS-A_Latency
+MS-B_Error MS-A_Error 
+MS-A_Latency MS-A_Threads 
+MS-A_Threads MS-A_Crash 
+MS-A_Error Outage 
+MS-A_Crash Outage 
+HeavyTraffic DB_Latency 
+HeavyTraffic MS-A_Latency    
+Unob_helper_1 DB_Change
+Unob_helper_2 MS-B_Latency
+Unob_helper_3 MS-B_Error
+Unob_helper_4 MS-A_Error
+Unob_helper_5 MS-A_Threads
+Unob_helper_6 MS-A_Crash
+Unob_helper_7 Outage
