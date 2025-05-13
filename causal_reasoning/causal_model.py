@@ -94,16 +94,27 @@ class CausalModel:
         interventions_value: list[int] | int | None = [],
         target: str | None = "",
         target_value: int | None = None,
+        gurobi=False,
     ):
         # TODO: Set interventions and target to CausalModel object
-        OptProblemBuilder.builder_linear_problem(
-            self.graph,
-            self.data,
-            self.interventions,
-            self.interventions_value,
-            self.target,
-            self.target_value,
-        )
+        if gurobi:
+            OptProblemBuilder.gurobi_builder_problem(
+                self.graph,
+                self.data,
+                self.interventions,
+                self.interventions_value,
+                self.target,
+                self.target_value,
+            )
+        else:
+            OptProblemBuilder.builder_linear_problem(
+                self.graph,
+                self.data,
+                self.interventions,
+                self.interventions_value,
+                self.target,
+                self.target_value,
+            )
 
 
 def get_graph(str_graph: str = None, unobservables: list[str] = None, file = None):
