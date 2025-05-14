@@ -3,6 +3,11 @@ import pandas as pd
 import numpy as np
 import gurobipy as gp
 from gurobipy import GRB
+
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
 from causal_reasoning.utils._enum import Examples
 from causal_reasoning.utils.probabilities_helper import ProbabilitiesHelper as ph
 
@@ -29,7 +34,7 @@ class MasterProblem:
     def update(self, newColumn, index, objCoeff):        
         new_col = gp.Column(coeffs=newColumn, constrs=self.constrs.values()) # Includes the new variable in the constraints.
         print(f"Obj coeff: {objCoeff}")
-        print(f"new_col: {new_col}")
+        # print(f"new_col: {new_col}")
         self.vars[index] = self.model.addVar(obj=objCoeff, column=new_col, # Adds the new variable
                                              name=f"Variable[{index}]")
         self.model.update()
@@ -57,7 +62,7 @@ class SubProblem:
                 self.model.addConstr(self.auxiliary_vars[index] <= self.bit_vars[bitPlus],
                                         name="IntegerProgrammingRestrictions")
             for bitMinus in parametric_columns[key][1]:                
-                self.model.addConstr(self.auxiliary_vars[index] <= self.bit_vars[bitMinus],
+                self.model.addConstr(self.auxiliary_vars[index] <= 1 - self.bit_vars[bitMinus],
                                         name="IntegerProgrammingRestrictions")                        
             
         self.constrs = self.model.addConstrs(( gp.quicksum(self.bit_vars[bitPlus]
@@ -80,7 +85,7 @@ class SubProblem:
         '''
         Change the objective functions coefficients.
         '''
-        self.model.setAttr("obj", self.auxiliary_vars, [-dual for dual in duals])
+        self.model.setAttr("obj", self.auxiliary_vars, [-duals[dual] for dual in duals])
         self.model.update()
 
 class ItauProblem:
@@ -119,9 +124,13 @@ class ItauProblem:
         while True:
             self.master.model.optimize()
             self.duals = self.master.model.getAttr("pi", self.master.constrs)
+            print(f"Master Duals: {self.duals}")
+            # self.master.model.write(f"master_{i}.lp")
             self.subproblem.update(self.duals)
             self.subproblem.model.optimize()
+            # self.subproblem.model.write(f"subproblem_{i}.lp")
             reduced_cost = self.subproblem.model.objVal
+            print(f"Reduced Cost: {reduced_cost}")
             if reduced_cost >= 0:
                 break
             
@@ -140,12 +149,11 @@ class ItauProblem:
                         currentValue = 0; break
                 
                 for bitMinus in self.parametric_columns[key][1]:
-                    print(f"Gurobi dict: {self.subproblem.bit_vars}")
                     if self.subproblem.bit_vars[bitMinus].X == 1:
                         currentValue = 0; break
                 newColumn.append(currentValue)
             newColumn.append(1) # For the equation sum(pi) = 1
-                
+            print(f"New Column: {newColumn}")
             # Calculate obj. function:
             objCoeff: float = self.subproblemBitsCosts[3] * self.subproblem.bit_vars[3].X + self.subproblemBitsCosts[4] * self.subproblem.bit_vars[4].X
             self.master.update(newColumn=newColumn, index=len(self.columns_base), objCoeff=objCoeff)
@@ -187,7 +195,7 @@ def main():
                         "000": ([], [0, 1]),
                         "001": ([1], [0]),
                         "010": ([0], [3]),
-                        "011": ([], [0, 3]),
+                        "011": ([0,3], []),
                         "100": ([], [0, 2]),
                         "101": ([2], [0]),
                         "110": ([0], [4]),
