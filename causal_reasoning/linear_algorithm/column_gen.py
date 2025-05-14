@@ -1,7 +1,12 @@
+from itertools import product
+import pandas as pd
 import numpy as np
 import gurobipy as gp
 from gurobipy import GRB
+from causal_reasoning.utils._enum import Examples
+from causal_reasoning.utils.probabilities_helper import ProbabilitiesHelper as ph
 
+BIG_M = 1e4
 
 class MasterProblem:
     def __init__(self):
@@ -9,37 +14,58 @@ class MasterProblem:
         self.vars = None
         self.constrs = None
         
-    def setup(self, patterns, demand):
-        num_patterns = len(patterns)
-        self.vars = self.model.addVars(num_patterns, obj=1, name="Pattern")
-        self.constrs = self.model.addConstrs((gp.quicksum(patterns[pattern][piece]*self.vars[pattern]
-                                                          for pattern in range(num_patterns))
-                                              >= demand[piece] for piece in demand.keys()),
-                                             name="Demand")
-        self.model.modelSense = GRB.MINIMIZE
+    def setup(self, columns_base: list[list[int]], empiricalProbabilities: list[float]):
+        num_columns_base = len(columns_base)
+        self.vars = self.model.addVars(num_columns_base, obj=BIG_M, name="BaseColumns") # obj = coefficient in the objective function.
+        self.constrs = self.model.addConstrs((gp.quicksum(columns_base[column_id][realization_id] * self.vars[column_id]
+                                                          for column_id in range(num_columns_base))
+                                              == empiricalProbabilities[realization_id] for realization_id in range(empiricalProbabilities)),
+                                             name="EmpiricalRestrictions")
+        self.model.modelSense = GRB.MINIMIZE # The master problem should minimize the objective function.
         # Turning off output because of the iterative procedure
         self.model.params.outputFlag = 0
+        self.model.update() # Use the gurobi built in update.
+            
+    def update(self, newColumn, index, objCoeff):
+        new_col = gp.Column(coeffs=newColumn, constrs=self.constrs.values()) # Includes the new variable in the constraints.
+        self.vars[index] = self.model.addVar(obj=objCoeff, column=new_col, # Adds the new variable
+                                             name=f"Variable[{index}]")
         self.model.update()
-        
-    def update(self, pattern, index):
-        new_col = gp.Column(coeffs=pattern, constrs=self.constrs.values())
-        self.vars[index] = self.model.addVar(obj=1, column=new_col,
-                                             name=f"Pattern[{index}]")
-        self.model.update()
-
 
 class SubProblem:
     def __init__(self):
         self.model = gp.Model("subproblem")
-        self.vars = {}
+        self.bit_vars = {}
+        self.auxiliary_vars = {}
         self.constr = None
         
-    def setup(self, stock_length, lengths, duals):
-        self.vars = self.model.addVars(len(lengths), obj=duals, vtype=GRB.INTEGER,
-                                       name="Frequency")
-        self.constr = self.model.addConstr(self.vars.prod(lengths) <= stock_length,
-                                           name="Knapsack")
-        self.model.modelSense = GRB.MAXIMIZE
+    def setup(self, amountBits: int, duals: list[float], subproblemBitsCosts: list[float], amountRestrictions: int,
+              parametric_columns: dict[str, tuple[list[int]]]):
+        self.bit_vars = self.model.addVars(len(amountBits), obj=subproblemBitsCosts, vtype=GRB.BINARY,
+                                       name=["b0", "b1", "b2", "b3", "b4"]) # b0, b1, b2, b3, b4.
+        self.auxiliary_vars = self.model.addVars(len(amountRestrictions), obj=[-dualCost for dualCost in duals], vtype=GRB.BINARY,
+                                       name=["au0", "au1", "au2", "au3", "au4", "au5", "au6", "au7"])
+
+        for key in parametric_columns:
+            self.model.addConstr(self.auxiliary_vars[key] >= 0,
+                                        name="IntegerProgrammingRestrictions")
+            self.model.addConstr(self.auxiliary_vars[key] <= 1,
+                                        name="IntegerProgrammingRestrictions")
+            for bitPlus in parametric_columns[key][0]:                
+                self.model.addConstr(self.auxiliary_vars[key] <= self.bit_vars[bitPlus],
+                                        name="IntegerProgrammingRestrictions")
+            for bitMinus in parametric_columns[key][1]:                
+                self.model.addConstr(self.auxiliary_vars[key] <= self.bit_vars[bitMinus],
+                                        name="IntegerProgrammingRestrictions")                        
+            
+        self.constrs = self.model.addConstrs(( gp.quicksum(self.bit_vars[bitPlus]
+                                                    for bitPlus in parametric_columns[key][0]) +
+                                                gp.quicksum(1 - self.bit_vars[bitMinus]
+                                                    for bitMinus in parametric_columns[key][1]) +
+                                                1 - (len(parametric_columns[key][0]) + len(parametric_columns[key][1]))
+                                            <= self.auxiliary_vars[key] for key in parametric_columns), name="IntegerProgrammingRestrictions")
+        
+        self.model.modelSense = GRB.MINIMIZE
         # Turning off output because of the iterative procedure
         self.model.params.outputFlag = 0
         # Stop the subproblem routine as soon as the objective's best bound becomes
@@ -50,55 +76,78 @@ class SubProblem:
         
     def update(self, duals):
         '''
-        bits seriam mexidos aqui
+        Change the objective functions coefficients.
         '''
-        self.model.setAttr("obj", self.vars, duals)
+        self.model.setAttr("obj", self.auxiliary_vars, [-dual for dual in duals])
         self.model.update()
 
-
 class ItauProblem:
-    def __init__(self, stock_length, pieces):
-        self.stock_length = stock_length
-        self.pieces, self.lengths, self.demand = gp.multidict(pieces)
-        # 
-        self.patterns = None
-        self.duals = [0]*len(self.pieces)
-        piece_reqs = [length*req for length, req in pieces.values()]
-        self.min_rolls = np.ceil(np.sum(piece_reqs)/stock_length)
-        
+    def __init__(self, dataFrame, empiricalProbabilities):
+        self.amount_restrictions = 8
+        self.columns_base = None
+        self.empiricalProbabilities: list[float] = empiricalProbabilities
+        self.amountBits = None
+        # Order: (d,x,y)
+        self.parametric_columns: dict[str, tuple[list[int]]] # Ex: (d=1,x=0,y=1), "101" -> ([2],[0]) (L+, L-).        
+        self.dataFrame = dataFrame
+        prob1 = ph.find_conditional_probability2(dataFrame=dataFrame, targetRealization={"D": 0}, conditionRealization={"X": 1})
+        prob2 = ph.find_conditional_probability2(dataFrame=dataFrame, targetRealization={"D": 1}, conditionRealization={"X": 1})
+        self.subproblemBitsCosts = [0, 0, 0, prob1, prob2]
+
+        self.duals = [0] * self.amount_restrictions
         self.solution = {}
         self.master = MasterProblem()
         self.subproblem = SubProblem()
-        
-    def _initialize_patterns(self):
-        # Find trivial patterns that consider one final piece at a time,
-        #fitting as many pieces as possible into the stock material unit
-        patterns = []
-        for idx, length in self.lengths.items():
-            pattern = [0]*len(self.pieces)
-            pattern[idx] = self.stock_length // length
-            patterns.append(pattern)
-        self.patterns = patterns
-        
+
+    def _initialize_column_base(self):
+        # Initialize big-M problem with the identity block of size
+        # equal to the amount of restrictions.
+        columns_base: list[list[int]] = []
+        for index in self.amount_restrictions:
+            new_column = [0]*len(self.amount_restrictions)
+            new_column[index] = 1
+            columns_base.append(new_column)
+        self.columns_base = columns_base
+
     def _generate_patterns(self):
-        self._initialize_patterns()
-        self.master.setup(self.patterns, self.demand)
-        self.subproblem.setup(self.stock_length, self.lengths, self.duals)
+        self._initialize_column_base()        
+        self.master.setup(self.columns_base, self.empiricalProbabilities)        
+        self.subproblem.setup(amountBits=5, duals=self.duals, subproblemBitsCosts=self.subproblemBitsCosts, amountRestrictions=8)
         while True:
             self.master.model.optimize()
             self.duals = self.master.model.getAttr("pi", self.master.constrs)
             self.subproblem.update(self.duals)
             self.subproblem.model.optimize()
-            reduced_cost = 1 - self.subproblem.model.objVal
+            reduced_cost = self.subproblem.model.objVal
             if reduced_cost >= 0:
                 break
             
-            pattern = [0]*len(self.pieces)
-            for piece, var in self.subproblem.vars.items():
-                if var.x > 0.5:
-                    pattern[piece] = round(var.x)
-            self.master.update(pattern, len(self.patterns))
-            self.patterns.append(pattern)
+            # TODO
+            # pattern = [0]*len(self.pieces)
+            # for piece, var in self.subproblem.vars.items():
+            #     if var.x > 0.5:
+            #         pattern[piece] = round(var.x)
+            
+            # Calculate the column
+            newColumn: list[int] = []
+            for key in self.parametric_columns:
+                currentValue = 1
+                for bitPlus in self.parametric_columns[key][0]:
+                    if self.subproblem.bit_vars[bitPlus] == 0:
+                        currentValue = 0; break
+                
+                for bitMinus in self.parametric_columns[key][1]:
+                    if self.subproblem.bit_vars[bitMinus] == 1:
+                        currentValue = 0; break
+                newColumn.append(currentValue)
+            newColumn.append(1) # For the equation sum(pi) = 1
+                
+            # Calculate obj. function:
+            objCoeff: float = self.subproblemBitsCosts[3] * self.subproblem.bit_vars[3] + self.subproblemBitsCosts[4] * self.subproblem.bit_vars[4]            
+            self.master.update(newColumn=newColumn, index=len(self.columns_base), obj=objCoeff)
+            self.columns_base.append(newColumn)
+            ### ###
+
     def solve(self):
         """
         Gurobi does not support branch-and-price, as this requires to add columns
@@ -109,8 +158,25 @@ class ItauProblem:
         the local nodes of the search tree.
         """
         self._generate_patterns()
-        self.master.model.setAttr("vType", self.master.vars, GRB.INTEGER)
+        self.master.model.setAttr("vType", self.master.vars, GRB.CONTINUOUS) # useless?
         self.master.model.optimize()
-        for pattern, var in self.master.vars.items():
-            if var.x > 0.5:
-                self.solution[pattern] = round(var.x)
+
+        print(f"Result of the inference: {self.master.model.ObjVal}")
+        # for pattern, var in self.master.vars.items():
+        #     if var.x > 0.5:
+        #         self.solution[pattern] = round(var.x)
+
+def main():
+    itau_csv_path = Examples.CSV_ITAU_EXAMPLE.value; df = pd.read_csv(itau_csv_path)
+    empiricalProbabilities: list[float] = []
+    for realizationCase in list(product([0, 1], repeat=3)):
+        targetRealization = {"X": realizationCase[1], "Y": realizationCase[2]}
+        conditionRealization = {"D": realizationCase[0]}        
+        empiricalProbabilities.append(ph.find_conditional_probability2(dataFrame=df, targetRealization=targetRealization, conditionRealization=conditionRealization))
+        print(f"EmpiricialProb[{realizationCase[0]}{realizationCase[1]}{realizationCase[2]} = {empiricalProbabilities[-1]}")
+        
+    itauProblem = ItauProblem(dataFrame=df, empiricalProbabilities=empiricalProbabilities)
+    itauProblem.solve()
+
+if __name__=="__main__":
+    main()

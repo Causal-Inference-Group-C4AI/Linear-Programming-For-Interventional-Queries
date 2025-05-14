@@ -3,7 +3,6 @@ import pandas as pd
 from causal_reasoning.utils._enum import Examples
 from causal_reasoning.causal_model import CausalModel
 
-
 def main():
     # balke_input = "Z -> X, X -> Y, U1 -> X, U1 -> Y, U2 -> Z"
     # balke_unobs = ["U1", "U2"]
@@ -24,10 +23,13 @@ def main():
     # )
     # balke_model.inference_query()
 
+    # itau_input = (
+    #     "X -> Y, X -> D, D -> Y, E -> D, U1 -> Y, U1 -> X, U2 -> D, U3 -> E, U1 -> F"
+    # )
     itau_input = (
-        "X -> Y, X -> D, D -> Y, E -> D, U1 -> Y, U1 -> X, U2 -> D, U3 -> E, U1 -> F"
+        "X -> Y, X -> D, D -> Y, U1 -> Y, U1 -> X, U2 -> D, U1 -> F"
     )
-    itau_unobs = ["U1", "U2", "U3"]
+    itau_unobs = ["U1", "U2"]
     itau_target = "Y"
     itau_intervention = "X"
     itau_csv_path = Examples.CSV_ITAU_EXAMPLE.value

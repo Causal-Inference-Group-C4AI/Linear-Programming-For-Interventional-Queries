@@ -304,22 +304,36 @@ class ObjFunctionGenerator:
 
             objFunctionCoefficients.append(mechanismCoefficient)
 
+        print(f"\n\n-------- Debug restrictions --------")        
+        for node in self.debugOrder:
+            if node in self.empiricalProbabilitiesVariables:
+                print(f"P({self.graph.indexToLabel[node]})", end="")
+            elif node in self.mechanismVariables:
+                parents: str = ""
+                for parent in self.graph.graphNodes[node].parents:
+                    parents += f"{self.graph.indexToLabel[parent]}, "
+                print(f"P({self.graph.indexToLabel[node]}|{parents[:-2]})", end="")
+            else:
+                wset: str = ""
+                for condVar in self.conditionalProbabilities[node]:
+                    if condVar != self.intervention:
+                        wset += f"{self.graph.indexToLabel[condVar]}, "
+                print(
+                    f"P({self.graph.indexToLabel[node]}|{self.graph.indexToLabel[self.intervention]}, {wset[:-2]})",
+                    end="",
+                )
+
+            if node != self.debugOrder[-1]:
+                print(" * ", end="")
+
+        print("\n")
+        
         return objFunctionCoefficients
 
     def test(graph: Graph, csv_path):
         """
         used for the development of the class. Uses the itau graph itau.txt.
         """
-        if False:
-            print("debug graph parsed by terminal:")
-
-            for i in range(graph.numberOfNodes):
-                print(f"node index {i} - node name: {graph.indexToLabel[i]}")
-                print(f"children: {graph.graphNodes[i].children}")
-                print(f"latentParent: {graph.graphNodes[i].latentParent}")
-                print(f"parents: {graph.graphNodes[i].parents}")
-            print("\n\n\n\n")
-
         df = pd.read_csv(csv_path)
 
         objFG = ObjFunctionGenerator(
