@@ -12,3 +12,4 @@ class Examples(Enum):
     TXT_ITAU_EXAMPLE = "causal_reasoning/test_cases/inputs/itau.txt"
     CSV_BALKE_PEARL_EXAMPLE = "causal_reasoning/data/balke_pearl.csv"
     TXT_BALKE_PEARL_EXAMPLE = "causal_reasoning/test_cases/inputs/balke_pearl.txt"
+    CSV_2SCALING = "causal_reasoning/data/2_scaling_case"
