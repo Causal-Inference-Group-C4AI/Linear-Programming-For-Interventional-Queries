@@ -172,8 +172,8 @@ class OptProblemBuilder:
         master.setup(probs, decisionMatrix, objFunctionCoefficients, modelSenseMin)
 
         master.model.optimize()
-        duals = master.model.getAttr("pi", master.constrs)
-        print(f"duals: {duals}")
+        # duals = master.model.getAttr("pi", master.constrs)
+        # print(f"duals: {duals}")
         if master.model.Status == gp.GRB.OPTIMAL: # OPTIMAL
                 lower = master.model.objVal
                 print(f"Minimal solution found!\nMIN Query: {lower}")
@@ -184,8 +184,8 @@ class OptProblemBuilder:
         master.setup(probs, decisionMatrix, objFunctionCoefficients, modelSenseMax)
 
         master.model.optimize()
-        duals = master.model.getAttr("pi", master.constrs)
-        print(f"duals: {duals}")
+        # duals = master.model.getAttr("pi", master.constrs)
+        # print(f"duals: {duals}")
         if master.model.Status == gp.GRB.OPTIMAL: # OPTIMAL
                 upper = master.model.objVal
                 print(f"Maximal solution found!\nMAX Query: {upper}")
