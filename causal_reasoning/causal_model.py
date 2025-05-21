@@ -135,9 +135,10 @@ def get_graph(str_graph: str = None, unobservables: list[str] = None, file = Non
                 inpDAG.add_edge(parent, ch)
     order = list(nx.topological_sort(inpDAG))
 
-    for i in range(numberOfNodes):
-        name_node = indexToLabel[i]
-        nx.relabel_nodes(inpDAG, {i: name_node}, copy=False)
+    # TODO: decide to use index or label for te networkx graph.
+    # for i in range(numberOfNodes):
+    #     name_node = indexToLabel[i]
+    #     nx.relabel_nodes(inpDAG, {i: name_node}, copy=False)
 
     endogenIndex: list[int] = []
     exogenIndex: list[int] = []

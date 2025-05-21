@@ -1,15 +1,12 @@
 import copy
-import pandas as pd
 import gurobipy as gp
 from gurobipy import GRB
 from causal_reasoning.linear_algorithm.scalable_problem_init import InitScalable
-from data_gen import generate_data_for_scale_case
+from causal_reasoning.utils.get_scalable_df import getScalableDataFrame
 
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
-
-from causal_reasoning.utils._enum import Examples
 
 BIG_M = 1e4
 DBG = False
@@ -34,7 +31,7 @@ class MasterProblem:
     
     def update(self, newColumn, index, objCoeff):        
         new_col = gp.Column(coeffs=newColumn, constrs=self.constrs.values()) # Includes the new variable in the constraints
-        print(f"Obj coeff: {objCoeff}")        
+        if (DBG): print(f"Obj coeff: {objCoeff}")        
         self.vars[index] = self.model.addVar(obj=objCoeff, column=new_col, # Adds the new variable
                                              name=f"Variable[{index}]")
         self.model.update()
@@ -266,14 +263,14 @@ class ScalarProblem:
         while True:
             self.master.model.optimize()
             self.duals = self.master.model.getAttr("pi", self.master.constrs)
-            print(f"Master Duals: {self.duals}")
-            self.master.model.write(f"master_{counter}.lp")
+            if (DBG): print(f"Master Duals: {self.duals}")
+            # self.master.model.write(f"master_{counter}.lp")
             self.subproblem.update(self.duals)
             self.subproblem.model.optimize()
-            self.subproblem.model.write(f"subproblem_{counter}.lp")
+            # self.subproblem.model.write(f"subproblem_{counter}.lp")
 
             reduced_cost = self.subproblem.model.objVal
-            print(f"Reduced Cost: {reduced_cost}")
+            if (DBG): print(f"Reduced Cost: {reduced_cost}")
             if reduced_cost >= 0:
                 break
             
@@ -282,7 +279,7 @@ class ScalarProblem:
                 newColumn.append(self.subproblem.bitsParametric[index].X)
 
             newColumn.append(1) # For the equation sum(pi) = 1. This restriction is used in the MASTER problem.
-            print(f"New Column: {newColumn}")
+            if (DBG): print(f"New Column: {newColumn}")
             
             objCoeff: float = 0.0
             for betaIndex in range(self.amountBetaVarsPerX):
@@ -294,8 +291,33 @@ class ScalarProblem:
             self.master.update(newColumn=newColumn, index=len(self.columns_base), objCoeff=objCoeff)
             self.columns_base.append(newColumn)
             counter += 1
+            print(f"Iteration Number = {counter}")
 
         return counter
+    
+    def buildScalarProblem(M: int, N: int, interventionValue: int, targetValue: int, df):
+        # Calculate the empirical probs (RHS of the restrictions, so b in Ax=b)
+        empiricalProbabilities: list[float] = InitScalable.calculateEmpiricals(N=N, M=M, df=df, DBG=DBG)    
+        # Auxiliary Gamma U variables (beta): calculate the obj coeff in the subproblem and the relation to the bit variables that compose them
+        betaVarsCoeffObjSubproblem: list[float] = []
+        betaVarsBitsX0, betaVarsCoeffObjSubproblemX0  = InitScalable.defineGammaUAuxiliaryVariables(M=M, N=N, df=df, 
+                                                                                                targetValue=targetValue, 
+                                                                                                XValue=0,
+                                                                                                DBG=DBG)
+        betaVarsBitsX1, betaVarsCoeffObjSubproblemX1  = InitScalable.defineGammaUAuxiliaryVariables(M=M, N=N, df=df, 
+                                                                                                targetValue=targetValue, 
+                                                                                                XValue=1,
+                                                                                                DBG=DBG)    
+        if interventionValue==1: 
+            betaVarsCoeffObjSubproblem = copy.deepcopy(betaVarsCoeffObjSubproblemX1)
+        else:                    
+            betaVarsCoeffObjSubproblem = copy.deepcopy(betaVarsCoeffObjSubproblemX0)        
+
+        # Parametric_columns:    
+        parametric_columns: list[tuple[list[str]]] = InitScalable.defineParametricColumn(M=M, N=N)
+        return ScalarProblem(dataFrame=df, empiricalProbabilities=empiricalProbabilities, parametric_columns=parametric_columns, N=N, M=M, 
+                                    betaVarsCost=betaVarsCoeffObjSubproblem, betaVarsBitsX0=betaVarsBitsX0, betaVarsBitsX1=betaVarsBitsX1,
+                                    interventionValue=interventionValue)        
 
     def solve(self):
         """
@@ -313,43 +335,15 @@ class ScalarProblem:
         print(f"Result of the inference: {self.master.model.ObjVal}")
         print(f"Required iterations: {numberIterations}")
 
+
 def main():    
-    N = 3; M = 2
-    # scalar_csv_path = Examples.CSV_2SCALING.value; df = pd.read_csv(scalar_csv_path)
-    scalar_csv_path = Examples.CSV_N3M2.value; df = pd.read_csv(scalar_csv_path)
-    # scalar_csv_path = Examples.CSV_2SCALING.value; df = pd.read_csv(scalar_csv_path)
-    # scalar_csv_path = Examples.CSV_N3M1.value; df = pd.read_csv(scalar_csv_path)    
-    # scalar_csv_path = Examples.CSV_N4M1.value; df = pd.read_csv(scalar_csv_path)    
-    # scalar_csv_path = Examples.CSV_N5M1.value; df = pd.read_csv(scalar_csv_path)    
-    interventionValue = 1; targetValue = 1
+    N = 2; M = 1
+    scalable_df = getScalableDataFrame(M=M, N=N)
+    interventionValue = 1; targetValue = 1    
         
-    # Calculate the empirical probs (RHS of the restrictions, so b in Ax=b)
-    empiricalProbabilities: list[float] = InitScalable.calculateEmpiricals(N=N, M=M, df=df, DBG=DBG)
-    
-    # Auxiliary Gamma U variables (beta): calculate the obj coeff in the subproblem and the relation to the bit variables that compose them
-    betaVarsCoeffObjSubproblem: list[float] = []
-    betaVarsBitsX0, betaVarsCoeffObjSubproblemX0  = InitScalable.defineGammaUAuxiliaryVariables(M=M, N=N, df=df, 
-                                                                                            targetValue=targetValue, 
-                                                                                            XValue=0,
-                                                                                            DBG=DBG)
-    betaVarsBitsX1, betaVarsCoeffObjSubproblemX1  = InitScalable.defineGammaUAuxiliaryVariables(M=M, N=N, df=df, 
-                                                                                            targetValue=targetValue, 
-                                                                                            XValue=1,
-                                                                                            DBG=DBG)    
-    if interventionValue==1: 
-        betaVarsCoeffObjSubproblem = copy.deepcopy(betaVarsCoeffObjSubproblemX1)
-    else:                    
-        betaVarsCoeffObjSubproblem = copy.deepcopy(betaVarsCoeffObjSubproblemX0)        
-
-    # Parametric_columns:    
-    parametric_columns: list[tuple[list[str]]] = InitScalable.defineParametricColumn(M=M, N=N)
-
-    scalarProblem = ScalarProblem(dataFrame=df, empiricalProbabilities=empiricalProbabilities, parametric_columns=parametric_columns, N=N, M=M, 
-                                  betaVarsCost=betaVarsCoeffObjSubproblem, betaVarsBitsX0=betaVarsBitsX0, betaVarsBitsX1=betaVarsBitsX1,
-                                  interventionValue=interventionValue)
+    scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df)
 
     scalarProblem.solve()
 
 if __name__=="__main__":
-    # generate_data_for_scale_case(N)
     main()

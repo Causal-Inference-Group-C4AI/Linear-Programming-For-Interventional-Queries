@@ -1,17 +1,6 @@
-import pandas as pd
-
 from causal_reasoning.utils._enum import Examples
 from causal_reasoning.causal_model import CausalModel
-
-def getCSV(N, M):
-    if (N == 1 and M == 1):
-        scalable_csv_path = Examples.CSV_N1M1.value
-    elif (N == 2 and M == 1):
-        scalable_csv_path = Examples.CSV_2SCALING.value
-    elif (N == 3 and M == 1):
-        scalable_csv_path = Examples.CSV_N3M1.value
-
-    return scalable_csv_path
+from causal_reasoning.utils.get_scalable_df import getScalableDataFrame
 
 def genGraph(N, M):
     scalable_input: str = "U1 -> X, U3 -> Y, "
@@ -33,12 +22,9 @@ def genGraph(N, M):
 
 
 def main():
-    N = 3; M = 1
-
+    N = 1; M = 1
     scalable_input = genGraph(N, M)    
-
-    scalable_csv_path = getCSV(N, M)
-    scalable_df = pd.read_csv(scalable_csv_path)
+    scalable_df = getScalableDataFrame(M=M, N=N)    
 
     print(f"Debug the graph: {scalable_input}")
 
