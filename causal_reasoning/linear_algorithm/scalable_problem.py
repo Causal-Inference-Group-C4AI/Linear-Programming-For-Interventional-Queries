@@ -5,6 +5,8 @@ import time as tm
 
 import sys
 import os
+
+import pandas as pd
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from causal_reasoning.linear_algorithm.scalable_problem_init import InitScalable
@@ -330,24 +332,49 @@ class ScalarProblem:
         solution could be overlooked, as additional columns are not generated at
         the local nodes of the search tree.
         """
-        start = tm.time()
         numberIterations = self._generate_patterns()
         self.master.model.setAttr("vType", self.master.vars, GRB.CONTINUOUS) # useless?
         self.master.model.optimize()
-        end = tm.time()
-        print(f"Result of the inference: {self.master.model.ObjVal}")
-        print(f"Required iterations: {numberIterations}")
-        print(f"Time taken: {end-start} seconds")
+        return self.master.model.ObjVal, numberIterations
 
 
-def main():    
-    N = 2; M = 1
-    scalable_df = getScalableDataFrame(M=M, N=N)
-    interventionValue = 1; targetValue = 1    
-        
-    scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df)
+def main():
+    # df = pd.DataFrame(columns=['N','M', 'LOWER_BOUND', 'LOWER_BOUND_TIME_TAKEN', 'LOWER_BOUND_REQUIRED_ITERATIONS'])
+    # df.to_csv("results.csv", index=False)
+    M=1
+    for N in range(1, 11):
+        scalable_df = getScalableDataFrame(M=M, N=N)
+        interventionValue = 1; targetValue = 1
+        scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df)
+        try:
+            start = tm.time()
+            lower, lower_iterations = scalarProblem.solve()
+            end = tm.time()
+            df = pd.read_csv("results.csv")
+            new_row = {'N': N, 'M': M, 'LOWER_BOUND': lower, 'LOWER_BOUND_TIME_TAKEN': end-start, 'LOWER_BOUND_REQUIRED_ITERATIONS': lower_iterations}
+            new_row_df = pd.DataFrame([new_row])
+            df = pd.concat([df, new_row_df], ignore_index=True)
+            df.to_csv("results.csv", index=False)
+        except Exception:
+            pass
 
-    scalarProblem.solve()
+    for M in range(2, 6):
+        for N in range(1, 5):
+            scalable_df = getScalableDataFrame(M=M, N=N)
+            interventionValue = 1; targetValue = 1    
+                
+            scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df)
+            try:
+                start = tm.time()
+                lower, lower_iterations = scalarProblem.solve()
+                end = tm.time()
+                df = pd.read_csv("results.csv")
+                new_row = {'N': N, 'M': M, 'LOWER_BOUND': lower, 'LOWER_BOUND_TIME_TAKEN': end-start, 'LOWER_BOUND_REQUIRED_ITERATIONS': lower_iterations}
+                new_row_df = pd.DataFrame([new_row])
+                df = pd.concat([df, new_row_df], ignore_index=True)
+                df.to_csv("results.csv", index=False)
+            except Exception:
+                pass
 
 if __name__=="__main__":
     main()

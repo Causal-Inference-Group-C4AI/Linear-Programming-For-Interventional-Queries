@@ -1,0 +1,72 @@
+N: 1, M: 1 test
+---------------------------------------------------
+Result of the inference: 0.1040568067305824
+Required iterations: 7
+Time taken: 0.0074465274810791016 seconds
+
+N: 2, M: 1 test
+---------------------------------------------------
+Result of the inference: 0.5392634111615854
+Required iterations: 13
+Time taken: 0.09170722961425781 seconds
+
+N: 3, M: 1 test
+---------------------------------------------------
+Result of the inference: 0.10355837657883707
+Required iterations: 46
+Time taken: 1.0716211795806885 seconds
+
+N: 4, M: 1 test
+---------------------------------------------------
+Result of the inference: 0.5351128708645817
+Required iterations: 77
+Time taken: 11.5014488697052 seconds
+
+N: 5, M: 1 test
+---------------------------------------------------
+Result of the inference: 0.09786182231820113
+Required iterations: 393
+Time taken: 362.5993185043335 seconds
+
+N: 1, M: 2 test
+---------------------------------------------------
+Result of the inference: 0.10887082613903279
+Required iterations: 16
+Time taken: 0.02178192138671875 seconds
+
+N: 2, M: 2 test
+---------------------------------------------------
+Result of the inference: 0.5519973583443178
+Required iterations: 40
+Time taken: 0.6132898330688477 seconds
+
+N: 3, M: 2 test
+---------------------------------------------------
+Result of the inference: 0.0956569519218699
+Required iterations: 198
+Time taken: 37.699846029281616 seconds
+
+N: 4, M: 2 test
+---------------------------------------------------
+Result of the inference: 0.5466229765799904
+Required iterations: 834
+Time taken: 1958.5339152812958 seconds
+
+N: 1, M: 3 test
+---------------------------------------------------
+Result of the inference: 0.10702924915108719
+Required iterations: 86
+Time taken: 0.1034393310546875 seconds
+
+N: 2, M: 3 test
+---------------------------------------------------
+Result of the inference: 0.546848429700399
+Required iterations: 142
+Time taken: 3.762796640396118 seconds
+
+N: 3, M: 3 test
+---------------------------------------------------
+Result of the inference: 0.10333198499075995
+Required iterations: 1651
+Time taken: 1336.3489928245544 seconds
+

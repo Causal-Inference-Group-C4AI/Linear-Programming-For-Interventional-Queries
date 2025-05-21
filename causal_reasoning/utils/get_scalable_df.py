@@ -23,14 +23,14 @@ def getScalableDataFrame(M: int, N: int):
     elif (N == 5 and M == 2):
         scalable_csv_path = Examples.CSV_N5M2.value
     elif (N == 1 and M == 3):
-        scalable_csv_path = Examples.CSV_N5M2.value
+        scalable_csv_path = Examples.CSV_N1M3.value
     elif (N == 2 and M == 3):
-        scalable_csv_path = Examples.CSV_N5M2.value
+        scalable_csv_path = Examples.CSV_N2M3.value
     elif (N == 3 and M == 3):
-        scalable_csv_path = Examples.CSV_N5M2.value
+        scalable_csv_path = Examples.CSV_N3M3.value
     elif (N == 4 and M == 3):
-        scalable_csv_path = Examples.CSV_N5M2.value
+        scalable_csv_path = Examples.CSV_N4M3.value
     elif (N == 5 and M == 3):
-        scalable_csv_path = Examples.CSV_N5M2.value
+        scalable_csv_path = Examples.CSV_N5M3.value
 
     return pd.read_csv(scalable_csv_path)

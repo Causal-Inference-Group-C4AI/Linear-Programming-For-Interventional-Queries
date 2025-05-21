@@ -23,4 +23,9 @@ class Examples(Enum):
     CSV_N3M2="causal_reasoning/data/n3_m2_scaling_case.csv"
     CSV_N4M2="causal_reasoning/data/n4_m2_scaling_case.csv"
     CSV_N5M2="causal_reasoning/data/n5_m2_scaling_case.csv"
+    CSV_N1M3="causal_reasoning/data/n1_m3_scaling_case.csv"
+    CSV_N2M3="causal_reasoning/data/n2_m3_scaling_case.csv"
+    CSV_N3M3="causal_reasoning/data/n3_m3_scaling_case.csv"
+    CSV_N4M3="causal_reasoning/data/n4_m3_scaling_case.csv"
+    CSV_N5M3="causal_reasoning/data/n5_m3_scaling_case.csv"
 
