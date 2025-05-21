@@ -22,7 +22,7 @@ def genGraph(N, M):
 
 
 def main():
-    N = 1; M = 1
+    N = 2; M = 1
     scalable_input = genGraph(N, M)    
     scalable_df = getScalableDataFrame(M=M, N=N)    
 

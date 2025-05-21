@@ -31,11 +31,15 @@ class MasterProblem:
         self.model.params.outputFlag = 0
         self.model.update()
     
-    def update(self, newColumn, index, objCoeff):        
+    def update(self, newColumn: list[float], index: int, objCoeff: list[float], minimun: bool):        
         new_col = gp.Column(coeffs=newColumn, constrs=self.constrs.values()) # Includes the new variable in the constraints
         if (DBG): print(f"Obj coeff: {objCoeff}")        
-        self.vars[index] = self.model.addVar(obj=objCoeff, column=new_col, # Adds the new variable
-                                             name=f"Variable[{index}]")
+        if minimun:
+            self.vars[index] = self.model.addVar(obj=objCoeff, column=new_col, # Adds the new variable
+                                                    name=f"Variable[{index}]")
+        else:
+            self.vars[index] = self.model.addVar(obj=-objCoeff, column=new_col, # Adds the new variable
+                                                    name=f"Variable[{index}]")
         self.model.update()
 
 class SubProblem:
@@ -51,7 +55,7 @@ class SubProblem:
     def setup(self, amountBitsPerCluster: int, amountBetaVarsPerX: int, duals: list[float], amountNonTrivialRestrictions: int,
                 betaVarsCost: list[float], parametric_column: list[tuple[list[int]]],
                 betaVarsBitsX0: list[tuple[list[str]]], betaVarsBitsX1: list[tuple[list[str]]],
-                N: int, M: int, interventionValue: int):
+                N: int, M: int, interventionValue: int, minimum: bool):
         
         # Bit that determines the value of X.
         self.bit0 = self.model.addVars(1, obj=0, vtype=GRB.BINARY,
@@ -68,17 +72,23 @@ class SubProblem:
         # Beta Var when X=0:
         betaVarX0Names: list[str] = []
         for i in range(amountBetaVarsPerX): betaVarX0Names.append(f"BX0_{i}")
-        
-        self.beta_varsX0 = self.model.addVars(amountBetaVarsPerX, obj=[cost * (1 - interventionValue) for cost in betaVarsCost],
-                                              vtype=GRB.BINARY, name=betaVarX0Names)
+        if minimum:
+            self.beta_varsX0 = self.model.addVars(amountBetaVarsPerX, obj=[cost * (1 - interventionValue) for cost in betaVarsCost],
+                                                    vtype=GRB.BINARY, name=betaVarX0Names)
+        else:
+            self.beta_varsX0 = self.model.addVars(amountBetaVarsPerX, obj=[-cost * (1 - interventionValue) for cost in betaVarsCost],
+                                                    vtype=GRB.BINARY, name=betaVarX0Names)
         
         # Beta Var when X=1:
         betaVarX1Names: list[str] = []
         for i in range(amountBetaVarsPerX): betaVarX1Names.append(f"BX1_{i}")
         
-        self.beta_varsX1 = self.model.addVars(amountBetaVarsPerX, obj=[cost * interventionValue for cost in betaVarsCost], 
-                                      vtype=GRB.BINARY, name=betaVarX1Names)
-        
+        if minimum:
+            self.beta_varsX1 = self.model.addVars(amountBetaVarsPerX, obj=[cost * interventionValue for cost in betaVarsCost], 
+                                        vtype=GRB.BINARY, name=betaVarX1Names)
+        else:
+            self.beta_varsX1 = self.model.addVars(amountBetaVarsPerX, obj=[-cost * interventionValue for cost in betaVarsCost], 
+                                        vtype=GRB.BINARY, name=betaVarX1Names)
         # Parametric Columns variables:
         parametricColumnsNames: list[str] = []
         for i in range(amountNonTrivialRestrictions): parametricColumnsNames.append(f"Parametric{i}")
@@ -210,7 +220,7 @@ class SubProblem:
 
 class ScalarProblem:
     def __init__(self, dataFrame, empiricalProbabilities: list[float], parametric_columns: dict[str, tuple[list[int]]], N: int, M: int, betaVarsCost: list[float],
-                 betaVarsBitsX0: list[tuple[str]], betaVarsBitsX1: list[tuple[str]], interventionValue: int):
+                 betaVarsBitsX0: list[tuple[str]], betaVarsBitsX1: list[tuple[str]], interventionValue: int, minimum : bool):
         
         self.M = M; self.N = N
         self.amountNonTrivialRestrictions = (1 << (M + N + 1))
@@ -226,7 +236,7 @@ class ScalarProblem:
         self.betaVarsBitsX1 = betaVarsBitsX1  
         self.betaVarsCost = betaVarsCost        
         self.interventionValue = interventionValue # X = x in {0, 1}
-
+        self.minimum = minimum
         auxDict = {}
         for i in range(self.amountNonTrivialRestrictions):
             auxDict[i] = BIG_M
@@ -258,7 +268,8 @@ class ScalarProblem:
                               betaVarsBitsX0=self.betaVarsBitsX0,
                               betaVarsBitsX1=self.betaVarsBitsX1,
                               N=self.N, M = self.M,
-                              interventionValue=self.interventionValue
+                              interventionValue=self.interventionValue,
+                              minimum= self.minimum
                               )
 
         counter = 0
@@ -290,14 +301,14 @@ class ScalarProblem:
                 else:
                     objCoeff += self.betaVarsCost[betaIndex] * self.subproblem.beta_varsX1[betaIndex].X
 
-            self.master.update(newColumn=newColumn, index=len(self.columns_base), objCoeff=objCoeff)
+            self.master.update(newColumn=newColumn, index=len(self.columns_base), objCoeff=objCoeff, minimun= self.minimum)
             self.columns_base.append(newColumn)
             counter += 1
             print(f"Iteration Number = {counter}")
 
         return counter
     
-    def buildScalarProblem(M: int, N: int, interventionValue: int, targetValue: int, df):
+    def buildScalarProblem(M: int, N: int, interventionValue: int, targetValue: int, df, minimum : bool):
         # Calculate the empirical probs (RHS of the restrictions, so b in Ax=b)
         empiricalProbabilities: list[float] = InitScalable.calculateEmpiricals(N=N, M=M, df=df, DBG=DBG)    
         # Auxiliary Gamma U variables (beta): calculate the obj coeff in the subproblem and the relation to the bit variables that compose them
@@ -319,7 +330,7 @@ class ScalarProblem:
         parametric_columns: list[tuple[list[str]]] = InitScalable.defineParametricColumn(M=M, N=N)
         return ScalarProblem(dataFrame=df, empiricalProbabilities=empiricalProbabilities, parametric_columns=parametric_columns, N=N, M=M, 
                                     betaVarsCost=betaVarsCoeffObjSubproblem, betaVarsBitsX0=betaVarsBitsX0, betaVarsBitsX1=betaVarsBitsX1,
-                                    interventionValue=interventionValue)        
+                                    interventionValue=interventionValue, minimum= minimum)        
 
     def solve(self):
         """
@@ -334,20 +345,23 @@ class ScalarProblem:
         numberIterations = self._generate_patterns()
         self.master.model.setAttr("vType", self.master.vars, GRB.CONTINUOUS) # useless?
         self.master.model.optimize()
-        end = tm.time()
-        print(f"Result of the inference: {self.master.model.ObjVal}")
-        print(f"Required iterations: {numberIterations}")
-        print(f"Time taken: {end-start} seconds")
+        bound = self.master.model.ObjVal
+        itBound  = numberIterations
+        return bound, itBound
 
 
 def main():    
-    N = 2; M = 1
+    N = 1; M = 1
     scalable_df = getScalableDataFrame(M=M, N=N)
     interventionValue = 1; targetValue = 1    
         
-    scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df)
-
-    scalarProblem.solve()
-
+    scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = True)
+    lower , itLower = scalarProblem.solve()
+    
+    scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = False)
+    upper , itUpper = scalarProblem.solve()
+    upper = -upper
+    print(f"{lower} =< P(Y = {targetValue}|X = {interventionValue}) <= {upper}")
+    print(f"{itLower} iteracoes para lower e {itUpper} para upper")
 if __name__=="__main__":
     main()

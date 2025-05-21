@@ -1,13 +1,10 @@
 import os
 import time as tm
 from itertools import product
-from scipy.optimize import linprog
 import pandas as pd
-from main_scalable import genGraph
 from causal_reasoning.utils.mechanisms_generator import MechanismGenerator
 from causal_reasoning.utils.probabilities_helper import ProbabilitiesHelper
 from causal_reasoning.graph.graph import Graph
-from causal_reasoning.causal_model import get_graph
 from causal_reasoning.utils._enum import Examples
 from causal_reasoning.utils.get_scalable_df import getScalableDataFrame
 def checkQuerry(N,M,y0,x0):
@@ -24,4 +21,6 @@ def main(N,M,y0,x0):
     prob = checkQuerry(N,M,y0,x0)
     print(f"Check for N = {N} and M = {M}: P(Y={y0}|do(X={x0})) = {prob}")
 if __name__ == "__main__":
-    main(2,1,1,1)
+    for m in range(1,6):
+        for n in range(1,6):
+            main(n,m,1,1)
