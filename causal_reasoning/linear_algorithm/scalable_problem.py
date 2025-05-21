@@ -5,9 +5,12 @@ import time as tm
 
 import sys
 import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 import pandas as pd
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from itertools import product
+
+from causal_reasoning.utils.probabilities_helper import ProbabilitiesHelper
 
 from causal_reasoning.linear_algorithm.scalable_problem_init import InitScalable
 from causal_reasoning.utils.get_scalable_df import getScalableDataFrame
@@ -351,10 +354,23 @@ class ScalarProblem:
         itBound  = numberIterations
         return bound, itBound
 
+def checkQuerry(N,M,y0,x0):
+    df: pd.DataFrame = getScalableDataFrame(N=N,M=M)
+    prob = 0 
+    for rlt in list(product([0, 1], repeat= 2)):
+        term = 1
+        term *= ProbabilitiesHelper.find_conditional_probability2(dataFrame=df,targetRealization={"Y":y0},conditionRealization={f"A{N}": rlt[0]})
+        term *= ProbabilitiesHelper.find_conditional_probability2(dataFrame=df,targetRealization={f"A{N}": rlt[0]},conditionRealization= {"U1": rlt[1], "X": x0})
+        term *= ProbabilitiesHelper.find_probability2(dataFrame= df, realizationDict={"U1":rlt[1]})
+        prob += term
+    return prob
+
+
+
 
 def main():    
     '''
-    N = 1; M = 1
+    N = 1; M = 5
     scalable_df = getScalableDataFrame(M=M, N=N)
     interventionValue = 1; targetValue = 1    
         
@@ -368,8 +384,7 @@ def main():
     print(f"{itLower} iteracoes para lower e {itUpper} para upper")
     '''
 
-
-    df = pd.DataFrame(columns=['N','M','LOWER_BOUND','LOWER_BOUND_SECONDS_TAKEN','LOWER_BOUND_REQUIRED_ITERATIONS','UPPER_BOUND','UPPER_BOUND_SECONDS_TAKEN','UPPER_BOUND_REQUIRED_ITERATIONS','BOUNDS_SIZE'])
+    df = pd.DataFrame(columns=['N','M','LOWER_BOUND','LOWER_BOUND_SECONDS_TAKEN','LOWER_BOUND_REQUIRED_ITERATIONS','UPPER_BOUND','UPPER_BOUND_SECONDS_TAKEN','UPPER_BOUND_REQUIRED_ITERATIONS','BOUNDS_SIZE', 'TRUE_PROBABILITY_VALUE'])
     df.to_csv("results.csv", index=False)
     M=1
     for N in range(1, 11):
@@ -394,7 +409,7 @@ def main():
             else:
                 bounds_size = None
             df = pd.read_csv("results.csv")
-            new_row = {'N': N,'M': M,'LOWER_BOUND': lower,'LOWER_BOUND_SECONDS_TAKEN': lower_time,'LOWER_BOUND_REQUIRED_ITERATIONS': lower_iterations,'UPPER_BOUND': upper,'UPPER_BOUND_SECONDS_TAKEN': upper_time,'UPPER_BOUND_REQUIRED_ITERATIONS': upper_iterations,'BOUNDS_SIZE': bounds_size}
+            new_row = {'N': N,'M': M,'LOWER_BOUND': lower,'LOWER_BOUND_SECONDS_TAKEN': lower_time,'LOWER_BOUND_REQUIRED_ITERATIONS': lower_iterations,'UPPER_BOUND': upper,'UPPER_BOUND_SECONDS_TAKEN': upper_time,'UPPER_BOUND_REQUIRED_ITERATIONS': upper_iterations,'BOUNDS_SIZE': bounds_size, 'TRUE_PROBABILITY_VALUE':checkQuerry(N,M,1,1)}
             new_row_df = pd.DataFrame([new_row])
             df = pd.concat([df, new_row_df], ignore_index=True)
             df.to_csv("results.csv", index=False)
@@ -424,7 +439,7 @@ def main():
                 else:
                     bounds_size = None
                 df = pd.read_csv("results.csv")
-                new_row = {'N': N,'M': M,'LOWER_BOUND': lower,'LOWER_BOUND_SECONDS_TAKEN': lower_time,'LOWER_BOUND_REQUIRED_ITERATIONS': lower_iterations,'UPPER_BOUND': upper,'UPPER_BOUND_SECONDS_TAKEN': upper_time,'UPPER_BOUND_REQUIRED_ITERATIONS': upper_iterations,'BOUNDS_SIZE': bounds_size}
+                new_row = {'N': N,'M': M,'LOWER_BOUND': lower,'LOWER_BOUND_SECONDS_TAKEN': lower_time,'LOWER_BOUND_REQUIRED_ITERATIONS': lower_iterations,'UPPER_BOUND': upper,'UPPER_BOUND_SECONDS_TAKEN': upper_time,'UPPER_BOUND_REQUIRED_ITERATIONS': upper_iterations,'BOUNDS_SIZE': bounds_size, 'TRUE_PROBABILITY_VALUE':checkQuerry(N,M,1,1)}
                 new_row_df = pd.DataFrame([new_row])
                 df = pd.concat([df, new_row_df], ignore_index=True)
                 df.to_csv("results.csv", index=False)
