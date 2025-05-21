@@ -1,9 +1,9 @@
 import os
 import time as tm
 from itertools import product
+from causal_reasoning.utils.probabilities_helper import ProbabilitiesHelper
 import pandas as pd
 from causal_reasoning.utils.mechanisms_generator import MechanismGenerator
-from causal_reasoning.utils.probabilities_helper import ProbabilitiesHelper
 from causal_reasoning.graph.graph import Graph
 from causal_reasoning.utils._enum import Examples
 from causal_reasoning.utils.get_scalable_df import getScalableDataFrame

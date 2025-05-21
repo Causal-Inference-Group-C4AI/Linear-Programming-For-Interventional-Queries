@@ -174,16 +174,13 @@ poetry install
 ### Linux
 - Activate poetry virtual environment
 ```bash
-poetry shell
+eval $(poetry env activate)
 ```
 
-```bash
-poetry run python script.py
-```
 
 Example:
 ```bash
-poetry run python causal_reasoning/example/scipy_example.py
+python3 causal_reasoning/example/scipy_example.py
 ```
 The output should be:
 ```
