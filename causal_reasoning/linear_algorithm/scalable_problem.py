@@ -401,9 +401,35 @@ def main():
         except Exception:
             pass
 
-    # for M in range(2, 4):
-    #     for N in range(1, 6):
-    #         pass
+    for M in range(2, 7):
+        for N in range(1, 6):
+            scalable_df = getScalableDataFrame(M=M, N=N)
+            interventionValue = 1; targetValue = 1
+            try:
+                start = tm.time()
+                scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = True)
+                lower , lower_iterations = scalarProblem.solve()
+                end = tm.time()
+                lower_time = end-start
+
+                scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = False)
+                start = tm.time()
+                upper, upper_iterations = scalarProblem.solve()
+                end = tm.time()
+                upper = -upper
+                upper_time = end-start
+                
+                if (isinstance(lower, int) and isinstance(upper, int)) or (isinstance(lower, float) and isinstance(upper, float)):
+                    bounds_size = upper - lower
+                else:
+                    bounds_size = None
+                df = pd.read_csv("results.csv")
+                new_row = {'N': N,'M': M,'LOWER_BOUND': lower,'LOWER_BOUND_SECONDS_TAKEN': lower_time,'LOWER_BOUND_REQUIRED_ITERATIONS': lower_iterations,'UPPER_BOUND': upper,'UPPER_BOUND_SECONDS_TAKEN': upper_time,'UPPER_BOUND_REQUIRED_ITERATIONS': upper_iterations,'BOUNDS_SIZE': bounds_size}
+                new_row_df = pd.DataFrame([new_row])
+                df = pd.concat([df, new_row_df], ignore_index=True)
+                df.to_csv("results.csv", index=False)
+            except Exception:
+                pass
 
 if __name__=="__main__":
     main()

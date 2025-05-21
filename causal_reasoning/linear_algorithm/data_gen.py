@@ -54,9 +54,9 @@ def generate_data_for_scale_case(n: int, m: int, samples: int = 10000):
     df.to_csv(f"n{n}_m{m}_scaling_case.csv", index=False)
 
 if __name__ == "__main__":
-    n = 5
-    m = 3
-    # for i in range(1, n+1):
-    #     for j in range(1, m+1):
-    generate_data_for_scale_case(1, 5)
-    generate_data_for_scale_case(2, 5)
+    n = 6
+    m = 6
+    for i in range(1, n+1):
+        for j in range(1, m+1):
+            generate_data_for_scale_case(i, j)
+    
