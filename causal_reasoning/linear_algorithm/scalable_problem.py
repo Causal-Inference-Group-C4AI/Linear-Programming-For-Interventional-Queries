@@ -339,8 +339,8 @@ class ScalarProblem:
 
 
 def main():
-    # df = pd.DataFrame(columns=['N','M', 'LOWER_BOUND', 'LOWER_BOUND_TIME_TAKEN', 'LOWER_BOUND_REQUIRED_ITERATIONS'])
-    # df.to_csv("results.csv", index=False)
+    df = pd.DataFrame(columns=['N','M','LOWER_BOUND','LOWER_BOUND_SECONDS_TAKEN','LOWER_BOUND_REQUIRED_ITERATIONS','UPPER_BOUND','UPPER_BOUND_SECONDS_TAKEN','UPPER_BOUND_REQUIRED_ITERATIONS','BOUNDS_SIZE'])
+    df.to_csv("results.csv", index=False)
     M=1
     for N in range(1, 11):
         scalable_df = getScalableDataFrame(M=M, N=N)
@@ -351,7 +351,15 @@ def main():
             lower, lower_iterations = scalarProblem.solve()
             end = tm.time()
             df = pd.read_csv("results.csv")
-            new_row = {'N': N, 'M': M, 'LOWER_BOUND': lower, 'LOWER_BOUND_TIME_TAKEN': end-start, 'LOWER_BOUND_REQUIRED_ITERATIONS': lower_iterations}
+            lower_time = end-start
+            upper = 0
+            upper_iterations = None
+            upper_time = None
+            if lower.isinstance(int) and upper.isinstance(int):
+                bounds_size = upper - lower
+            else:
+                bounds_size = None
+            new_row = {'N': N,'M': M,'LOWER_BOUND': lower,'LOWER_BOUND_SECONDS_TAKEN': lower_time,'LOWER_BOUND_REQUIRED_ITERATIONS': lower_iterations,'UPPER_BOUND': upper,'UPPER_BOUND_SECONDS_TAKEN': upper_time,'UPPER_BOUND_REQUIRED_ITERATIONS': upper_iterations,'BOUNDS_SIZE': bounds_size}
             new_row_df = pd.DataFrame([new_row])
             df = pd.concat([df, new_row_df], ignore_index=True)
             df.to_csv("results.csv", index=False)
@@ -369,7 +377,7 @@ def main():
                 lower, lower_iterations = scalarProblem.solve()
                 end = tm.time()
                 df = pd.read_csv("results.csv")
-                new_row = {'N': N, 'M': M, 'LOWER_BOUND': lower, 'LOWER_BOUND_TIME_TAKEN': end-start, 'LOWER_BOUND_REQUIRED_ITERATIONS': lower_iterations}
+                new_row = {'N': N, 'M': M, 'LOWER_BOUND': lower, 'LOWER_BOUND_SECONDS_TAKEN': end-start, 'LOWER_BOUND_REQUIRED_ITERATIONS': lower_iterations}
                 new_row_df = pd.DataFrame([new_row])
                 df = pd.concat([df, new_row_df], ignore_index=True)
                 df.to_csv("results.csv", index=False)
