@@ -56,6 +56,7 @@ def generate_data_for_scale_case(n: int, m: int, samples: int = 10000):
 if __name__ == "__main__":
     n = 5
     m = 3
-    for i in range(1, n+1):
-        for j in range(1, m+1):
-            generate_data_for_scale_case(i, j)
+    # for i in range(1, n+1):
+    #     for j in range(1, m+1):
+    generate_data_for_scale_case(1, 5)
+    generate_data_for_scale_case(2, 5)

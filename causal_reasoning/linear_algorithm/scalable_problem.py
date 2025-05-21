@@ -5,6 +5,8 @@ import time as tm
 
 import sys
 import os
+
+import pandas as pd
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from causal_reasoning.linear_algorithm.scalable_problem_init import InitScalable
@@ -351,6 +353,7 @@ class ScalarProblem:
 
 
 def main():    
+    '''
     N = 1; M = 1
     scalable_df = getScalableDataFrame(M=M, N=N)
     interventionValue = 1; targetValue = 1    
@@ -363,5 +366,44 @@ def main():
     upper = -upper
     print(f"{lower} =< P(Y = {targetValue}|X = {interventionValue}) <= {upper}")
     print(f"{itLower} iteracoes para lower e {itUpper} para upper")
+    '''
+
+
+    df = pd.DataFrame(columns=['N','M','LOWER_BOUND','LOWER_BOUND_SECONDS_TAKEN','LOWER_BOUND_REQUIRED_ITERATIONS','UPPER_BOUND','UPPER_BOUND_SECONDS_TAKEN','UPPER_BOUND_REQUIRED_ITERATIONS','BOUNDS_SIZE'])
+    df.to_csv("results.csv", index=False)
+    M=1
+    for N in range(1, 11):
+        scalable_df = getScalableDataFrame(M=M, N=N)
+        interventionValue = 1; targetValue = 1
+        try:
+            start = tm.time()
+            scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = True)
+            lower , lower_iterations = scalarProblem.solve()
+            end = tm.time()
+            lower_time = end-start
+
+            scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = False)
+            start = tm.time()
+            upper, upper_iterations = scalarProblem.solve()
+            end = tm.time()
+            upper = -upper
+            upper_time = end-start
+            
+            if (isinstance(lower, int) and isinstance(upper, int)) or (isinstance(lower, float) and isinstance(upper, float)):
+                bounds_size = upper - lower
+            else:
+                bounds_size = None
+            df = pd.read_csv("results.csv")
+            new_row = {'N': N,'M': M,'LOWER_BOUND': lower,'LOWER_BOUND_SECONDS_TAKEN': lower_time,'LOWER_BOUND_REQUIRED_ITERATIONS': lower_iterations,'UPPER_BOUND': upper,'UPPER_BOUND_SECONDS_TAKEN': upper_time,'UPPER_BOUND_REQUIRED_ITERATIONS': upper_iterations,'BOUNDS_SIZE': bounds_size}
+            new_row_df = pd.DataFrame([new_row])
+            df = pd.concat([df, new_row_df], ignore_index=True)
+            df.to_csv("results.csv", index=False)
+        except Exception:
+            pass
+
+    # for M in range(2, 4):
+    #     for N in range(1, 6):
+    #         pass
+
 if __name__=="__main__":
     main()
