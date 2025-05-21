@@ -402,7 +402,7 @@ def main():
             pass
 
     for M in range(2, 7):
-        for N in range(1, 6):
+        for N in range(1, 7):
             scalable_df = getScalableDataFrame(M=M, N=N)
             interventionValue = 1; targetValue = 1
             try:
