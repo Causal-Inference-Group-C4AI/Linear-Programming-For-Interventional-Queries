@@ -1,12 +1,14 @@
 import copy
 import gurobipy as gp
 from gurobipy import GRB
-from causal_reasoning.linear_algorithm.scalable_problem_init import InitScalable
-from causal_reasoning.utils.get_scalable_df import getScalableDataFrame
+import time as tm
 
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+from causal_reasoning.linear_algorithm.scalable_problem_init import InitScalable
+from causal_reasoning.utils.get_scalable_df import getScalableDataFrame
 
 BIG_M = 1e4
 DBG = False
@@ -328,12 +330,14 @@ class ScalarProblem:
         solution could be overlooked, as additional columns are not generated at
         the local nodes of the search tree.
         """
+        start = tm.time()
         numberIterations = self._generate_patterns()
         self.master.model.setAttr("vType", self.master.vars, GRB.CONTINUOUS) # useless?
         self.master.model.optimize()
-
+        end = tm.time()
         print(f"Result of the inference: {self.master.model.ObjVal}")
         print(f"Required iterations: {numberIterations}")
+        print(f"Time taken: {end-start} seconds")
 
 
 def main():    
