@@ -5,6 +5,7 @@ description = "Package for causal inference under partially observability"
 authors = ["danlawand <daniel.lawand@gmail.com>"]
 license = "MIT"
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.10"
