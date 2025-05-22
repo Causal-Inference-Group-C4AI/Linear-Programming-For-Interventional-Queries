@@ -62,14 +62,14 @@ class MechanismGenerator:
             functionDomain: list[list[int]] = [
                 list(auxTuple) for auxTuple in itertools.product(*auxSpaces)
             ]
-            if v:
+            # if v:
                 #print(functionDomain)
 
             imageValues: list[int] = range(cardinalities[var])
 
             varResult = [[domainCase + [c] for c in imageValues]
                          for domainCase in functionDomain]
-            if v:
+            # if v:
                 #print(f"For variable {var}:")
                 #print(f"Function domain: {functionDomain}")
                 #print(f"VarResult: {varResult}")
@@ -82,34 +82,34 @@ class MechanismGenerator:
 
             allCasesList = allCasesList + varResult
 
-        if v:
+        # if v:
             #print(headerArray)
             #print(
-                f"List all possible mechanism, placing in the same array those that determine the same function:\n{allCasesList}"
-            )
-            #print(
-                f"List the keys of the dictionary (all combinations of the domains of the functions): {dictKeys}"
-            )
+            #     f"List all possible mechanism, placing in the same array those that determine the same function:\n{allCasesList}"
+            # )
+            # #print(
+            #     f"List the keys of the dictionary (all combinations of the domains of the functions): {dictKeys}"
+            # )
 
         allPossibleMechanisms = list(itertools.product(*allCasesList))
         mechanismDicts: list[dict[str, int]] = []
         for index, mechanism in enumerate(allPossibleMechanisms):
-            if v:
+            # if v:
                 #print(f"{index}) {mechanism}")
             currDict: dict[str, int] = {}
             for domainIndex, nodeFunction in enumerate(mechanism):
-                if v:
+                # if v:
                     #print(f"The node function = {nodeFunction}")
                 currDict[dictKeys[domainIndex]] = nodeFunction[-1]
 
             mechanismDicts.append(currDict)
 
-        if v:
-            #print("Check if the mechanism dictionary is working as expected:")
-            for mechanismDict in mechanismDicts:
-                for key in mechanismDict:
-                    #print(f"key: {key} & val: {mechanismDict[key]}")
-                #print("------------")
+        # if v:
+        #     #print("Check if the mechanism dictionary is working as expected:")
+        #     for mechanismDict in mechanismDicts:
+        #         for key in mechanismDict:
+        #             #print(f"key: {key} & val: {mechanismDict[key]}")
+        #         #print("------------")
 
         """
         mechanismDicts: list[dict[str, int]]
