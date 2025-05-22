@@ -69,7 +69,8 @@ def main():
             df.to_csv("algorithm_results.csv", index=False)
         except Exception:
             pass
-
+    
+    print("Done")
 
 if __name__ == "__main__":
     main()
