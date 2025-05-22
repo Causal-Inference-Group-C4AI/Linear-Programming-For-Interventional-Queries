@@ -29,20 +29,20 @@ def opt_problem(objFunction: list[float],
     if lowerBoundSol.success:
         lowerBound = trim_decimal(3, lowerBoundSol.fun)
         if v:
-            print(f"Optimal distribution = {lowerBoundSol.x}")
-            print(f"Obj. function = {lowerBound}")
+            #print(f"Optimal distribution = {lowerBoundSol.x}")
+            #print(f"Obj. function = {lowerBound}")
     else:
-        print("Solution not found:", lowerBoundSol.message)
+        #print("Solution not found:", lowerBoundSol.message)
 
     # Find maximum (uses the negated objective function and changes the sign
     # of the result)
     if upperBoundSol.success:
         upperBound = trim_decimal(3, -upperBoundSol.fun)
         if v:
-            print(f"Optimal distribution = {upperBoundSol.x}")
-            print(f"Obj. function = {upperBound}")
+            #print(f"Optimal distribution = {upperBoundSol.x}")
+            #print(f"Obj. function = {upperBound}")
     else:
-        print("Solution not found:", upperBoundSol.message)
+        #print("Solution not found:", upperBoundSol.message)
 
     return lowerBound, upperBound
 
@@ -76,22 +76,22 @@ def main():
     b_eq = [1, 0.32, 0.32, 0.04, 0.32, 0.02, 0.17, 0.67, 0.14]
 
     # ---------- compute using the final objective function -------- #
-    print("\nUsing the complete objective function, the results are:")
+    #print("\nUsing the complete objective function, the results are:")
     lb0, ub0 = opt_problem(c, a_eq, b_eq, bounds, False)
-    print(f"Lower bound: {lb0} - Upper bound: {ub0}")
+    #print(f"Lower bound: {lb0} - Upper bound: {ub0}")
 
     # ---------- compute using the partial objective functions -------- #
-    print("\nUsing the complete objective function, the result for the positive query is:")
+    #print("\nUsing the complete objective function, the result for the positive query is:")
     lb1, ub1 = opt_problem(c1, a_eq, b_eq, bounds, False)
-    print(f"Lower bound: {lb1} - Upper bound: {ub1}")
+    #print(f"Lower bound: {lb1} - Upper bound: {ub1}")
 
-    print("Using the complete objective function, the result for the negative query is:")
+    #print("Using the complete objective function, the result for the negative query is:")
     lb2, ub2 = opt_problem(c2, a_eq, b_eq, bounds, False)
-    print(f"Lower bound: {lb2} - Upper bound: {ub2}")
+    #print(f"Lower bound: {lb2} - Upper bound: {ub2}")
 
     # ---------- results comparison -------- #
-    print(f"\nWith the first method, we obtain the interval: [{lb0},{ub0}]")
-    print(
+    #print(f"\nWith the first method, we obtain the interval: [{lb0},{ub0}]")
+    #print(
         f"With the second method, we obtain the interval: [{trim_decimal(3,lb1 - ub2)},{trim_decimal(3,ub1 - lb2)}]")
 
 

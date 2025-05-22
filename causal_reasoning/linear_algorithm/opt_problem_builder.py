@@ -1,6 +1,7 @@
 from scipy.optimize import linprog
 import gurobipy as gp
 import pandas as pd
+import time as tm
 
 from causal_reasoning.graph.graph import Graph
 from causal_reasoning.linear_algorithm.linear_constraints import generate_constraints
@@ -80,15 +81,15 @@ class OptProblemBuilder:
             mechanism=mechanisms,
         )
 
-        print("-- DEBUG OBJ FUNCTION --")
-        for i, coeff in enumerate(objFunctionCoefficients):
-            print(f"c_{i} = {coeff}")
+        #print("-- DEBUG OBJ FUNCTION --")
+        # for i, coeff in enumerate(objFunctionCoefficients):
+            #print(f"c_{i} = {coeff}")
 
-        print("-- DECISION MATRIX --")
-        for i in range(len(decisionMatrix)):
-            for j in range(len(decisionMatrix[i])):
-                print(f"{decisionMatrix[i][j]} ", end="")
-            print(f" = {probs[i]}")
+        #print("-- DECISION MATRIX --")
+        # for i in range(len(decisionMatrix)):
+            # for j in range(len(decisionMatrix[i])):
+                #print(f"{decisionMatrix[i][j]} ", end="")
+            #print(f" = {probs[i]}")
         intervals = [(0, 1) for _ in range(len(decisionMatrix[0]))]
         lowerBoundSol = linprog(
             c=objFunctionCoefficients,
@@ -157,43 +158,49 @@ class OptProblemBuilder:
             mechanism=mechanisms,
         )
 
-        print("-- DEBUG OBJ FUNCTION --")
-        for i, coeff in enumerate(objFunctionCoefficients):
-            print(f"c_{i} = {coeff}")
+        #print("-- DEBUG OBJ FUNCTION --")
+        # for i, coeff in enumerate(objFunctionCoefficients):
+        #     #print(f"c_{i} = {coeff}")
 
-        print("-- DECISION MATRIX --")
-        for i in range(len(decisionMatrix)):
-            for j in range(len(decisionMatrix[i])):
-                print(f"{decisionMatrix[i][j]} ", end="")
-            print(f" = {probs[i]}")
+        # #print("-- DECISION MATRIX --")
+        # for i in range(len(decisionMatrix)):
+        #     for j in range(len(decisionMatrix[i])):
+                #print(f"{decisionMatrix[i][j]} ", end="")
+            #print(f" = {probs[i]}")
 
         master = MasterProblem()
         modelSenseMin = 1
         master.setup(probs, decisionMatrix, objFunctionCoefficients, modelSenseMin)
-
+        start = tm.time()
         master.model.optimize()
+        end = tm.time()
+        lower_time = end-start
         # duals = master.model.getAttr("pi", master.constrs)
-        # print(f"duals: {duals}")
+        # #print(f"duals: {duals}")
         if master.model.Status == gp.GRB.OPTIMAL: # OPTIMAL
                 lower = master.model.objVal
-                print(f"Minimal solution found!\nMIN Query: {lower}")
+                #print(f"Minimal solution found!\nMIN Query: {lower}")
         else:
-            print(f"Minimal solution not found. Gurobi status code: {master.model.Status}")
+            #print(f"Minimal solution not found. Gurobi status code: {master.model.Status}")
             lower = None
         modelSenseMax = -1
         master.setup(probs, decisionMatrix, objFunctionCoefficients, modelSenseMax)
 
+        start = tm.time()
         master.model.optimize()
+        end = tm.time()
+        upper_time = end-start
         # duals = master.model.getAttr("pi", master.constrs)
-        # print(f"duals: {duals}")
+        # #print(f"duals: {duals}")
         if master.model.Status == gp.GRB.OPTIMAL: # OPTIMAL
                 upper = master.model.objVal
-                print(f"Maximal solution found!\nMAX Query: {upper}")
+                #print(f"Maximal solution found!\nMAX Query: {upper}")
         else:
-            print(f"Maximal solution not found. Gurobi status code: {master.model.Status}")
+            #print(f"Maximal solution not found. Gurobi status code: {master.model.Status}")
             upper = None
 
-        print(
-            f"Causal query: P({target}={target_value}|do({intervention}={intervention_value}))"
-        )
-        print(f"Bounds: {lower} <= P <= {upper}")
+        #print(
+        #     f"Causal query: P({target}={target_value}|do({intervention}={intervention_value}))"
+        # )
+        #print(f"Bounds: {lower} <= P <= {upper}")
+        return lower, upper, lower_time, upper_time

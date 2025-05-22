@@ -85,7 +85,7 @@ class ProbabilitiesHelper:
 
         compatibleCasesCount = dataFrame[conditions].shape[0]
         if v:
-            print(f"Count compatible cases: {compatibleCasesCount}")
-            print(f"Total cases: {dataFrame.shape[0]}")
+            #print(f"Count compatible cases: {compatibleCasesCount}")
+            #print(f"Total cases: {dataFrame.shape[0]}")
 
         return compatibleCasesCount / dataFrame.shape[0]

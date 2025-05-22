@@ -73,9 +73,9 @@ class ObjFunctionGenerator:
         operatedDigraph.remove_edges_from(outgoing_edgesX)
         
         while len(current_targets) > 0:            
-            print("---- Current targets array:")
-            for tg in current_targets:
-                print(f"- {self.graph.indexToLabel[tg]}")
+            #print("---- Current targets array:")
+            # for tg in current_targets:
+                #print(f"- {self.graph.indexToLabel[tg]}")
             
             j = len(self.graph.topologicalOrder) - 1
             while (j >= 0):                
@@ -86,24 +86,24 @@ class ObjFunctionGenerator:
 
             current_targets.remove(current_target)
             debugOrder.append(current_target)
-            print(f"Current target: {self.graph.indexToLabel[current_target]}")
+            #print(f"Current target: {self.graph.indexToLabel[current_target]}")
 
             if not self.graph.is_descendant(
                 ancestor=self.intervention, descendant=current_target
             ):
-                print(f"------- Case 1: Not a descendant")
+                #print(f"------- Case 1: Not a descendant")
                 empiricalProbabilitiesVariables.append(current_target)
             elif (
                 self.graph.graphNodes[current_target].latentParent == interventionLatent
             ):
-                print(f"------- Case 2: Mechanisms")
+                #print(f"------- Case 2: Mechanisms")
                 mechanismVariables.append(current_target)
                 for parent in self.graph.graphNodes[current_target].parents:
                     # if (parent not in current_targets) and parent != intervention:
                     if (parent not in current_targets):
                         current_targets.append(parent)
             else:
-                print(f"------- Case 3: Find d-separator set")
+                #print(f"------- Case 3: Find d-separator set")
                 ancestors = self.graph.find_ancestors(node=current_target)
 
                 alwaysConditionedNodes: list[int] = current_targets.copy()
@@ -125,16 +125,16 @@ class ObjFunctionGenerator:
 
                 
 
-                print("Always Conditioned ancestors:")
-                for condNode in alwaysConditionedNodes:
-                    print(f"{self.graph.indexToLabel[condNode]} ", end="")
-                print("")
+                #print("Always Conditioned ancestors:")
+                # for condNode in alwaysConditionedNodes:
+                    #print(f"{self.graph.indexToLabel[condNode]} ", end="")
+                #print("")
 
 
-                print("Conditionable ancestors:")
-                for condNode in conditionableAncestors:
-                    print(f"{self.graph.indexToLabel[condNode] } ", end="")
-                print("")
+                #print("Conditionable ancestors:")
+                # for condNode in conditionableAncestors:
+                    #print(f"{self.graph.indexToLabel[condNode] } ", end="")
+                #print("")
                     
                 
                 failureFlag = True
@@ -152,15 +152,15 @@ class ObjFunctionGenerator:
 
                     if condition1 and condition2:
                         separator: list[int] = []
-                        print(f"The following set works:")
+                        #print(f"The following set works:")
                         for element in conditionedNodes:
-                            print(f"{self.graph.indexToLabel[element]} ", end="")
+                            #print(f"{self.graph.indexToLabel[element]} ", end="")
                             separator.append(element)               
-                        print("\n")         
+                        #print("\n")         
                         
                         failureFlag = False; break
 
-                if failureFlag: print("Failure: Could not find a separator set")
+                # if failureFlag: #print("Failure: Could not find a separator set")
                 
                 current_targets = list(
                     (set(current_targets) | set(separator))                    
@@ -173,7 +173,7 @@ class ObjFunctionGenerator:
         self.mechanismVariables = mechanismVariables
         self.conditionalProbabilities = conditionalProbabilities
         self.debugOrder = debugOrder
-        print("Found linear good set")
+        #print("Found linear good set")
 
     def get_mechanisms_pruned(self) -> list[list[int]]:
         """
@@ -205,7 +205,7 @@ class ObjFunctionGenerator:
             Only the intervention has a fixed value.
         """
         
-        print(f"Debug variables: {self.debugOrder}")
+        #print(f"Debug variables: {self.debugOrder}")
         if self.intervention in self.debugOrder:
             self.debugOrder.remove(self.intervention)
 
@@ -231,21 +231,21 @@ class ObjFunctionGenerator:
         TODO: the case in which the summandNodes is empty (e.g Balke Pearl) has a very ugly fix
         """
         objFunctionCoefficients: list[float] = []
-        print("Debug input cases:")
-        print(f"Size of #inputs: {len(inputCases)}")
-        print(f"first component:")
-        print(inputCases[0])
+        #print("Debug input cases:")
+        #print(f"Size of #inputs: {len(inputCases)}")
+        #print(f"first component:")
+        #print(inputCases[0])
 
-        print("Debug summand nodes")
-        for node in summandNodes:
-            print(f"index={node}, label={self.graph.indexToLabel[node]}")
+        #print("Debug summand nodes")
+        # for node in summandNodes:
+            #print(f"index={node}, label={self.graph.indexToLabel[node]}")
 
-        print("--- DEBUG OBJ FUNCTION GENERATION ---")
+        #print("--- DEBUG OBJ FUNCTION GENERATION ---")
         for mechanism in mechanisms:
-            # print("-- START MECHANISM --")
+            # #print("-- START MECHANISM --")
             mechanismCoefficient: int = 0
             for inputCase in inputCases:
-                # print("---- START INPUT CASE ----")
+                # #print("---- START INPUT CASE ----")
                 variablesValues: dict[int, int] = {
                     self.intervention: self.intervention_value,
                     self.target: self.target_value,
@@ -254,17 +254,17 @@ class ObjFunctionGenerator:
 
                 for index, variableValue in enumerate(inputCase):
                     variablesValues[summandNodes[index]] = variableValue
-                    # print(f"{self.graph.indexToLabel[summandNodes[index]]} = {variableValue}", end="")
+                    # #print(f"{self.graph.indexToLabel[summandNodes[index]]} = {variableValue}", end="")
                      
 
                 for variable in summandNodes:
-                    # print(
+                    # #print(
                     #     f"\nCurrent variable: {self.graph.indexToLabel[variable]} (index={variable})"
                     # )
                     if (
                         variable in self.empiricalProbabilitiesVariables
                     ):  # Case 1: coff *= P(V=value)
-                        # print("Case 1")
+                        # #print("Case 1")
                         variableProbability = ProbabilitiesHelper.find_probability(
                             dataFrame=self.dataFrame,
                             indexToLabel=self.graph.indexToLabel,
@@ -275,21 +275,21 @@ class ObjFunctionGenerator:
                     elif (
                         variable in self.mechanismVariables
                     ):  # Case 2: terminate with coeff 0 if the decision function is 0. Do nothing otherwise
-                        # print("Case 2")
+                        # #print("Case 2")
                         mechanismKey: str = ""
                         for nodeIndex, node in enumerate(self.graph.graphNodes):
                             if not node.isLatent and (variable in node.children):
                                 mechanismKey += (
                                     f"{nodeIndex}={variablesValues[nodeIndex]},"
                                 )
-                        # print(f"key: {mechanismKey[:-1]}")
+                        # #print(f"key: {mechanismKey[:-1]}")
                         expectedValue = mechanism[mechanismKey[:-1]]
 
                         if expectedValue != variablesValues[variable]:
                             partialCoefficient = 0
-                            # print("End process")
+                            # #print("End process")
                     else:  # Case 3: coeff *= P(V|some endo parents)
-                        # print("Case 3")
+                        # #print("Case 3")
                         conditionRealization: dict[int, int] = {}
                         for conditionalVariable in self.conditionalProbabilities[
                             variable
@@ -309,39 +309,39 @@ class ObjFunctionGenerator:
                         )
                         partialCoefficient *= conditionalProbability
 
-                    # print(f"current partial coefficient: {partialCoefficient}")
+                    # #print(f"current partial coefficient: {partialCoefficient}")
                     if partialCoefficient == 0:
                         break
 
                 mechanismCoefficient += partialCoefficient
-                # print(f"current coef = {mechanismCoefficient}")
+                # #print(f"current coef = {mechanismCoefficient}")
 
             objFunctionCoefficients.append(mechanismCoefficient)
 
 
-        print(f"\n\n-------- Debug restrictions --------")        
-        for node in self.debugOrder:
-            if node in self.empiricalProbabilitiesVariables:
-                print(f"P({self.graph.indexToLabel[node]})", end="")
-            elif node in self.mechanismVariables:
-                parents: str = ""
-                for parent in self.graph.graphNodes[node].parents:
-                    parents += f"{self.graph.indexToLabel[parent]}, "
-                print(f"P({self.graph.indexToLabel[node]}|{parents[:-2]})", end="")
-            else:
-                wset: str = ""
-                for condVar in self.conditionalProbabilities[node]:
-                    if condVar != self.intervention:
-                        wset += f"{self.graph.indexToLabel[condVar]}, "
-                print(
-                    f"P({self.graph.indexToLabel[node]}|{self.graph.indexToLabel[self.intervention]}, {wset[:-2]})",
-                    end="",
-                )
+        #print(f"\n\n-------- Debug restrictions --------")        
+        # for node in self.debugOrder:
+        #     if node in self.empiricalProbabilitiesVariables:
+        #         #print(f"P({self.graph.indexToLabel[node]})", end="")
+        #     elif node in self.mechanismVariables:
+        #         parents: str = ""
+        #         for parent in self.graph.graphNodes[node].parents:
+        #             parents += f"{self.graph.indexToLabel[parent]}, "
+        #         #print(f"P({self.graph.indexToLabel[node]}|{parents[:-2]})", end="")
+        #     else:
+        #         wset: str = ""
+        #         for condVar in self.conditionalProbabilities[node]:
+        #             if condVar != self.intervention:
+        #                 wset += f"{self.graph.indexToLabel[condVar]}, "
+        #         #print(
+        #             f"P({self.graph.indexToLabel[node]}|{self.graph.indexToLabel[self.intervention]}, {wset[:-2]})",
+        #             end="",
+        #         )
 
-            if node != self.debugOrder[-1]:
-                print(" * ", end="")
+        #     if node != self.debugOrder[-1]:
+        #         #print(" * ", end="")
 
-        print("\n")
+        # #print("\n")
         
         return objFunctionCoefficients
 
@@ -364,32 +364,32 @@ class ObjFunctionGenerator:
             dataFrame=df,
         )
         objFG.find_linear_good_set()
-        print(f"\n\n-------- Debug restrictions --------")
-        for node in objFG.debugOrder:
-            if node in objFG.empiricalProbabilitiesVariables:
-                print(f"P({objFG.graph.indexToLabel[node]})", end="")
-            elif node in objFG.mechanismVariables:
-                parents: str = ""
-                for parent in objFG.graph.graphNodes[node].parents:
-                    parents += f"{objFG.graph.indexToLabel[parent]}, "
-                print(f"P({objFG.graph.indexToLabel[node]}|{parents[:-2]})", end="")
-            else:
-                wset: str = ""
-                for condVar in objFG.conditionalProbabilities[node]:
-                    if condVar != objFG.intervention:
-                        wset += f"{objFG.graph.indexToLabel[condVar]}, "
-                print(
-                    f"P({objFG.graph.indexToLabel[node]}|{objFG.graph.indexToLabel[objFG.intervention]}, {wset[:-2]})",
-                    end="",
-                )
+        #print(f"\n\n-------- Debug restrictions --------")
+        # for node in objFG.debugOrder:
+        #     if node in objFG.empiricalProbabilitiesVariables:
+        #         #print(f"P({objFG.graph.indexToLabel[node]})", end="")
+        #     elif node in objFG.mechanismVariables:
+        #         parents: str = ""
+        #         for parent in objFG.graph.graphNodes[node].parents:
+        #             parents += f"{objFG.graph.indexToLabel[parent]}, "
+        #         #print(f"P({objFG.graph.indexToLabel[node]}|{parents[:-2]})", end="")
+        #     else:
+        #         wset: str = ""
+        #         for condVar in objFG.conditionalProbabilities[node]:
+        #             if condVar != objFG.intervention:
+        #                 wset += f"{objFG.graph.indexToLabel[condVar]}, "
+        #         #print(
+        #             f"P({objFG.graph.indexToLabel[node]}|{objFG.graph.indexToLabel[objFG.intervention]}, {wset[:-2]})",
+        #             end="",
+        #         )
 
-            if node != objFG.debugOrder[-1]:
-                print(" * ", end="")
+        #     if node != objFG.debugOrder[-1]:
+                #print(" * ", end="")
 
-        print("\n")
+        #print("\n")
 
         mechanisms = objFG.get_mechanisms_pruned()
         objCoefficients = objFG.build_objective_function(mechanisms)
-        print("--- DEBUG OBJ FUNCTION ---")
-        for i, coeff in enumerate(objCoefficients):
-            print(f"c_{i} = {coeff}")
+        #print("--- DEBUG OBJ FUNCTION ---")
+        # for i, coeff in enumerate(objCoefficients):
+            #print(f"c_{i} = {coeff}")

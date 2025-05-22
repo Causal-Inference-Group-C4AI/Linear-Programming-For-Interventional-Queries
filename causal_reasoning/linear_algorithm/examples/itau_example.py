@@ -39,21 +39,21 @@ def opt_problem(objFunction: list[float],
     if lowerBoundSol.success:
         lowerBound = trim_decimal(3, lowerBoundSol.fun)
         if v:
-            print(f"Optimal distribution = {lowerBoundSol.x}")
-            print(f"Obj. function = {lowerBound}")
+            #print(f"Optimal distribution = {lowerBoundSol.x}")
+            #print(f"Obj. function = {lowerBound}")
     else:
-        print("Solution not found:", lowerBoundSol.message)
+        #print("Solution not found:", lowerBoundSol.message)
 
     # Find maximum (uses the negated objective function and changes the sign
     # of the result)
     if upperBoundSol.success:
         upperBound = trim_decimal(3, -upperBoundSol.fun)
         if v:
-            print(f"Optimal distribution = {upperBoundSol.x}")
-            print(f"Obj. function = {upperBound}")
+            #print(f"Optimal distribution = {upperBoundSol.x}")
+            #print(f"Obj. function = {upperBound}")
     else:
-        print("Solution not found:", upperBoundSol.message)
-    print(f"[{lowerBound}, {upperBound}]")
+        #print("Solution not found:", upperBoundSol.message)
+    #print(f"[{lowerBound}, {upperBound}]")
     return lowerBound, upperBound
 
 
@@ -118,7 +118,7 @@ def main(dag: Graph):
                         aux.append(0)
                 a.append(aux)
     for i in range(len(a)):
-        print(f"{a[i]} = {b[i]}")
+        #print(f"{a[i]} = {b[i]}")
     opt_problem(objFunction=c, Aeq=a, Beq=b, interval=bounds, v=True)
 
 
@@ -127,4 +127,4 @@ if __name__ == "__main__":
     start = tm.time()
     main(dag=dag)
     end = tm.time()
-    print(f"Time taken {end - start}")
+    #print(f"Time taken {end - start}")

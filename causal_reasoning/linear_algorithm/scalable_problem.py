@@ -38,7 +38,7 @@ class MasterProblem:
     
     def update(self, newColumn: list[float], index: int, objCoeff: list[float], minimun: bool):        
         new_col = gp.Column(coeffs=newColumn, constrs=self.constrs.values()) # Includes the new variable in the constraints
-        if (DBG): print(f"Obj coeff: {objCoeff}")        
+        if (DBG): #print(f"Obj coeff: {objCoeff}")        
         if minimun:
             self.vars[index] = self.model.addVar(obj=objCoeff, column=new_col, # Adds the new variable
                                                     name=f"Variable[{index}]")
@@ -281,14 +281,14 @@ class ScalarProblem:
         while True:
             self.master.model.optimize()
             self.duals = self.master.model.getAttr("pi", self.master.constrs)
-            if (DBG): print(f"Master Duals: {self.duals}")
+            if (DBG): #print(f"Master Duals: {self.duals}")
             # self.master.model.write(f"master_{counter}.lp")
             self.subproblem.update(self.duals)
             self.subproblem.model.optimize()
             # self.subproblem.model.write(f"subproblem_{counter}.lp")
 
             reduced_cost = self.subproblem.model.objVal
-            if (DBG): print(f"Reduced Cost: {reduced_cost}")
+            if (DBG): #print(f"Reduced Cost: {reduced_cost}")
             if reduced_cost >= 0:
                 break
             
@@ -297,7 +297,7 @@ class ScalarProblem:
                 newColumn.append(self.subproblem.bitsParametric[index].X)
 
             newColumn.append(1) # For the equation sum(pi) = 1. This restriction is used in the MASTER problem.
-            if (DBG): print(f"New Column: {newColumn}")
+            if (DBG): #print(f"New Column: {newColumn}")
             
             objCoeff: float = 0.0
             for betaIndex in range(self.amountBetaVarsPerX):
@@ -309,7 +309,7 @@ class ScalarProblem:
             self.master.update(newColumn=newColumn, index=len(self.columns_base), objCoeff=objCoeff, minimun= self.minimum)
             self.columns_base.append(newColumn)
             counter += 1
-            # print(f"Iteration Number = {counter}")
+            # #print(f"Iteration Number = {counter}")
 
         return counter
     
@@ -377,8 +377,8 @@ def single_exec():
     scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = False)
     upper , itUpper = scalarProblem.solve()
     upper = -upper
-    print(f"{lower} =< P(Y = {targetValue}|X = {interventionValue}) <= {upper}")
-    print(f"{itLower} iteracoes para lower e {itUpper} para upper")
+    #print(f"{lower} =< P(Y = {targetValue}|X = {interventionValue}) <= {upper}")
+    #print(f"{itLower} iteracoes para lower e {itUpper} para upper")
 
 
 def main():    
@@ -393,8 +393,8 @@ def main():
     # scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = False)
     # upper , itUpper = scalarProblem.solve()
     # upper = -upper
-    # print(f"{lower} =< P(Y = {targetValue}|X = {interventionValue}) <= {upper}")
-    # print(f"{itLower} iteracoes para lower e {itUpper} para upper")
+    # #print(f"{lower} =< P(Y = {targetValue}|X = {interventionValue}) <= {upper}")
+    # #print(f"{itLower} iteracoes para lower e {itUpper} para upper")
 
     # return
     df = pd.DataFrame(columns=['N','M','LOWER_BOUND','LOWER_BOUND_SECONDS_TAKEN','LOWER_BOUND_REQUIRED_ITERATIONS','UPPER_BOUND','UPPER_BOUND_SECONDS_TAKEN','UPPER_BOUND_REQUIRED_ITERATIONS','BOUNDS_SIZE', 'TRUE_PROBABILITY_VALUE'])

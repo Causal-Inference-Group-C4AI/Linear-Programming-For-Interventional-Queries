@@ -137,11 +137,11 @@ def main():
     mycsp = CuttingStock(100, orders)
     mycsp.solve()
     for p in mycsp.patterns:
-        print(p)
-    print("----")
-    print(mycsp.solution)
-    print("----")
-    print(mycsp.min_rolls)
+        #print(p)
+    #print("----")
+    #print(mycsp.solution)
+    #print("----")
+    #print(mycsp.min_rolls)
 if __name__ == "__main__":
     main()
 

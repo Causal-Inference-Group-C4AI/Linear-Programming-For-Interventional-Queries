@@ -98,7 +98,7 @@ class CausalModel:
     ):
         # TODO: Set interventions and target to CausalModel object
         if gurobi:
-            OptProblemBuilder.gurobi_builder_problem(
+            return OptProblemBuilder.gurobi_builder_problem(
                 self.graph,
                 self.data,
                 self.interventions,

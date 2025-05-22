@@ -33,8 +33,8 @@ class MasterProblem:
             
     def update(self, newColumn, index, objCoeff):        
         new_col = gp.Column(coeffs=newColumn, constrs=self.constrs.values()) # Includes the new variable in the constraints.
-        print(f"Obj coeff: {objCoeff}")
-        # print(f"new_col: {new_col}")
+        #print(f"Obj coeff: {objCoeff}")
+        # #print(f"new_col: {new_col}")
         self.vars[index] = self.model.addVar(obj=objCoeff, column=new_col, # Adds the new variable
                                              name=f"Variable[{index}]")
         self.model.update()
@@ -129,13 +129,13 @@ class GeneralProblem:
         while True:
             self.master.model.optimize()
             self.duals = self.master.model.getAttr("pi", self.master.constrs)
-            print(f"Master Duals: {self.duals}")
+            #print(f"Master Duals: {self.duals}")
             # self.master.model.write(f"master_{i}.lp")
             self.subproblem.update(self.duals)
             self.subproblem.model.optimize()
             # self.subproblem.model.write(f"subproblem_{i}.lp")
             reduced_cost = self.subproblem.model.objVal
-            print(f"Reduced Cost: {reduced_cost}")
+            #print(f"Reduced Cost: {reduced_cost}")
             if reduced_cost >= 0:
                 break
             # Calculate the column
@@ -151,7 +151,7 @@ class GeneralProblem:
                         currentValue = 0; break
                 newColumn.append(currentValue)
             newColumn.append(1) # For the equation sum(pi) = 1
-            print(f"New Column: {newColumn}")
+            #print(f"New Column: {newColumn}")
             # Calculate obj. function:
 
             latentRealization = [b.X for b in self.subproblemBitsCosts]
@@ -223,7 +223,7 @@ class GeneralProblem:
         self.master.model.setAttr("vType", self.master.vars, GRB.CONTINUOUS) # useless?
         self.master.model.optimize()
 
-        print(f"Result of the inference: {self.master.model.ObjVal}")
+        #print(f"Result of the inference: {self.master.model.ObjVal}")
         # for pattern, var in self.master.vars.items():
         #     if var.x > 0.5:
         #         self.solution[pattern] = round(var.x)
@@ -237,7 +237,7 @@ def main():
         part1 = ph.find_conditional_probability2(dataFrame=df, targetRealization=targetRealization, conditionRealization=conditionRealization)        
         part2 = ph.find_probability2(dataFrame=df, realizationDict={"X": realizationCase[1]})
         empiricalProbabilities.append(part1 * part2)
-        print(f"EmpiricialProb[{realizationCase[0]}{realizationCase[1]}{realizationCase[2]} = {empiricalProbabilities[-1]}")
+        #print(f"EmpiricialProb[{realizationCase[0]}{realizationCase[1]}{realizationCase[2]} = {empiricalProbabilities[-1]}")
     empiricalProbabilities.append(1)
 
     # TODO: parametric_columns    

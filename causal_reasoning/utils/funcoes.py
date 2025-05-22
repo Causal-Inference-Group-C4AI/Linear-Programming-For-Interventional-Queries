@@ -174,7 +174,7 @@ def get_joaos_input(
         f = open(file_path, "w")
         f.write(joaos_str)
     else:
-        print(joaos_str)
+        #print(joaos_str)
 
 
 def tuple_generate_example(edges, custom_cardinalities: dict = None):

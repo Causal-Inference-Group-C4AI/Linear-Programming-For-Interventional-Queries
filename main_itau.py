@@ -11,7 +11,7 @@ def main():
     # balke_csv_path = Examples.CSV_BALKE_PEARL_EXAMPLE.value
     # balke_df = pd.read_csv(balke_csv_path)
 
-    # print("------")
+    # #print("------")
     # balke_model = CausalModel(
     #     data=balke_df,
     #     edges=balke_input,
@@ -35,7 +35,7 @@ def main():
     itau_csv_path = Examples.CSV_ITAU_EXAMPLE.value
     itau_df = pd.read_csv(itau_csv_path)
 
-    print("------")
+    #print("------")
     itau_model = CausalModel(
         data=itau_df,
         edges=itau_input,
