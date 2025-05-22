@@ -5,19 +5,20 @@ from causal_reasoning.utils.get_scalable_df import getScalableDataFrame
 import time as tm
 
 def main():
-    df = pd.DataFrame(columns=['N','M','LOWER_BOUND','LOWER_BOUND_SECONDS_TAKEN','LOWER_BOUND_REQUIRED_ITERATIONS','UPPER_BOUND','UPPER_BOUND_SECONDS_TAKEN','UPPER_BOUND_REQUIRED_ITERATIONS','BOUNDS_SIZE', 'TRUE_PROBABILITY_VALUE'])
-    df.to_csv("./outputs/results.csv", index=False)
-    N_M = [(1,1),
-            (2,1),
-            (3,1),
-            (4,1),
-            (5,1),
-            (1,2),
-            (2,2),
+    # df = pd.DataFrame(columns=['N','M','LOWER_BOUND','LOWER_BOUND_SECONDS_TAKEN','LOWER_BOUND_REQUIRED_ITERATIONS','UPPER_BOUND','UPPER_BOUND_SECONDS_TAKEN','UPPER_BOUND_REQUIRED_ITERATIONS','BOUNDS_SIZE', 'TRUE_PROBABILITY_VALUE'])
+    # df.to_csv("./outputs/results.csv", index=False)
+    N_M = [
+            # (1,1),
+            # (2,1),
+            # (3,1),
+            # (4,1),
+            # (5,1),
+            # (1,2),
+            # (2,2),
             (3,2),
-            (4,2),
-            (1,3),
-            (2,3),
+            # (4,2),
+            # (1,3),
+            # (2,3),
             (3,3)]
     for values in N_M:
         N, M = values
