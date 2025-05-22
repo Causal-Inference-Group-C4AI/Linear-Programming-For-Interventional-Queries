@@ -66,6 +66,7 @@ def main():
                 df.to_csv("results.csv", index=False)
             except Exception:
                 pass
+    print("Done")
 
 if __name__=="__main__":
     main()
