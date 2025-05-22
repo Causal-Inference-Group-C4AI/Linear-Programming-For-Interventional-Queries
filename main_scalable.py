@@ -25,7 +25,7 @@ def genGraph(N, M):
 def main():
     N = 1; M = 1
     df = pd.DataFrame(columns=['N','M','LOWER_BOUND','LOWER_BOUND_SECONDS_TAKEN','UPPER_BOUND','UPPER_BOUND_SECONDS_TAKEN','BOUNDS_SIZE'])
-    df.to_csv("algorithm_results.csv", index=False)
+    df.to_csv("./outputs/algorithm_results.csv", index=False)
 
     scalable_unobs = ["U1", "U2", "U3"]
     scalable_target = "Y"; target_value = 1
@@ -61,12 +61,12 @@ def main():
             )
 
             lower, upper, lower_time, upper_time = scalable_model.inference_query(gurobi=True)
-            df = pd.read_csv("algorithm_results.csv")
+            df = pd.read_csv("./outputs/algorithm_results.csv")
             bounds_size = upper - lower
             new_row = {'N': N,'M': M,'LOWER_BOUND': lower,'LOWER_BOUND_SECONDS_TAKEN': lower_time,'UPPER_BOUND': upper,'UPPER_BOUND_SECONDS_TAKEN': upper_time,'BOUNDS_SIZE': bounds_size}
             new_row_df = pd.DataFrame([new_row])
             df = pd.concat([df, new_row_df], ignore_index=True)
-            df.to_csv("algorithm_results.csv", index=False)
+            df.to_csv("./outputs/algorithm_results.csv", index=False)
         except Exception:
             pass
     
