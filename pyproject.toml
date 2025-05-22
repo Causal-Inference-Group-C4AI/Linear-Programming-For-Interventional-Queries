@@ -19,5 +19,5 @@ pytest = "^8.3.5"
 black = "^25.1.0"
 
 [build-system]
-requires = ["poetry-core"]
+requires = ["poetry-core>=2.1.1"]
 build-backend = "poetry.core.masonry.api"

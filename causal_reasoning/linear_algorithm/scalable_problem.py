@@ -366,10 +366,23 @@ def checkQuerry(N,M,y0,x0):
     return prob
 
 
+def single_exec():
+    N = 1; M = 5
+    scalable_df = getScalableDataFrame(M=M, N=N)
+    interventionValue = 1; targetValue = 1    
+        
+    scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = True)
+    lower , itLower = scalarProblem.solve()
+    
+    scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = False)
+    upper , itUpper = scalarProblem.solve()
+    upper = -upper
+    print(f"{lower} =< P(Y = {targetValue}|X = {interventionValue}) <= {upper}")
+    print(f"{itLower} iteracoes para lower e {itUpper} para upper")
 
 
 def main():    
-
+    return single_exec()
     # N = 1; M = 5
     # scalable_df = getScalableDataFrame(M=M, N=N)
     # interventionValue = 1; targetValue = 1    
