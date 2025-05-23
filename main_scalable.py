@@ -1,4 +1,5 @@
 import pandas as pd
+import time as tm
 from causal_reasoning.utils._enum import Examples
 from causal_reasoning.causal_model import CausalModel
 from causal_reasoning.utils.get_scalable_df import getScalableDataFrame
@@ -50,6 +51,8 @@ def main():
         scalable_input = genGraph(N, M)    
         scalable_df = getScalableDataFrame(M=M, N=N)
         try:
+            start = tm.time()
+        
             scalable_model = CausalModel(
                 data=scalable_df,
                 edges=scalable_input,
@@ -60,14 +63,20 @@ def main():
                 target_value=target_value,
             )
 
-            lower, upper, lower_time, upper_time = scalable_model.inference_query(gurobi=True)
+            lower, upper = scalable_model.inference_query(gurobi=True)
+            end = tm.time()
             df = pd.read_csv("./outputs/algorithm_results.csv")
             bounds_size = upper - lower
-            new_row = {'N': N,'M': M,'LOWER_BOUND': lower,'LOWER_BOUND_SECONDS_TAKEN': lower_time,'UPPER_BOUND': upper,'UPPER_BOUND_SECONDS_TAKEN': upper_time,'BOUNDS_SIZE': bounds_size}
+            new_row = {'N': N,'M': M,'LOWER_BOUND': lower,'UPPER_BOUND': upper,'BOUNDS_SECONDS_TAKEN': end-start,'BOUNDS_SIZE': bounds_size}
             new_row_df = pd.DataFrame([new_row])
             df = pd.concat([df, new_row_df], ignore_index=True)
             df.to_csv("./outputs/algorithm_results.csv", index=False)
         except Exception:
+            df = pd.read_csv("./outputs/algorithm_results.csv")
+            new_row = {'N': N,'M': M,'LOWER_BOUND': None,'UPPER_BOUND': None,'BOUNDS_SECONDS_TAKEN': None,'BOUNDS_SIZE': None}
+            new_row_df = pd.DataFrame([new_row])
+            df = pd.concat([df, new_row_df], ignore_index=True)
+            df.to_csv("./outputs/algorithm_results.csv", index=False)
             pass
     
     print("Done")

@@ -1,7 +1,6 @@
 from scipy.optimize import linprog
 import gurobipy as gp
 import pandas as pd
-import time as tm
 
 from causal_reasoning.graph.graph import Graph
 from causal_reasoning.linear_algorithm.linear_constraints import generate_constraints
@@ -171,10 +170,8 @@ class OptProblemBuilder:
         master = MasterProblem()
         modelSenseMin = 1
         master.setup(probs, decisionMatrix, objFunctionCoefficients, modelSenseMin)
-        start = tm.time()
         master.model.optimize()
-        end = tm.time()
-        lower_time = end-start
+
         # duals = master.model.getAttr("pi", master.constrs)
         # #print(f"duals: {duals}")
         if master.model.Status == gp.GRB.OPTIMAL: # OPTIMAL
@@ -185,11 +182,8 @@ class OptProblemBuilder:
             lower = None
         modelSenseMax = -1
         master.setup(probs, decisionMatrix, objFunctionCoefficients, modelSenseMax)
-
-        start = tm.time()
         master.model.optimize()
-        end = tm.time()
-        upper_time = end-start
+
         # duals = master.model.getAttr("pi", master.constrs)
         # #print(f"duals: {duals}")
         if master.model.Status == gp.GRB.OPTIMAL: # OPTIMAL
@@ -203,4 +197,4 @@ class OptProblemBuilder:
         #     f"Causal query: P({target}={target_value}|do({intervention}={intervention_value}))"
         # )
         #print(f"Bounds: {lower} <= P <= {upper}")
-        return lower, upper, lower_time, upper_time
+        return lower, upper
