@@ -29,7 +29,7 @@ class MasterProblem:
         self.model.setObjective(gp.quicksum(objFunctionCoefficients[i] * self.vars[i] for i in range(len(objFunctionCoefficients))))
         
         # Turning off output because of the iterative procedure
-        self.model.params.outputFlag = 0
+        # self.model.params.outputFlag = 0
         self.model.update()
         
     # def update(self, pattern, index):
