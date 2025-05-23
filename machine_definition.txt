@@ -1,0 +1,2 @@
+Gurobi Optimizer version 12.0.2 build v12.0.2rc0 (linux64 - "Debian GNU/Linux 11 (bullseye)")
+CPU model: AMD Ryzen Threadripper PRO 7975WX 32-Cores, instruction set [SSE2|AVX|AVX2|AVX512]
