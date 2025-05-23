@@ -25,7 +25,7 @@ def genGraph(N, M):
 
 def main():
     N = 1; M = 1
-    df = pd.DataFrame(columns=['N','M','LOWER_BOUND','LOWER_BOUND_SECONDS_TAKEN','UPPER_BOUND','UPPER_BOUND_SECONDS_TAKEN','BOUNDS_SIZE'])
+    df = pd.DataFrame(columns=['N','M','LOWER_BOUND','UPPER_BOUND','BOUNDS_SECONDS_TAKEN','BOUNDS_SIZE'])
     df.to_csv("./outputs/algorithm_results.csv", index=False)
 
     scalable_unobs = ["U1", "U2", "U3"]
