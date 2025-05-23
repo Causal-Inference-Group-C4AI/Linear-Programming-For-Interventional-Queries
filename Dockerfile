@@ -29,3 +29,4 @@ RUN poetry install --no-interaction --no-ansi
 
 COPY . /code
 
+docker run -d -v /home/danlawand/Linear-Programming-For-Interventional-Queries/.gurobi/gurobi.lic:/opt/gurobi/gurobi.lic:ro -v /home/danlawand/Linear-Programming-For-Interventional-Queries/resultados:/code/outputs causal-reasoning python3 main_scalable.py
