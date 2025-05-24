@@ -73,7 +73,9 @@ def main():
             new_row_df = pd.DataFrame([new_row])
             df = pd.concat([df, new_row_df], ignore_index=True)
             df.to_csv("./outputs/algorithm_results.csv", index=False)
-        except Exception:
+        except Exception as e:
+            with open("./outputs/algo_error_log.txt", 'a') as file:
+                file.write(f"Error: {e}")
             df = pd.read_csv("./outputs/algorithm_results.csv")
             new_row = {'N': N,'M': M,'ALGO_LOWER_BOUND': None,'ALGO_UPPER_BOUND': None,'ALGO_TOTAL_SECONDS_TAKEN': None}
             new_row_df = pd.DataFrame([new_row])

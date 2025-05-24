@@ -43,7 +43,9 @@ def main():
             new_row_df = pd.DataFrame([new_row])
             df = pd.concat([df, new_row_df], ignore_index=True)
             df.to_csv("./outputs/gc_results.csv", index=False)
-        except Exception:
+        except Exception as e:
+            with open("./outputs/gc_error_log.txt", 'a') as file:
+                file.write(f"Error: {e}")
             df = pd.read_csv("./outputs/gc_results.csv")
             new_row = {'N': N,'M': M,'LOWER_BOUND': None,'LOWER_BOUND_REQUIRED_ITERATIONS': None,'UPPER_BOUND': None,'UPPER_BOUND_REQUIRED_ITERATIONS': None, 'TOTAL_SECONDS_TAKEN':None}
             new_row_df = pd.DataFrame([new_row])
