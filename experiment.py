@@ -43,7 +43,6 @@ def true_value(N,M,y0,x0,df):
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    logging.getLogger('gurobipy').setLevel(logging.CRITICAL)
 
     # df = pd.DataFrame(columns=['N','M','GC_LOWER_BOUND', 'GC_UPPER_BOUND', 'GC_LOWER_BOUND_REQUIRED_ITERATIONS','GC_UPPER_BOUND_REQUIRED_ITERATIONS', 'GC_SECONDS_TAKEN', 'LP_LOWER_BOUND', 'LP_UPPER_BOUND', 'LP_SECONDS_TAKEN', 'TRUE_VALUE'])
     # df.to_csv("./outputs/experiment_results.csv", index=False)
