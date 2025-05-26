@@ -174,7 +174,7 @@ class ObjFunctionGenerator:
         self.mechanismVariables = mechanismVariables
         self.conditionalProbabilities = conditionalProbabilities
         self.debugOrder = debugOrder
-        logger.debugt("Found linear good set")
+        logger.debug("Found linear good set")
 
     def get_mechanisms_pruned(self) -> list[list[int]]:
         """

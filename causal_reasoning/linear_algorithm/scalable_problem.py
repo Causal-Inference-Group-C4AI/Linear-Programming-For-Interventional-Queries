@@ -312,7 +312,7 @@ class ScalarProblem:
             self.master.update(newColumn=newColumn, index=len(self.columns_base), objCoeff=objCoeff, minimun= self.minimum)
             self.columns_base.append(newColumn)
             counter += 1
-            logger.debug(f"Iteration Number = {counter}")
+            logger.info(f"Iteration Number = {counter}")
 
         return counter
     

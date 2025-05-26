@@ -175,6 +175,7 @@ class OptProblemBuilder:
         master = MasterProblem()
         modelSenseMin = 1
         master.setup(probs, decisionMatrix, objFunctionCoefficients, modelSenseMin)
+        master.model.params.OutputFlag = 0
         master.model.optimize()
 
         duals = master.model.getAttr("pi", master.constrs)

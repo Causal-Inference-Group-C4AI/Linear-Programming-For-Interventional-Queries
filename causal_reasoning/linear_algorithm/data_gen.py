@@ -15,7 +15,8 @@ def fa(ai: int, b: list[int], u: int):
     return (b_and ^ u) ^ ai
 
 
-def generate_data_for_scale_case(n: int, m: int, samples: int = 10000):    
+def generate_data_for_scale_case(n: int, m: int, samples: int = 10000):
+    file_path = f"./causal_reasoning/data/n{n}_m{m}_scaling_case.csv"
     U1 = [random.choice([0, 1]) for _ in range(samples)]
     U2 = [random.choice([0, 1]) for _ in range(samples)]
     X = [fx(u) for u in U1]
@@ -51,7 +52,7 @@ def generate_data_for_scale_case(n: int, m: int, samples: int = 10000):
     columns_values['Y'] = Y
 
     df = pd.DataFrame(columns_values)
-    df.to_csv(f"n{n}_m{m}_scaling_case.csv", index=False)
+    df.to_csv(file_path, index=False)
 
 if __name__ == "__main__":
     n = 6

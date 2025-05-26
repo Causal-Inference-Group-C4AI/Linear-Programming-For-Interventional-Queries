@@ -5,8 +5,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 from itertools import product
-from causal_reasoning.utils.probabilities_helper import ProbabilitiesHelper
 import pandas as pd
+from causal_reasoning.utils.probabilities_helper import ProbabilitiesHelper
 from causal_reasoning.utils.mechanisms_generator import MechanismGenerator
 from causal_reasoning.graph.graph import Graph
 from causal_reasoning.utils._enum import Examples
