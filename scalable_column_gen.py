@@ -1,39 +1,50 @@
 
+import time as tm
+import logging
+
+logger = logging.getLogger(__name__)
+
 import pandas as pd
 from causal_reasoning.linear_algorithm.scalable_problem import ScalarProblem, checkQuerry, single_exec
 from causal_reasoning.utils.get_scalable_df import getScalableDataFrame
-import time as tm
 
 def main():
+    logging.basicConfig(level=logging.INFO)
+
     df = pd.DataFrame(columns=['N','M','LOWER_BOUND','LOWER_BOUND_REQUIRED_ITERATIONS','UPPER_BOUND','UPPER_BOUND_REQUIRED_ITERATIONS', 'TOTAL_SECONDS_TAKEN'])
     df.to_csv("./outputs/gc_results.csv", index=False)
     N_M = [
-            (1,1),
-            (2,1),
-            (3,1),
-            (4,1),
-            (5,1),
-            (6,1),
-            (1,2),
-            (2,2),
+            # (1,1),
+            # (2,1),
+            # (3,1),
+            # (4,1),
+            # (5,1),
+            # (6,1),
+            # (1,2),
+            # (2,2),
             (3,2),
-            (4,2),
-            (1,3),
-            (2,3),
-            (3,3),
-            (4,3),
+            # (4,2),
+            # (1,3),
+            # (2,3),
+            # (3,3),
+            # (4,3),
     ]
     for values in N_M:
         N, M = values
+        logger.info(f"Running for: N:{N}, M:{M}")
         try:
             scalable_df = getScalableDataFrame(M=M, N=N)
             interventionValue = 1; targetValue = 1
             start = tm.time()
+            logger.info("Building MIN Problem")
             scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = True)
             lower , lower_iterations = scalarProblem.solve()
+            logger.info(f"Minimum Optimization N:{N}, M:{M}: Lower: {lower}, Iterations: {lower_iterations}")
 
+            logger.info("Building MAX Problem")
             scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = False)
             upper, upper_iterations = scalarProblem.solve()
+            logger.info(f"Maximum Optimization N:{N}, M:{M}: Upper: {upper}, Iterations: {upper_iterations}")
             end = tm.time()
             upper = -upper
             total_time = end-start
@@ -43,7 +54,9 @@ def main():
             new_row_df = pd.DataFrame([new_row])
             df = pd.concat([df, new_row_df], ignore_index=True)
             df.to_csv("./outputs/gc_results.csv", index=False)
+            logger.info("Wrote in CSV")
         except Exception as e:
+            logger.error(f"Error_N:{N}_M:{M}_: {e}")
             with open("./outputs/gc_error_log.txt", 'a') as file:
                 file.write(f"Error: {e}")
             df = pd.read_csv("./outputs/gc_results.csv")
@@ -51,8 +64,7 @@ def main():
             new_row_df = pd.DataFrame([new_row])
             df = pd.concat([df, new_row_df], ignore_index=True)
             df.to_csv("./outputs/gc_results.csv", index=False)
-            pass
-    print("Done")
+    logger.info("Done")
 
 if __name__=="__main__":
     main()

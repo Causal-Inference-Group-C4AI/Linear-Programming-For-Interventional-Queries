@@ -1,7 +1,9 @@
 import networkx as nx
 from typing import Optional
 from pandas import DataFrame
+import logging
 
+logger = logging.getLogger(__name__)
 from causal_reasoning.utils.funcoes import get_tuple_edges
 from causal_reasoning.graph.graph import Graph
 from causal_reasoning.graph.node import Node
@@ -165,7 +167,7 @@ def get_graph(str_graph: str = None, unobservables: list[str] = None, file = Non
                     break
 
             if latentParent == -1:
-                print(
+                logger.error(
                     f"PARSE ERROR: ALL OBSERVABLE VARIABLES SHOULD HAVE A LATENT PARENT, BUT {node} DOES NOT."
                 )
 

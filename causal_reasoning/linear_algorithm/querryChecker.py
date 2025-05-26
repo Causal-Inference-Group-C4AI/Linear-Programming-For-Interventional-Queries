@@ -1,5 +1,9 @@
 import os
 import time as tm
+import logging
+
+logger = logging.getLogger(__name__)
+
 from itertools import product
 from causal_reasoning.utils.probabilities_helper import ProbabilitiesHelper
 import pandas as pd
@@ -19,7 +23,7 @@ def checkQuerry(N,M,y0,x0):
     return prob
 def main(N,M,y0,x0):
     prob = checkQuerry(N,M,y0,x0)
-    #print(f"Check for N = {N} and M = {M}: P(Y={y0}|do(X={x0})) = {prob}")
+    logger.info(f"Check for N = {N} and M = {M}: P(Y={y0}|do(X={x0})) = {prob}")
 if __name__ == "__main__":
     for m in range(1,6):
         for n in range(1,6):

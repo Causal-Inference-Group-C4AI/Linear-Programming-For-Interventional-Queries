@@ -1,5 +1,7 @@
 from collections import namedtuple
+import logging
 
+logger = logging.getLogger(__name__)
 import pandas as pd
 
 dictAndIndex = namedtuple("dictAndIndex", ["mechanisms", "index"])
@@ -85,7 +87,7 @@ class ProbabilitiesHelper:
 
         compatibleCasesCount = dataFrame[conditions].shape[0]
         # if v:
-        #     print(f"Count compatible cases: {compatibleCasesCount}")
-        #     print(f"Total cases: {dataFrame.shape[0]}")
+        logger.debug(f"Count compatible cases: {compatibleCasesCount}")
+        logger.debug(f"Total cases: {dataFrame.shape[0]}")
 
         return compatibleCasesCount / dataFrame.shape[0]

@@ -81,7 +81,6 @@ def main():
             new_row_df = pd.DataFrame([new_row])
             df = pd.concat([df, new_row_df], ignore_index=True)
             df.to_csv("./outputs/algorithm_results.csv", index=False)
-            pass
     
     print("Done")
 

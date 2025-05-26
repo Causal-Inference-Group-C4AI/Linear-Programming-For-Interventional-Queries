@@ -1,7 +1,10 @@
 import copy
 import gurobipy as gp
 from gurobipy import GRB
-import time as tm
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 import sys
 import os
@@ -38,7 +41,7 @@ class MasterProblem:
     
     def update(self, newColumn: list[float], index: int, objCoeff: list[float], minimun: bool):        
         new_col = gp.Column(coeffs=newColumn, constrs=self.constrs.values()) # Includes the new variable in the constraints
-        # if (DBG): #print(f"Obj coeff: {objCoeff}")        
+        logger.debug(f"Obj coeff: {objCoeff}")        
         if minimun:
             self.vars[index] = self.model.addVar(obj=objCoeff, column=new_col, # Adds the new variable
                                                     name=f"Variable[{index}]")
@@ -281,14 +284,14 @@ class ScalarProblem:
         while True:
             self.master.model.optimize()
             self.duals = self.master.model.getAttr("pi", self.master.constrs)
-            # if (DBG): #print(f"Master Duals: {self.duals}")
+            logger.debug(f"Master Duals: {self.duals}")
             # self.master.model.write(f"master_{counter}.lp")
             self.subproblem.update(self.duals)
             self.subproblem.model.optimize()
             # self.subproblem.model.write(f"subproblem_{counter}.lp")
 
             reduced_cost = self.subproblem.model.objVal
-            # if (DBG): #print(f"Reduced Cost: {reduced_cost}")
+            logger.debug(f"Reduced Cost: {reduced_cost}")
             if reduced_cost >= 0:
                 break
             
@@ -297,7 +300,7 @@ class ScalarProblem:
                 newColumn.append(self.subproblem.bitsParametric[index].X)
 
             newColumn.append(1) # For the equation sum(pi) = 1. This restriction is used in the MASTER problem.
-            # if (DBG): #print(f"New Column: {newColumn}")
+            logger.debug(f"New Column: {newColumn}")
             
             objCoeff: float = 0.0
             for betaIndex in range(self.amountBetaVarsPerX):
@@ -309,7 +312,7 @@ class ScalarProblem:
             self.master.update(newColumn=newColumn, index=len(self.columns_base), objCoeff=objCoeff, minimun= self.minimum)
             self.columns_base.append(newColumn)
             counter += 1
-            # #print(f"Iteration Number = {counter}")
+            logger.debug(f"Iteration Number = {counter}")
 
         return counter
     
@@ -346,7 +349,6 @@ class ScalarProblem:
         solution could be overlooked, as additional columns are not generated at
         the local nodes of the search tree.
         """
-        start = tm.time()
         numberIterations = self._generate_patterns()
         self.master.model.setAttr("vType", self.master.vars, GRB.CONTINUOUS) # useless?
         self.master.model.optimize()
@@ -377,8 +379,8 @@ def single_exec():
     scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = False)
     upper , itUpper = scalarProblem.solve()
     upper = -upper
-    #print(f"{lower} =< P(Y = {targetValue}|X = {interventionValue}) <= {upper}")
-    #print(f"{itLower} iteracoes para lower e {itUpper} para upper")
+    logger.info(f"{lower} =< P(Y = {targetValue}|X = {interventionValue}) <= {upper}")
+    logger.info(f"{itLower} iteracoes para lower e {itUpper} para upper")
 
 
 def main():    
@@ -393,71 +395,71 @@ def main():
     # scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = False)
     # upper , itUpper = scalarProblem.solve()
     # upper = -upper
-    # #print(f"{lower} =< P(Y = {targetValue}|X = {interventionValue}) <= {upper}")
-    # #print(f"{itLower} iteracoes para lower e {itUpper} para upper")
+    # #logger.info(f"{lower} =< P(Y = {targetValue}|X = {interventionValue}) <= {upper}")
+    # #logger.info(f"{itLower} iteracoes para lower e {itUpper} para upper")
 
     # return
-    df = pd.DataFrame(columns=['N','M','LOWER_BOUND','LOWER_BOUND_SECONDS_TAKEN','LOWER_BOUND_REQUIRED_ITERATIONS','UPPER_BOUND','UPPER_BOUND_SECONDS_TAKEN','UPPER_BOUND_REQUIRED_ITERATIONS','BOUNDS_SIZE', 'TRUE_PROBABILITY_VALUE'])
-    df.to_csv("results.csv", index=False)
-    M=1
-    for N in range(1, 11):
-        scalable_df = getScalableDataFrame(M=M, N=N)
-        interventionValue = 1; targetValue = 1
-        try:
-            start = tm.time()
-            scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = True)
-            lower , lower_iterations = scalarProblem.solve()
-            end = tm.time()
-            lower_time = end-start
+    # df = pd.DataFrame(columns=['N','M','LOWER_BOUND','LOWER_BOUND_SECONDS_TAKEN','LOWER_BOUND_REQUIRED_ITERATIONS','UPPER_BOUND','UPPER_BOUND_SECONDS_TAKEN','UPPER_BOUND_REQUIRED_ITERATIONS','BOUNDS_SIZE', 'TRUE_PROBABILITY_VALUE'])
+    # df.to_csv("results.csv", index=False)
+    # M=1
+    # for N in range(1, 11):
+    #     scalable_df = getScalableDataFrame(M=M, N=N)
+    #     interventionValue = 1; targetValue = 1
+    #     try:
+    #         start = tm.time()
+    #         scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = True)
+    #         lower , lower_iterations = scalarProblem.solve()
+    #         end = tm.time()
+    #         lower_time = end-start
 
-            scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = False)
-            start = tm.time()
-            upper, upper_iterations = scalarProblem.solve()
-            end = tm.time()
-            upper = -upper
-            upper_time = end-start
+    #         scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = False)
+    #         start = tm.time()
+    #         upper, upper_iterations = scalarProblem.solve()
+    #         end = tm.time()
+    #         upper = -upper
+    #         upper_time = end-start
             
-            if (isinstance(lower, int) and isinstance(upper, int)) or (isinstance(lower, float) and isinstance(upper, float)):
-                bounds_size = upper - lower
-            else:
-                bounds_size = None
-            df = pd.read_csv("results.csv")
-            new_row = {'N': N,'M': M,'LOWER_BOUND': lower,'LOWER_BOUND_SECONDS_TAKEN': lower_time,'LOWER_BOUND_REQUIRED_ITERATIONS': lower_iterations,'UPPER_BOUND': upper,'UPPER_BOUND_SECONDS_TAKEN': upper_time,'UPPER_BOUND_REQUIRED_ITERATIONS': upper_iterations,'BOUNDS_SIZE': bounds_size, 'TRUE_PROBABILITY_VALUE':checkQuerry(N,M,1,1)}
-            new_row_df = pd.DataFrame([new_row])
-            df = pd.concat([df, new_row_df], ignore_index=True)
-            df.to_csv("results.csv", index=False)
-        except Exception:
-            pass
+    #         if (isinstance(lower, int) and isinstance(upper, int)) or (isinstance(lower, float) and isinstance(upper, float)):
+    #             bounds_size = upper - lower
+    #         else:
+    #             bounds_size = None
+    #         df = pd.read_csv("results.csv")
+    #         new_row = {'N': N,'M': M,'LOWER_BOUND': lower,'LOWER_BOUND_SECONDS_TAKEN': lower_time,'LOWER_BOUND_REQUIRED_ITERATIONS': lower_iterations,'UPPER_BOUND': upper,'UPPER_BOUND_SECONDS_TAKEN': upper_time,'UPPER_BOUND_REQUIRED_ITERATIONS': upper_iterations,'BOUNDS_SIZE': bounds_size, 'TRUE_PROBABILITY_VALUE':checkQuerry(N,M,1,1)}
+    #         new_row_df = pd.DataFrame([new_row])
+    #         df = pd.concat([df, new_row_df], ignore_index=True)
+    #         df.to_csv("results.csv", index=False)
+    #     except Exception:
+    #         pass
 
-    for M in range(2, 7):
-        for N in range(1, 7):
-            scalable_df = getScalableDataFrame(M=M, N=N)
-            interventionValue = 1; targetValue = 1
-            try:
-                start = tm.time()
-                scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = True)
-                lower , lower_iterations = scalarProblem.solve()
-                end = tm.time()
-                lower_time = end-start
+    # for M in range(2, 7):
+    #     for N in range(1, 7):
+    #         scalable_df = getScalableDataFrame(M=M, N=N)
+    #         interventionValue = 1; targetValue = 1
+    #         try:
+    #             start = tm.time()
+    #             scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = True)
+    #             lower , lower_iterations = scalarProblem.solve()
+    #             end = tm.time()
+    #             lower_time = end-start
 
-                scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = False)
-                start = tm.time()
-                upper, upper_iterations = scalarProblem.solve()
-                end = tm.time()
-                upper = -upper
-                upper_time = end-start
+    #             scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = False)
+    #             start = tm.time()
+    #             upper, upper_iterations = scalarProblem.solve()
+    #             end = tm.time()
+    #             upper = -upper
+    #             upper_time = end-start
                 
-                if (isinstance(lower, int) and isinstance(upper, int)) or (isinstance(lower, float) and isinstance(upper, float)):
-                    bounds_size = upper - lower
-                else:
-                    bounds_size = None
-                df = pd.read_csv("results.csv")
-                new_row = {'N': N,'M': M,'LOWER_BOUND': lower,'LOWER_BOUND_SECONDS_TAKEN': lower_time,'LOWER_BOUND_REQUIRED_ITERATIONS': lower_iterations,'UPPER_BOUND': upper,'UPPER_BOUND_SECONDS_TAKEN': upper_time,'UPPER_BOUND_REQUIRED_ITERATIONS': upper_iterations,'BOUNDS_SIZE': bounds_size, 'TRUE_PROBABILITY_VALUE':checkQuerry(N,M,1,1)}
-                new_row_df = pd.DataFrame([new_row])
-                df = pd.concat([df, new_row_df], ignore_index=True)
-                df.to_csv("results.csv", index=False)
-            except Exception:
-                pass
+    #             if (isinstance(lower, int) and isinstance(upper, int)) or (isinstance(lower, float) and isinstance(upper, float)):
+    #                 bounds_size = upper - lower
+    #             else:
+    #                 bounds_size = None
+    #             df = pd.read_csv("results.csv")
+    #             new_row = {'N': N,'M': M,'LOWER_BOUND': lower,'LOWER_BOUND_SECONDS_TAKEN': lower_time,'LOWER_BOUND_REQUIRED_ITERATIONS': lower_iterations,'UPPER_BOUND': upper,'UPPER_BOUND_SECONDS_TAKEN': upper_time,'UPPER_BOUND_REQUIRED_ITERATIONS': upper_iterations,'BOUNDS_SIZE': bounds_size, 'TRUE_PROBABILITY_VALUE':checkQuerry(N,M,1,1)}
+    #             new_row_df = pd.DataFrame([new_row])
+    #             df = pd.concat([df, new_row_df], ignore_index=True)
+    #             df.to_csv("results.csv", index=False)
+    #         except Exception:
+    #             pass
 
 if __name__=="__main__":
     main()
