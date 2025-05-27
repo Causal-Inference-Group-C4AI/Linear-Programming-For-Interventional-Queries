@@ -51,14 +51,14 @@ def main():
     scalable_target = "Y"; target_value = 1
     scalable_intervention = "X"; intervention_value = 1   
     N_M = [
-            (1,1),
-            # (2,1),
-            # (1,2),
-            # (3,1),
-            # (4,1),
-            # (2,2),
-            # (1,3),
-            # (2,3), # Not LP
+            #(1,1),
+            (2,1),
+            (1,2),
+            (3,1),
+            (4,1),
+            (2,2),
+            (1,3),
+            (2,3), # Not LP
     ]
     for values in N_M:
         N, M = values
@@ -107,27 +107,28 @@ def main():
                 with open("./outputs/error_log.txt", 'a') as file:
                     file.write(f"GC Error for {i}th -- N:{N},M:{M}: {e}\n")
 
-            try:
-                start = tm.time()
-                scalable_model = CausalModel(
-                    data=scalable_df,
-                    edges=scalable_input,
-                    unobservables=scalable_unobs,
-                    interventions=scalable_intervention,
-                    interventions_value=intervention_value,
-                    target=scalable_target,
-                    target_value=target_value,
-                )
-                lower, upper = scalable_model.inference_query(gurobi=True)
-                end = tm.time()
-                new_row_df['LP_LOWER_BOUND'] = lower
-                new_row_df['LP_UPPER_BOUND'] = upper
-                new_row_df['LP_SECONDS_TAKEN'] = total_time
-                logger.info("LP Ran")
-            except Exception as e:
-                logger.error(f"LP Error_N:{N}_M:{M}_: {e}")
-                with open("./outputs/error_log.txt", 'a') as file:
-                    file.write(f"LP Error for {i}th -- N:{N},M:{M}: {e}\n")
+            if N!=2 or M!=3:
+                try:
+                    start = tm.time()
+                    scalable_model = CausalModel(
+                        data=scalable_df,
+                        edges=scalable_input,
+                        unobservables=scalable_unobs,
+                        interventions=scalable_intervention,
+                        interventions_value=intervention_value,
+                        target=scalable_target,
+                        target_value=target_value,
+                    )
+                    lower, upper = scalable_model.inference_query(gurobi=True)
+                    end = tm.time()
+                    new_row_df['LP_LOWER_BOUND'] = lower
+                    new_row_df['LP_UPPER_BOUND'] = upper
+                    new_row_df['LP_SECONDS_TAKEN'] = total_time
+                    logger.info("LP Ran")
+                except Exception as e:
+                    logger.error(f"LP Error_N:{N}_M:{M}_: {e}")
+                    with open("./outputs/error_log.txt", 'a') as file:
+                        file.write(f"LP Error for {i}th -- N:{N},M:{M}: {e}\n")
             
             try:
                 new_row_df['TRUE_VALUE'] = true_value(N,M,target_value,intervention_value,scalable_df)
