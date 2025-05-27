@@ -213,6 +213,7 @@ class SubProblem:
         self.model.modelSense = GRB.MINIMIZE
         # Turning off output because of the iterative procedure
         self.model.params.outputFlag = 0
+        self.model.params.Method = 4
         # Stop the subproblem routine as soon as the objective's best bound becomes
         #less than or equal to one, as this implies a non-negative reduced cost for
         #the entering column.

@@ -92,9 +92,9 @@ def main():
                 scalarProblem = ScalarProblem.buildScalarProblem(M=M, N=N, interventionValue=interventionValue, targetValue=targetValue, df=scalable_df, minimum = False)
                 logger.info("MAX Problem Built")
                 upper, upper_iterations = scalarProblem.solve()
+                upper = -upper
                 logger.info(f"Maximum Optimization N:{N}, M:{M}: Upper: {upper}, Iterations: {upper_iterations}")
                 end = tm.time()
-                upper = -upper
                 total_time = end-start
                 new_row_df['GC_LOWER_BOUND'] = lower
                 new_row_df['GC_UPPER_BOUND'] = upper
