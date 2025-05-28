@@ -1,0 +1,1 @@
+Error: local variable 'scalable_csv_path' referenced before assignment

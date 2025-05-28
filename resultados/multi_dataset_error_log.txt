@@ -1,0 +1,17 @@
+GC Error for 6th -- N:3,M:1: Too many iterations
+GC Error for 7th -- N:3,M:1: Too many iterations
+GC Error for 9th -- N:3,M:1: Too many iterations
+GC Error for 10th -- N:3,M:1: Too many iterations
+GC Error for 11th -- N:3,M:1: Too many iterations
+GC Error for 14th -- N:3,M:1: Too many iterations
+GC Error for 1th -- N:4,M:1: Too many iterations
+GC Error for 4th -- N:4,M:1: Too many iterations
+GC Error for 6th -- N:4,M:1: Too many iterations
+GC Error for 7th -- N:4,M:1: Too many iterations
+GC Error for 8th -- N:4,M:1: Too many iterations
+GC Error for 9th -- N:4,M:1: Too many iterations
+GC Error for 10th -- N:4,M:1: Too many iterations
+GC Error for 10th -- N:2,M:2: Too many iterations
+GC Error for 11th -- N:2,M:2: Too many iterations
+LP Error for 9th -- N:1,M:3: Unable to retrieve attribute 'pi'
+GC Error for 6th -- N:2,M:3: Too many iterations
