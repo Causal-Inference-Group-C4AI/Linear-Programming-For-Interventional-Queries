@@ -37,6 +37,7 @@ class MasterProblem:
         self.model.modelSense = GRB.MINIMIZE
         # Turning off output because of the iterative procedure
         self.model.params.outputFlag = 0
+        #self.model.setParam('FeasibilityTol', 1e-9) 
         self.model.update()
     
     def update(self, newColumn: list[float], index: int, objCoeff: list[float], minimun: bool):        
@@ -212,6 +213,7 @@ class SubProblem:
 
         self.model.modelSense = GRB.MINIMIZE
         # Turning off output because of the iterative procedure
+        #self.model.setParam('FeasibilityTol', 1e-9)
         self.model.params.outputFlag = 0
         self.model.params.Method = 4
         # Stop the subproblem routine as soon as the objective's best bound becomes
@@ -284,12 +286,28 @@ class ScalarProblem:
         counter = 0
         while True:
             self.master.model.optimize()
+            if self.master.model.Status == gp.GRB.OPTIMAL: # OPTIMAL
+                    b = self.master.model.objVal
+                    logger.info(f"--------->> Master solution found: {b}")
+            elif self.master.model.Status == gp.GRB.USER_OBJ_LIMIT:
+                    b = self.master.model.objVal
+                    logger.info(f"--------->> BIG_M Limit reached! Master solution found: {b}")
+            else:
+                logger.error(f"--------->>  Master solution not found. Gurobi status code: {self.master.model.Status}")
             self.duals = self.master.model.getAttr("pi", self.master.constrs)
             logger.debug(f"Master Duals: {self.duals}")
-            # self.master.model.write(f"master_{counter}.lp")
+            self.master.model.write(f"master_{counter}.lp")
             self.subproblem.update(self.duals)
             self.subproblem.model.optimize()
-            # self.subproblem.model.write(f"subproblem_{counter}.lp")
+            if self.subproblem.model.Status == gp.GRB.OPTIMAL: # OPTIMAL
+                    b = self.subproblem.model.objVal
+                    logger.info(f"--------->> Subproblem solution found!: {b}")
+            elif self.subproblem.model.Status == gp.GRB.USER_OBJ_LIMIT:
+                    b = self.subproblem.model.objVal
+                    logger.info(f"--------->> BIG_M Limit reached! Subproblem solution found: {b}")
+            else:
+                logger.error(f"--------->>  Subproblem solution not found. Gurobi status code: {self.subproblem.model.Status}")
+            self.subproblem.model.write(f"subproblem_{counter}.lp")
 
             reduced_cost = self.subproblem.model.objVal
             logger.debug(f"Reduced Cost: {reduced_cost}")
@@ -355,6 +373,8 @@ class ScalarProblem:
         numberIterations = self._generate_patterns()
         self.master.model.setAttr("vType", self.master.vars, GRB.CONTINUOUS) # useless?
         self.master.model.optimize()
+        self.master.model.write("model.lp")
+        self.master.model.write("model.mps")
         bound = self.master.model.ObjVal
         itBound  = numberIterations
         return bound, itBound
