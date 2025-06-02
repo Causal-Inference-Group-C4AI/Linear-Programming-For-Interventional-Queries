@@ -44,22 +44,13 @@ def true_value(N,M,y0,x0,df):
 def main():
     logging.basicConfig(level=logging.INFO)
 
-    # df = pd.DataFrame(columns=['N','M','GC_LOWER_BOUND', 'GC_UPPER_BOUND', 'GC_LOWER_BOUND_REQUIRED_ITERATIONS','GC_UPPER_BOUND_REQUIRED_ITERATIONS', 'GC_SECONDS_TAKEN', 'LP_LOWER_BOUND', 'LP_UPPER_BOUND', 'LP_SECONDS_TAKEN', 'TRUE_VALUE'])
-    # df.to_csv("./outputs/experiment_results.csv", index=False)
+    df = pd.DataFrame(columns=['N','M','GC_LOWER_BOUND', 'GC_UPPER_BOUND', 'GC_LOWER_BOUND_REQUIRED_ITERATIONS','GC_UPPER_BOUND_REQUIRED_ITERATIONS', 'GC_SECONDS_TAKEN', 'LP_LOWER_BOUND', 'LP_UPPER_BOUND', 'LP_SECONDS_TAKEN', 'TRUE_VALUE'])
+    df.to_csv("./outputs/experiment_results.csv", index=False)
 
     scalable_unobs = ["U1", "U2", "U3"]
     scalable_target = "Y"; target_value = 1
     scalable_intervention = "X"; intervention_value = 1   
-    N_M = [
-            #(1,1),
-            (2,1),
-            (1,2),
-            (3,1),
-            (4,1),
-            (2,2),
-            (1,3),
-            (2,3), # Not LP
-    ]
+    N_M = [(1,1),(2,1),(1,2),(3,1),(4,1),(2,2),(1,3),(2,3), (5,1), (1,4),(4,2)]
     for values in N_M:
         N, M = values
         scalable_input = genGraph(N, M)
@@ -72,7 +63,7 @@ def main():
             new_row = {'N':N,'M':M,'GC_LOWER_BOUND':None,'GC_UPPER_BOUND':None,'GC_LOWER_BOUND_REQUIRED_ITERATIONS':None,'GC_UPPER_BOUND_REQUIRED_ITERATIONS':None, 'GC_SECONDS_TAKEN':None, 'LP_LOWER_BOUND':None, 'LP_UPPER_BOUND':None, 'LP_SECONDS_TAKEN':None, 'TRUE_VALUE':None}
             new_row_df = pd.DataFrame([new_row])
 
-            generate_data_for_scale_case(n=N, m=M)
+            #generate_data_for_scale_case(n=N, m=M)
 
             interventionValue = 1; targetValue = 1
             scalable_df = None
@@ -107,7 +98,7 @@ def main():
                 with open("./outputs/error_log.txt", 'a') as file:
                     file.write(f"GC Error for {i}th -- N:{N},M:{M}: {e}\n")
 
-            if N!=2 or M!=3:
+            if N>=5 and M>=5:
                 try:
                     start = tm.time()
                     scalable_model = CausalModel(
